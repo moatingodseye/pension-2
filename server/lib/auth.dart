@@ -72,12 +72,40 @@ Future<Response> register(Request req) async {
 // Login user
 Future<Response> login(Request req) async {
   final body = jsonDecode(await req.readAsString());
-  final result = db.select("SELECT * FROM users WHERE username=?", [body['username']]);
+  final username = body['username']?.toString();
+  final password = body['password']?.toString();
 
-  if (result.isEmpty || !BCrypt.checkpw(body['password'], result.first['password'])) {
-    return Response(403, body: 'Invalid credentials');
+  if (username == null || password == null) {
+    return Response(400, body: jsonEncode({'success': false, 'error': 'Username and password are required'}));
   }
 
-  final jwt = JWT({'id': result.first['id'], 'admin': result.first['is_admin'] == 1});
-  return Response.ok(jsonEncode({'token': jwt.sign(SecretKey(jwtSecret)), 'isAdmin': result.first['is_admin']}));
+  try {
+    // Query to fetch user details based on username
+    final result = await db.select(
+      'SELECT id, username, password, is_admin, locked FROM users WHERE username = ?',
+      [username],
+    );
+
+    if (result.isEmpty) {
+      return Response(401, body: jsonEncode({'success': false, 'error': 'Invalid username or password'}));
+    }
+
+    final user = result.first;
+
+    // Check if the account is locked
+    if (user['locked'] == 1) {
+      return Response(403, body: jsonEncode({'success': false, 'error': 'Account is locked'}));  // 403 Forbidden
+    }
+
+    // Check if the password matches
+    final isPasswordCorrect = BCrypt.checkpw(password!, user['password']);
+    if (!isPasswordCorrect) {
+      return Response(401, body: jsonEncode({'success': false, 'error': 'Invalid username or password'}));
+    }
+
+    final jwt = JWT({'id': user['id'], 'admin': user['is_admin'] == 1});
+    return Response.ok(jsonEncode({'token': jwt.sign(SecretKey(jwtSecret)), 'isAdmin': user['is_admin']}));
+  } catch (e) {
+    return Response(500, body: jsonEncode({'success': false, 'error': 'Error during login: ${e.toString()}'}));
+  }
 }

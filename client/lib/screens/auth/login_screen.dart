@@ -13,8 +13,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController userController = TextEditingController();
   final TextEditingController passController = TextEditingController();
+
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _errorMessage; // To capture error message from the server
 
   @override
   Widget build(BuildContext context) {
@@ -30,58 +31,79 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Username Field
               TextField(
                 controller: userController,
                 decoration: const InputDecoration(
                   labelText: 'Username',
                 ),
+                textInputAction: TextInputAction.next, // Move to Password field
               ),
               const SizedBox(height: 12),
+
+              // Password Field
               TextField(
                 controller: passController,
                 decoration: const InputDecoration(
                   labelText: 'Password',
                 ),
                 obscureText: true,
+                textInputAction: TextInputAction.done, // Done action for login
               ),
               const SizedBox(height: 20),
 
-              // Error message
+              // Error message display (if any error occurs)
               if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
                 ),
 
               const SizedBox(height: 20),
+
+              // Login Button
               ElevatedButton(
                 onPressed: _isLoading
                     ? null
                     : () async {
                         setState(() {
                           _isLoading = true;
-                          _errorMessage = null;
+                          _errorMessage = null; // Clear previous error
                         });
+
                         try {
+                          // Attempt login
                           await authProvider.login(
                             userController.text.trim(),
                             passController.text.trim(),
                           );
                         } catch (e) {
-                          setState(() =>
-                              _errorMessage = 'Login failed: $e');
+                          // If there's an error, show the error message
+                          setState(() {
+                            _errorMessage = e.toString(); // Display the error
+                          });
                         } finally {
-                          setState(() => _isLoading = false);
+                          setState(() {
+                            _isLoading = false;
+                          });
                         }
                       },
                 child: _isLoading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white)
+                    ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Login'),
               ),
 
               const SizedBox(height: 16),
 
+              // Register button to navigate to Register screen
               TextButton(
                 onPressed: () {
                   Navigator.of(context).push(
