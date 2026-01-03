@@ -74,6 +74,4 @@ void main() async {
   final server = await serve(public, InternetAddress.anyIPv4, port);
 
   logTo('Listen:${server.address.address}:${server.port}');
-
-  print('Listen:${server.address.address}:${server.port}');
 }

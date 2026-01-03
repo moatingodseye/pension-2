@@ -1,5 +1,6 @@
 import 'package:sqlite3/sqlite3.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'debuglogger.dart';
 
 final db = sqlite3.open('pension.db');
 
@@ -68,10 +69,10 @@ void _addPensionPotNameColumn() {
 
     if (!columns.contains('name')) {
       db.execute("ALTER TABLE pension_pots ADD COLUMN name TEXT;");
-      print("Column 'name' added to pension_pots table.");
+      logTo("Column 'name' added to pension_pots table.");
     }
   } catch (e) {
-    print("Migration failed: $e");
+    logTo("Migration failed: $e");
   }
 }
 
@@ -82,10 +83,10 @@ void _addPensionPotToDrawdowns() {
 
     if (!columns.contains('pension_pot_id')) {
       db.execute("ALTER TABLE drawdowns ADD COLUMN pension_pot_id INTEGER;");
-      print("Column 'pension_pot_id' added to drawdowns table.");
+      logTo("Column 'pension_pot_id' added to drawdowns table.");
     }
   } catch (e) {
-    print("Migration failed: $e");
+    logTo("Migration failed: $e");
   }
 }
 

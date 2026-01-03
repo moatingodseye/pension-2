@@ -32,9 +32,9 @@ Future<void> logTo(String message) async {
 
     log.info(message);
     if (response.statusCode != 204) {
-      print('logToDocker: Unexpected status code: ${response.statusCode}');
+      print('logTo: Unexpected status code: ${response.statusCode}');
     }
   } catch (e) {
-    print('logToDocker failed: $e');
+    print('logTo failed: $e');
   }
 }
