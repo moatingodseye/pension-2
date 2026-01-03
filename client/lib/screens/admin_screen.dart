@@ -37,6 +37,121 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  Future<void> _showUpdateUserDialog(int userId) async {
+    final provider = Provider.of<DataProvider>(context, listen: false);
+    
+    // Fetch the full user details (including DOB)
+    final userDetails = await provider.getUser(userId);
+
+    final usernameController = TextEditingController(text: userDetails['username']);
+    final dobController = TextEditingController(text: userDetails['dob']);  // Pre-fill DOB
+    final passwordController = TextEditingController();
+    bool isAdmin = userDetails['is_admin'] == 1;
+    bool isLocked = userDetails['locked'] == 1;
+
+    String dialogError = '';
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Update User'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: usernameController,
+                  decoration: const InputDecoration(labelText: 'Username'),
+                ),
+                TextField(
+                  controller: dobController,  // This will pre-fill the DOB
+                  decoration: const InputDecoration(labelText: 'Date of Birth'),
+                ),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(labelText: 'New Password'),
+                  obscureText: true,
+                ),
+                Row(
+                  children: [
+                    Text('Admin'),
+                    Switch(
+                      value: isAdmin,
+                      onChanged: (value) {
+                        setState(() {
+                          isAdmin = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text('Locked'),
+                    Switch(
+                      value: isLocked,
+                      onChanged: (value) {
+                        setState(() {
+                          isLocked = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                if (dialogError.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      dialogError,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final username = usernameController.text.trim();
+                  final dob = dobController.text.trim();
+                  final password = passwordController.text.trim();
+
+                  if (username.isEmpty || dob.isEmpty) {
+                    setState(() {
+                      dialogError = 'Please fill all required fields';
+                    });
+                    return;
+                  }
+
+                  try {
+                    await provider.updateUser(
+                      userId,
+                      username,
+                      dob,
+                      password.isEmpty ? null : password,  // Send null if password is empty
+                      isAdmin,
+                      isLocked
+                    );
+                    Navigator.of(dialogCtx).pop();
+                  } catch (e) {
+                    setState(() {
+                      dialogError = 'Update failed: ${e.toString()}';
+                    });
+                  }
+                },
+                child: const Text('Update'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   Future<void> _showResetPasswordDialog(int userId) async {
     final TextEditingController passwordController =
         TextEditingController();
@@ -173,10 +288,9 @@ class _AdminScreenState extends State<AdminScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.password),
-                            tooltip: 'Reset Password',
+                            tooltip: 'Edit User',
                             onPressed: () =>
-                                _showResetPasswordDialog(
-                                    u['id'] as int),
+                                _showUpdateUserDialog(u['id'] as int),
                           ),
                         ],
                       ),

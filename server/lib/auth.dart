@@ -41,19 +41,31 @@ Future<Response> register(Request req) async {
   final dob = body['dob'];
 
   if (username == null || password == null || dob == null) {
-    return Response(400, body: 'Missing fields');
+    return Response(
+      400,
+      body: jsonEncode({'success': false, 'error': 'Missing fields'}),
+      headers: {'Content-Type': 'application/json'},
+    );
   }
 
   final hash = BCrypt.hashpw(password, BCrypt.gensalt());
 
   try {
+    // create user default to none admin and locked so anyone can register but admin has to approve
     db.execute(
-      "INSERT INTO users (username, password, dob, is_admin) VALUES (?, ?, ?, 0)",
+      "INSERT INTO users (username, password, dob, locked, is_admin) VALUES (?, ?, ?, 1, 0)", 
       [username, hash, dob],
     );
-    return Response.ok('Registered');
+    return Response.ok(
+      jsonEncode({'success': true, 'message': 'Registered successfully'}),
+      headers: {'Content-Type': 'application/json'},
+    );  
   } catch (_) {
-    return Response(409, body: 'Username already exists');
+    return Response(
+      409,
+      body: jsonEncode({'success': false, 'error': 'Username already exists'}),
+      headers: {'Content-Type': 'application/json'},
+    );
   }
 }
 
@@ -67,5 +79,5 @@ Future<Response> login(Request req) async {
   }
 
   final jwt = JWT({'id': result.first['id'], 'admin': result.first['is_admin'] == 1});
-  return Response.ok(jsonEncode({'token': jwt.sign(SecretKey(jwtSecret))}));
+  return Response.ok(jsonEncode({'token': jwt.sign(SecretKey(jwtSecret)), 'isAdmin': result.first['is_admin']}));
 }

@@ -17,7 +17,7 @@ class AuthProvider extends ChangeNotifier {
       await ApiService.initToken(); // ✅ changed: await added
 
       loggedIn = true; // ✅ changed: set before notifyListeners
-      isAdmin = res['isAdmin'] == true; // ✅ changed: set before notifyListeners
+      isAdmin = res['isAdmin'] == 1; // ✅ changed: set before notifyListeners
 
       notifyListeners();
     }

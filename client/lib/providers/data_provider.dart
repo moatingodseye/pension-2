@@ -185,4 +185,50 @@ class DataProvider extends ChangeNotifier {
       await fetchUsers();
     }
   }
+
+  // Update user details
+  Future<void> updateUser(
+    int userId,
+    String username,
+    String dob,
+    String? password, // password can be null if not provided
+    bool isAdmin,
+    bool isLocked,
+  ) async {
+    // Prepare data to send to the backend
+    final Map<String, dynamic> userData = {
+      'username': username,
+      'dob': dob,
+      'is_admin': isAdmin ? 1 : 0,
+      'locked': isLocked ? 1 : 0,
+    };
+
+    // If password is provided, include it in the update request
+    if (password != null && password.isNotEmpty) {
+      userData['password'] = password;
+    }
+
+    try {
+      final response = await ApiService.put('admin/user/$userId', userData);
+
+      if (response['success'] == true) {
+        // If the update is successful, fetch the updated users
+        await fetchUsers();
+      } else {
+        throw Exception('Failed to update user: ${response['error']}');
+      }
+    } catch (e) {
+      throw Exception('Error updating user: ${e.toString()}');
+    }
+  }
+
+  // Get a user's full details by ID (including DOB)
+  Future<Map<String, dynamic>> getUser(int userId) async {
+    try {
+      final response = await ApiService.getOne('admin/user/$userId');
+      return response;  // This should return user details including dob, is_admin, etc.
+    } catch (e) {
+      throw Exception('Error fetching user details: ${e.toString()}');
+    }
+  }  
 }

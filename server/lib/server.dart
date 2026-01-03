@@ -63,10 +63,12 @@ void main() async {
 
     ..post('/simulate', simulate)
 
-    ..get('/users', getUsers)
-    ..post('/lock_user', lockUser)
-    ..post('/unlock_user', unlockUser)
-    ..post('/reset_password', resetPassword);
+    ..get('/admin/users', getUsers)
+    ..get('/admin/user/<id>', getUser)
+    ..put('/admin/user/<id>', updateUser)
+    ..post('/admin/lock_user', lockUser)
+    ..post('/admin/unlock_user', unlockUser)
+    ..post('/admin/reset_password', resetPassword);
 
   
   final int port = int.parse(Platform.environment['PORT'] ?? '8080');

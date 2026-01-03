@@ -85,22 +85,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      final res = await ApiService.post('register', {
-        'username': username,
-        'password': password,
-        'dob': dob,
-      });
+      final result = await ApiService.register(
+        username: username,
+        password: password,
+        dob: dob,
+      );
 
-      // res must be parsed JSON because the backend now returns JSON
-      if (res['success'] == true) {
-        setState(() => _successMessage = 'Registered successfully');
-      } else {
-        setState(() => _errorMessage = res['error'] ?? 'Registration failed');
-      }
+      setState(() {
+        if (result.ok) {
+          _successMessage = result.message;
+        } else {
+          _errorMessage = result.message;
+        }
+        _isLoading = false;
+      });
     } catch (e) {
-      setState(() => _errorMessage = 'Error: $e');
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _errorMessage = 'Error: $e';
+        _isLoading = false;
+      });
     }
   }
+
 }

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'debuglogger.dart';
+import 'apiresponse.dart';
 
 class ApiService {
   static String? token = "";
@@ -105,4 +106,30 @@ class ApiService {
       'raw': res.body,
     };
   }
+
+  /// Register a new user and return an ApiResponse
+  static Future<ApiResponse> register({
+    required String username,
+    required String password,
+    required String dob,
+  }) async {
+    final body = {
+      'username': username,
+      'password': password,
+      'dob': dob,
+    };
+
+    try {
+      final res = await post('register', body);
+
+      // Create and return ApiResponse from backend response
+      return ApiResponse.fromJson(res);
+    } catch (e) {
+      // Return a generic error response
+      return ApiResponse(
+        ok: false,
+        message: 'Error: $e',
+      );
+    }
+  }  
 }
