@@ -1,5 +1,5 @@
 #:/bin/bash
-git reset --hard origin/main
+git reset --hard origin/master
 git pull
 cd client
 docker build -t flutter_dev -f flutterfile .
