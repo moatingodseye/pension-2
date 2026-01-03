@@ -1,0 +1,44 @@
+FROM dart:stable
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y curl git unzip wget xz-utils
+
+# Set Flutter version and path
+ENV FLUTTER_VERSION=3.22.2 \
+    FLUTTER_ROOT=/opt/flutter
+ENV PATH="$FLUTTER_ROOT/bin:$FLUTTER_ROOT/bin/cache/dart-sdk/bin:$PATH"
+
+# Create directory and download Flutter SDK
+RUN mkdir -p $FLUTTER_ROOT
+WORKDIR $FLUTTER_ROOT
+
+# Download and extract Flutter
+RUN git clone --depth 1 -b stable https://github.com/flutter/flutter.git /opt/flutter
+# RUN wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_li>
+#     tar -xf flutter_linux_${FLUTTER_VERSION}-stable.tar.xz --strip-components=1 && \
+#     rm flutter_linux_${FLUTTER_VERSION}-stable.tar.xz
+#    rm -rf $FLUTTER_ROOT/.git
+
+# After extracting Flutter
+WORKDIR $FLUTTER_ROOT
+
+# Initialize Git repo to satisfy Flutter's check
+# RUN git config --global user.email "no@one" && \
+#     git config --global user.name "nobody" && \
+#     git init && \
+#     git add . && \
+#     git commit --allow-empty -m "Flutter base"
+
+# RUN git config --global --add safe.directory /opt/flutter
+# ENV FLUTTER_ROOT_WARNING=0
+# RUN chown -R root:root $FLUTTER_ROOT
+
+# Verify installation
+RUN flutter channel stable
+RUN flutter upgrade
+
+# usage
+# docker build -t flutter_dev -f ./flutterfile .
+# docker run -ut flutter_dev /bin/bash
+# flutter --version

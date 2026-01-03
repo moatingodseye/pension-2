@@ -1,0 +1,685 @@
+    1  su visudo
+    2  sudo visudo
+    3  su -
+    4  visudo
+    5  sudo visudo
+    6  nano
+    7  sudo apt install nano
+    8  sudo visudo
+    9  exit
+   10  sudo pt update
+   11  sudo apt update
+   12  sudo apt installca-certificates curl -y
+   13  sudo apt install ca-certificates curl -y
+   14  sudo install -m 0755 -d /etc/apt/keyrings
+   15  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg =o /etc/apt/keyrings/docker.asc
+   16  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+   17  sudo chmod a+r /etc/apt/keyrings/docker.asc 
+   18  sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   19  sudo apt update
+   20  sudo apt install docker-ce
+   21  sudo systemctl start docker
+   22  sudo systemctl enable docker
+   23  sudo systemctl status docker
+   24  docker run --rm hello-world
+   25  sudo docker run --rm hello-world
+   26  docker run -it ubuntu bash
+   27  sudo service docker restart
+   28  docker run -it ubuntu bash
+   29  sudo chmod 660 /var/run/docker.sock
+   30  docker run -it ubuntu bash
+   31  sudo usermod -aG docker jrb
+   32  docker run -it ubuntu bash
+   33  exit
+   34  sudo systemctl edit docker.service
+   35  sudo systemctl daemon-reload
+   36  sudo systemctl status docker
+   37  docker run -it ubuntu bash
+   38  docker ps
+   39  docker ps -a
+   40  sudo systemctl restart docker.service
+   41  docker ps -a
+   42  sudo netstat -Intp
+   43  sudo netstat -lntp
+   44  sudo apt install netstat
+   45  sudo apt install net-tools
+   46  sudo netstat -Intp
+   47  sudo netstat -Intp | grep docker
+   48  sudo netstat -Intp | grep dockerd
+   49  sudo netstat -lntp | grep dockerd
+   50  sudo netstat -lntp 
+   51  sudo netstat -Intp 
+   52  sudo netstat -antp 
+   53  sudo nano /etc/docker/daemon.json
+   54  sudo systemctl restart docker.service
+   55  sudo systemctl status docker.service
+   56  sudo systemctl edit docker.service
+   57  sudo systemctl daemon-reload
+   58  sudo systemctl restart docker.service
+   59  sudo nano /etc/docker/daemon.json
+   60  sudo systemctl restart docker.service
+   61  sudo systemctl daemon-reload
+   62  sudo systemctl restart docker.service
+   63  sudo systemctl status docker.service
+   64  sudo systemctl edit docker.service
+   65  sudo systemctl daemon-reload
+   66  sudo systemctl status docker.service
+   67  sudo systemctl restart docker.service
+   68  sudo systemctl edit docker.service
+   69  sudo systemctl daemon-reload
+   70  sudo systemctl restart docker.service
+   71  sudo systemctl edit docker.service
+   72  sudo systemctl daemon-reload
+   73  sudo systemctl restart docker.service
+   74  sudo systemctl edit docker.service
+   75  sudo systemctl daemon-reload
+   76  sudo systemctl restart docker.service
+   77  sudo systemctl status docker.service
+   78  sudo systemctl edit docker.service
+   79  sudo systemctl daemon-reload
+   80  sudo systemctl restart docker.service
+   81  sudo systemctl status docker.service
+   82  sudo systemctl edit docker.service
+   83  sudo nano /etc/docker/daemon.json
+   84  sudo systemctl restart docker.service
+   85  sudo systemctl status docker.service
+   86  sudo nano /etc/docker/daemon.json
+   87  sudo systemctl restart docker.service
+   88  sudo systemctl daemon-reload
+   89  sudo systemctl restart docker.service
+   90  sudo systemctl status docker.service
+   91  sudo nano /etc/docker/daemon.json
+   92  sudo systemctl restart docker.service
+   93  sudo systemctl status docker.service
+   94  sudo nano /etc/docker/daemon.json
+   95  sudo systemctl restart docker.service
+   96  sudo systemctl stop docker.service
+   97  sudo systemctl restart docker.service
+   98  sudo systemctl status docker.service
+   99  sudo nano /etc/docker/daemon.json
+  100  sudo systemctl restart docker.service
+  101  docker -l debug info
+  102  exit
+  103  docker run -it ubuntu bash
+  104  docker ps -a
+  105  docker --version
+  106  docker ps
+  107  docker pull postgres
+  108  docker list
+  109  docker --help
+  110  ip addr
+  111  docker stop dartpostgresql
+  112  docker stop dart-postgresql
+  113  sudo shutdown -h now
+  114  history
+  115  ip addr
+  116  ls
+  117  history > history.txt
+  118  ls
+  119  cd
+  120  ls
+  121  md server
+  122  mkdir server
+  123  cd server
+  124  cd ..
+  125  rd server
+  126  rmdir server
+  127  mkdir pension
+  128  cd pension
+  129  git clone https://github.com/moatingodseye/pension-1.git .
+  130  ls
+  131  cd server/
+  132  docker build
+  133  docker build dockerfile 
+  134  ls
+  135  cd ..
+  136  ls
+  137  git pull
+  138  ls
+  139  cd server/
+  140  ls
+  141  docker build dockerfile
+  142  docker build
+  143  docker build ./dockerfile
+  144  docker buildx build ./dockerfile 
+  145  docker --version
+  146  sudo apt get update
+  147  sudo aptget update
+  148  sudo apt update
+  149  sudo apt upgrade
+  150  sudo reboot
+  151  curl http://127.0.0.1:8080
+  152  curl 127.0.0.1:8080
+  153  docker ps
+  154  docker stop server
+  155  docker stop modest_kalam
+  156  docker ps
+  157  docker stop vibrant_rosalind
+  158  docker ps
+  159  docker ps -a
+  160  curl 127.0.0.1:8080
+  161  docker ps
+  162  docker stop busy
+  163  docker stop busy_merkle
+  164  cd
+  165  ls
+  166  cd pension/
+  167  git pull
+  168  rm server/dockerfile 
+  169  git pull
+  170  cd server/
+  171  df -h
+  172  docker ps
+  173  docker ps -a
+  174  df -h
+  175  docker system df
+  176  df -h
+  177  top
+  178  df -h
+  179  docker system df
+  180  df -h
+  181  cd ..
+  182  cd client/
+  183  type dockerfile 
+  184  ls
+  185  cat dockerfile 
+  186  nano dockerfile 
+  187  df -h
+  188  cat dockerfile 
+  189  df -h
+  190  cd ..
+  191  cd server/
+  192  cat dockerfile 
+  193  ip addr
+  194  docker logs -f vigorous_borg
+  195  ls
+  196  exit
+  197  curl http://localhost:8080
+  198  cd pension
+  199  cd client
+  200  ls
+  201  cat dockerfile 
+  202  docker ps
+  203  docker compose ps
+  204  cd ..
+  205  ls
+  206  nano docker-compose.yaml 
+  207  docker compose ps
+  208  curl http://localhost:8080
+  209  curl http://0.0.0.0:8080
+  210  docker compose ps
+  211  nano docker-compose.yaml 
+  212  docker compose down
+  213  docker compose ps
+  214  docker compse logs client
+  215  docker compose logs client
+  216  docker compse exec client ls /usr/share/nginx/html
+  217  docker compose exec client ls /usr/share/nginx/html
+  218  jrb@ubuntu-docker:~/pension$ docker compse exec client ls /usr/share/nginx/html
+  219  docker: unknown command: docker compse
+  220  Run 'docker --help' for more information
+  221  jrb@ubuntu-docker:~/pension$ docker compose exec client ls /usr/share/nginx/html
+  222  50x.html                   flutter.js                 index.html
+  223  assets                     flutter_bootstrap.js       main.dart.js
+  224  canvaskit                  flutter_service_worker.js  manifest.json
+  225  favicon.png                icons                      version.json
+  226  docker compose down -v --rmi all
+  227  docker compose up --build --force-recreate
+  228  docker compose ps
+  229  docker compose down
+  230  cat docker-compose.yaml 
+  231  docker compose up --build --force-recreate
+  232  docker compose ps
+  233  docker compose down
+  234  nano docker-compose.yaml 
+  235  docker compose up --build --force-recreate
+  236  docker compose ps
+  237  cd client
+  238  ls
+  239  cd lib
+  240  ls
+  241  cd services/
+  242  ls
+  243  nano api_service.dart 
+  244  docker build -t client -f dockerfile .
+  245  cd ..
+  246  docker build -t client -f dockerfile .
+  247  nano lib/client.dart 
+  248  docker build -t client -f dockerfile .
+  249  nano lib/services/api_service.dart 
+  250  docker build -t client -f dockerfile .
+  251  nano dockerfile 
+  252  cat flutterfile 
+  253  df -h
+  254  cd ..
+  255  cd server/
+  256  df -h
+  257  docker build -t server -f dockerfile .
+  258  cd ..
+  259  docker compose up --build
+  260  docker compose ps
+  261  docker inspect --format='{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)   
+  262  exit
+  263  ls
+  264  cd pension
+  265  docker build ./docker.tlp 
+  266  cd server
+  267  docker build ./dockerfile 
+  268  docker build -f ./dockerfile 
+  269  docker build -t server -f ./dockerfile .
+  270  ls
+  271  ls -al
+  272  docker ls
+  273  docker list
+  274  docker ps
+  275  docker ps -a
+  276  cat dockerfile 
+  277  vi dockerfile 
+  278  nano dockerfile 
+  279  docker build -t server -f ./dockerfile .
+  280  docker ps -a
+  281  nano dockerfile 
+  282  docker build -t server -f ./dockerfile .
+  283  docker ps
+  284  docker ps -a
+  285  docker run -it server /bin/bash
+  286  docker rm server
+  287  docker ps
+  288  docker ps -a
+  289  docker stop server
+  290  nano dockerfile 
+  291  docker build -t server -f ./dockerfile .
+  292  nano dockerfile 
+  293  docker build -t server -f ./dockerfile .
+  294  docker ps
+  295  docker ps -a
+  296  docker run server
+  297  nano dockerfile 
+  298  docker build -t server -f ./dockerfile .
+  299  docker run server
+  300  docker run server -it /bin/bash
+  301  docker run -it server /bin/bash
+  302  nano dockerfile
+  303  docker build -t server -f ./dockerfile .
+  304  docker run -it server /bin/bash
+  305  nano dockerfile
+  306  docker build -t server -f ./dockerfile .
+  307  nano dockerfile
+  308  docker build -t server -f ./dockerfile .
+  309  nano dockerfile
+  310  docker build -t server -f ./dockerfile .
+  311  nano dockerfile
+  312  docker build -t server -f ./dockerfile .
+  313  nano dockerfile
+  314  docker build -t server -f ./dockerfile .
+  315  docker run -it sqlite /bin/bash
+  316  cp dockerfile sqlite
+  317  nano sqlite 
+  318  docker build -t sqlite -f ./sqlite
+  319  ls
+  320  cat sqlite 
+  321  docker build -t sqlite -f ./sqlite .
+  322  docker run -it sqlite /bin/bash
+  323  nano dockerfile 
+  324  docker build -t server -f ./dockerfile .
+  325  docker ps
+  326  docker ps -a
+  327  docker image prune
+  328  docker ps -a
+  329  docker rmi -f sqlite
+  330  docker rmi -f a477
+  331  docker rmi -f a95
+  332  docker ps -a
+  333  docker rmi -f a95*
+  334  docker rmi -f a95
+  335  docker rmi -f objective_mcnulty
+  336  docker rmi -f objective_mccarthy
+  337  docker ps -a
+  338  docker run server
+  339  nano dockerfile 
+  340  docker build -t server -f ./dockerfile .
+  341  docker run server
+  342  docker run -p 8080:8080 server
+  343  docker run -d -p 8080:8080 server
+  344  docker logs --tail 10 6264
+  345  ls
+  346  cd ..
+  347  ls
+  348  cat server/dockerfile 
+  349  # need sqlite
+  350  FROM debian:bullseye-slim AS sqlite
+  351  RUN apt-get update
+  352  RUN apt-get install -y libsqlite3-0 libsqlite3-dev
+  353  history
+  354  ls
+  355  cd server/
+  356  docker build -t server -f ./dockerfile .
+  357  docker run -d -p 8080:8080 server
+  358  cd ..
+  359  cd client/
+  360  docker build -t client -f ./dockerfile .
+  361  nano dockerfile
+  362  nano flutterfile
+  363  docker build -t flut -f ./flutterfile .
+  364  nano flutterfile
+  365  docker build -t flut -f ./flutterfile .
+  366  docker run -it flut /bin/bash
+  367  nano flutterfile 
+  368  docker build -t flut -f ./flutterfile .
+  369  nano flutterfile 
+  370  docker build -t flut -f ./flutterfile .
+  371  df -h
+  372  docker prune ps
+  373  docker system prune -a --volumes -f
+  374  df -h
+  375  docker build -t flut -f ./flutterfile .
+  376  nano flutterfile 
+  377  docker build -t flut -f ./flutterfile .
+  378  nano flutterfile 
+  379  docker build -t flut -f ./flutterfile .
+  380  ------
+  381  0.358    Woah! You appear to be trying to run flutter as root.
+  382  0.358    We strongly recommend running the flutter tool without superuser privileges.
+  383  0.358   /
+  384  0.358 📎
+  385  0.358 Error: The Flutter directory is not a clone of the GitHub project.
+  386  0.358        The flutter tool requires Git in order to operate properly;
+  387  0.358        to install Flutter, see the instructions at:
+  388  0.358        https://flutter.dev/get-started
+  389  ------
+  390  flutterfile:27
+  391  --------------------
+  392  ERROR: failed to build: failed to solve: process "/bin/sh -c flutter --version" did not complete successfully: exit code: 1
+  393  nano flutterfile 
+  394  docker build -t flut -f ./flutterfile .
+  395  docker run -it flut /bin/bash
+  396  nano flutterfile 
+  397  docker ps
+  398  docker ps -a
+  399  docker rmi flut
+  400  docker build -t flut -f ./flutterfile .
+  401  nano flutterfile 
+  402  docker build -t flut -f ./flutterfile .
+  403  nano flutterfile 
+  404  docker build -t flut -f ./flutterfile .
+  405  history
+  406  docker system prune -a --volumes -f
+  407  df -h
+  408  sudo apt autoremove --purge   
+  409  snap list --all | grep disabled | awk '{print $1, $3}' | xargs -n2 sudo snap remove --revision   
+  410  df -h
+  411  docker build -t flut -f ./flutterfile .
+  412  docker run -it flut /bin/bash
+  413  docker system prune -a --volumes -f
+  414  nano flutterfile 
+  415  docker build -t flut -f ./flutterfile .
+  416  ls
+  417  docker tag flut:tag flutter_dev:tag
+  418  docker ps
+  419  docker ps -a
+  420  df -h
+  421  docker system prune -a --volumes -f
+  422  docker build -t flutter_dev -f ./flutterfile .
+  423  docker build -t client -f ./dockerfile .
+  424  nano flutterfile 
+  425  docker system prune -a --volumes -f
+  426  docker build -t flutter_dev -f ./flutterfile .
+  427  nano flutterfile 
+  428  docker build -t flutter_dev -f ./flutterfile .
+  429  docker run -it flutter_dev /bin/bash
+  430  docker system prune -a --volumes -f
+  431  nano flutterfile 
+  432  docker build -t flutter_dev -f ./flutterfile .
+  433  docker system prune -a --volumes -f
+  434  nano flutterfile 
+  435  docker build -t flutter_dev -f ./flutterfile .
+  436  docker build -t client -f ./dockerfile .
+  437  nano dockerfile 
+  438  docker build -t client -f ./dockerfile .
+  439  nano dockerfile 
+  440  docker build -t client -f ./dockerfile .
+  441  cat dockerfile 
+  442  FROM flutter-dev AS build_env
+  443  # Enable web support
+  444  RUN flutter config --enable-web
+  445  RUN mkdir /app/
+  446  COPY . /app/
+  447  # Set the working directory inside the container
+  448  WORKDIR /app/
+  449  # Build the Flutter web application
+  450  RUN flutter build web --release --web-renderer html
+  451  FROM nginx:1.21.1-alpine
+  452  COPY --from=build-env /app/build/web /usr/share/nginx/html
+  453  # EXPOSE <EXPOSE PORT THAT YOU WANT>
+  454  cat dockerfile 
+  455  docker build -t client -f ./dockerfile .
+  456  nano dockerfile
+  457  docker build -t client -f ./dockerfile .
+  458  nano dockerfile
+  459  docker build -t client -f ./dockerfile .
+  460  cat dockerfile 
+  461  nano dockerfile 
+  462  docker build -t client -f ./dockerfile .
+  463  docker images
+  464  nano dockerfile 
+  465  docker build -t client -f ./dockerfile .
+  466  docker images
+  467  nano dockerfile 
+  468  docker build -t client -f ./dockerfile .
+  469  nano dockerfile 
+  470  docker build -t client -f ./dockerfile .
+  471  ls
+  472  ls lib
+  473  cat devtools_options.yaml 
+  474  cat pubspec.yaml 
+  475  grep -d+ -i+ main.dart *
+  476  grep -i+ main.dart *
+  477  grep main.dart *
+  478  ls web
+  479  docker build -t client -f ./dockerfile .
+  480  nano dockerfile 
+  481  docker build -t client -f ./dockerfile .
+  482  docker run -d -p 80:80 client
+  483  docker logs -f client
+  484  docker ps
+  485  docker logs -f objective_yalow
+  486  ls
+  487  nano dockerfile 
+  488  nano flutterfile
+  489  cd ..
+  490  ls
+  491  cat docker.tlp 
+  492  ls
+  493  nano docker-compose.yaml
+  494  docker ps
+  495  docker stop objective_yalow
+  496  dokcer stop vigorous_borg
+  497  docker stop vigorous_borg
+  498  docker ps
+  499  docker compose up
+  500  docker compose down
+  501  docker compose up --build
+  502  df -h
+  503  docker compose ps
+  504  sudo uptables -L -n
+  505  sudo iptables -L -n
+  506  cat /etc/docker/daemon.json
+  507  nano docker-compose.yaml 
+  508  docker compose down
+  509  docker compose up --build
+  510  docker compose ps
+  511  docker compose up --build
+  512  docker compose ps
+  513  docker compose down
+  514  cd client
+  515  cd lib
+  516  ls
+  517  nano client.dart
+  518  ls
+  519  nano app.dart
+  520  ls
+  521  cd core
+  522  ls
+  523  cat constants.dart 
+  524  nano constants.dart 
+  525  cd ..
+  526  docker build -t client -f dockerfile .
+  527  cd ..
+  528  cd client
+  529  nano dockerfile 
+  530  docker build -t client -f dockerfile .
+  531  cd ..
+  532  nano docker-compose.yaml 
+  533  docker compose up --build --forcerecreate
+  534  docker compose up --build
+  535  docker compose down
+  536  df -h
+  537  history
+  538  docker system prune -a --volumes -f
+  539  docker compose up --build
+  540  cd client
+  541  docker build -t flutter_dev -f flutterfile .
+  542  df -h
+  543  docker build -t flutter_dev -f flutterfile .
+  544  docker system prune -a --volumes -f
+  545  df -h
+  546  docker ps
+  547  docker ps -al
+  548  docker build -t flutter_dev -f flutterfile .
+  549  docker build -t client -f dockerfile .
+  550  docker compose logs client
+  551  docker compose logs server
+  552  cd ..
+  553  nano docker-compose.yaml 
+  554  docker compose down
+  555  sudo shutdown
+  556  lsblk
+  557  sudo growpart /dev/sda3
+  558  sudo growpart /dev/sda 3
+  559  lsblk
+  560  df -h
+  561  sudo pvresize /dev/sda3
+  562  pvdisplay
+  563  sudo pvdisplay
+  564  df -h
+  565  lsblk
+  566  sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+  567  lsblk
+  568  sudo pvdisplay
+  569  df -h
+  570  sudo resize2fs /dev/ubuntu-vg/ubuntu-lv
+  571  df -h
+  572  cd pension
+  573  cat docker-compose.yaml 
+  574  docker compose up --build
+  575  docker compose logs server
+  576  docker compose logs client
+  577  docker compose logs server
+  578  cd client
+  579  cat dockerfile 
+  580  nano nginx.conf
+  581  nano dockerfile 
+  582  nano dock.sh
+  583  chmod +x dock.sh
+  584  ./dock
+  585  ./dock.sh
+  586  cat ERROR 
+  587  rm ERROR 
+  588  ls
+  589  ./dock.sh
+  590  nano lib/services/api_service.dart 
+  591  ./dock.sh
+  592  cd ..
+  593  docker compose down
+  594  docker compose up --build
+  595  docker compose logs client
+  596  docker compose logs server
+  597  docker logs client
+  598  docker compose down
+  599  cd client
+  600  mv nginx.conf  default.conf
+  601  nano default.conf 
+  602  nano dockerfile 
+  603  ./dock.sh 
+  604  cd ..
+  605  docker compose build --no-cache
+  606  docker exec -it client nginx -t
+  607  docker compose up
+  608  docker exec -it client nginx -t
+  609  docker logs client
+  610  docker ps
+  611  docker exec -it pension_client nginx -t
+  612  docker exec -it pension-client nginx -t
+  613  docker logs client
+  614  docker logs pension-client-1
+  615  docker logs pension-server-1
+  616  docker exec -it pension-client-1 nginx -t
+  617  docker logs pension-client-1
+  618  docker compose down
+  619  cd client
+  620  nano dockerfile 
+  621  nano def
+  622  nano default.conf 
+  623  cd ..
+  624  nano docker-compose.yaml 
+  625  docker compose build --no-cache
+  626  docker ps
+  627  docker ps -a
+  628  docker compose up
+  629  docker exec -it pension-client-1 sh
+  630  docker logs pension-server=-1
+  631  docker ps
+  632  docker compose logs pension-server=-1
+  633  docker compose logs pension-server-1
+  634  docker logs pension-server-1
+  635  docker logs pension-client-1
+  636  docker logs pension-server-1
+  637  nano client/default.conf 
+  638  nano client/lib/client.dart 
+  639  nano client/default.conf 
+  640  nano client/dockerfile 
+  641  nano client/lib/client.dart 
+  642  docker compose down
+  643  docker compose build --no-cache
+  644  docker compose up
+  645  docker logs client
+  646  docker logs pension-client-1
+  647  docker logs pension-server-1
+  648  docker compose down
+  649  nano client/dockerfile 
+  650  cd client/
+  651  ./dock.sh 
+  652  docker run -d -p 81:80 client
+  653  docker logs client
+  654  docker logs 1c6f
+  655  docker stop 1c6f
+  656  nano lib/services/api_service.dart 
+  657  nano lib/core/constants.dart 
+  658  nano dockerfile 
+  659  nano lib/core/constants.dart 
+  660  nano dockerfile 
+  661  cd ..
+  662  docker compose down -v
+  663  docker compose build --no-cache client
+  664  docker compose up
+  665  docker logs pension-client-1
+  666  docker logs pension-server-1
+  667  cat client/dockerfile 
+  668  docker logs pension-server-1
+  669  docker logs pension-client-1
+  670  cat client/lib/services/
+  671  ls client/lib/services/
+  672  cat client/lib/services/dockerlog.dart 
+  673  import 'package:http/http.dart' as http;
+  674  // log to docker via nginx
+  675  void logToDocker(String message) {
+  676  }
+  677  nano client/lib/services/dockerlog.dart 
+  678  docker compose down
+  679  docker compose build --no-cache client
+  680  docker compose up
+  681  docker logs pension-client-1
+  682  docker logs pension-server-1
+  683  docker logs pension-client-1
+  684  docker compose down
+  685  history > history2.txt

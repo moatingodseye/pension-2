@@ -1,0 +1,26 @@
+FROM flutter_dev:latest AS build-env
+
+# Enable web support
+RUN flutter config --enable-web
+
+RUN mkdir /app/
+COPY . /app/
+# Set the working directory inside the container
+WORKDIR /app/
+
+# Build the Flutter web application
+RUN flutter build web --release -t lib/client.dart --dart-define=SERVER_URL=/api --dart-define=LOG_LEVEL=INFO
+
+FROM nginx:alpine
+ENV NGINX_LOG_LEVEL=info
+ENV PORT=80
+ENV CLOUDURL=http://127.0.0.1:8080
+
+COPY --from=build-env /app/build/web /usr/share/nginx/html
+COPY default.conf /etc/nginx/conf.d/default.conf.template
+COPY entrypoint.sh /entrypoint.sh
+
+# EXPOSE <EXPOSE PORT THAT YOU WANT>
+EXPOSE 80
+
+CMD ["/entrypoint.sh"]

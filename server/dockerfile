@@ -1,0 +1,38 @@
+# Use latest stable channel SDK.
+FROM dart:stable AS build
+
+# Resolve app dependencies.
+WORKDIR /app
+COPY pubspec.* ./
+RUN dart pub get
+
+# Copy app source code (except anything in .dockerignore) and AOT compile app.
+COPY . .
+RUN mkdir -p /app/bin
+RUN dart pub get --offline
+RUN dart compile exe lib/server.dart -o bin/server -DLOG_LEVEL=INFO
+
+# need sqlite
+FROM debian:bullseye-slim AS sqlite
+RUN apt-get update
+RUN apt-get install -y libsqlite3-0 libsqlite3-dev
+RUN rm -rf /var/lib/lists/*
+
+# Build minimal serving image from AOT-compiled `/server`
+# and the pre-built AOT-runtime in the `/runtime/` directory of the base image.
+FROM scratch
+COPY --from=build /runtime/ /
+COPY --from=build /app/bin/server /app/bin/
+COPY --from=sqlite /usr/lib/x86_64-linux-gnu/libsqlite3.so /usr/lib/libsqlite3.so
+
+# Start server.
+ENV NGINX_LOG_LEVEL=info
+ENV PORT=8080
+EXPOSE 8080
+CMD ["/app/bin/server"]
+
+# to use
+# cd server
+# docker build -t server -f ./dockerfile .
+# docker run -d -p 8080:8080 server
+# docker logs --tail 10 server

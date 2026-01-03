@@ -1,0 +1,26 @@
+services:
+  server:
+    build: ./server
+    expose:
+      - "8080"
+    networks:
+      internal:
+        ipv4_address: 172.20.0.10
+
+  client:
+    build: ./client
+    ports:
+      - "81:80"
+    environment:
+      - PORT=80
+      - CLOUDURL=http://172.20.0.10:8080
+    networks:
+      internal:
+        ipv4_address: 172.20.0.11
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+#    internal: true   
