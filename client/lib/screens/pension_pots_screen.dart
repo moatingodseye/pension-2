@@ -45,115 +45,121 @@ class _PensionPotsScreenState extends State<PensionPotsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<DataProvider>(context);
+    // Use Consumer to listen to changes in DataProvider
+    return Consumer<DataProvider>(
+      builder: (ctx, provider, _) {
+      if (provider.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const Text('Pension Pots', style: TextStyle(fontSize: 24)),
-          Expanded(
-            child: ListView.builder(
-              itemCount: provider.pensionPots.length,
-              itemBuilder: (ctx, i) {
-                final pot = provider.pensionPots[i];
-                return ListTile(
-                  title: Text(pot['name'] ?? 'No Name'), // Safely handle name null
-                  subtitle: Text(
-                      '£${pot['amount']} | Date: ${pot['date']} | Rate: ${pot['interest_rate']*100.0}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Edit Button
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () {
-                          _editPensionPot(pot);
-                        },
-                      ),
-                      // Delete Button
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () =>
-                            provider.deletePensionPot(pot['id'] as int),
-                      ),
-                    ],
-                  ),
-                );
-              },
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text('Pension Pots', style: TextStyle(fontSize: 24)),
+            Expanded(
+              child: ListView.builder(
+                itemCount: provider.pensionPots.length,
+                itemBuilder: (ctx, i) {
+                  final pot = provider.pensionPots[i];
+                  return ListTile(
+                    title: Text(pot['name'] ?? 'No Name'), // Safely handle name null
+                    subtitle: Text(
+                        '£${pot['amount']} | Date: ${pot['date']} | Rate: ${pot['interest_rate']*100.0}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Edit Button
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            _editPensionPot(pot);
+                          },
+                        ),
+                        // Delete Button
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () =>
+                              provider.deletePensionPot(pot['id'] as int),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const Divider(),
-          Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Enter a name' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: amountController,
-                  decoration:
-                      const InputDecoration(labelText: 'Amount (£)'),
-                  keyboardType: TextInputType.number,
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Enter amount' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: dateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Date',
-                    suffixIcon: Icon(Icons.calendar_today),
+            const Divider(),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Enter a name' : null,
                   ),
-                  readOnly: true,
-                  onTap: () => _pickDate(context),
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Select date' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: interestController,
-                  decoration: const InputDecoration(
-                      labelText: 'Interest Rate (%)'),
-                  keyboardType: TextInputType.number,
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Enter rate' : null,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) return;
-                    final amount =
-                        double.tryParse(amountController.text);
-                    final rate = double.tryParse(interestController.text);
-                    if (amount == null || rate == null || selectedDate == null) {
-                      return;
-                    }
-                    provider.addPensionPot({
-                      'name': nameController.text, // Include name
-                      'amount': amount,
-                      'date': selectedDate!.toIso8601String(),
-                      'interest_rate': rate / 100.0,
-                    });
-                    amountController.clear();
-                    dateController.clear();
-                    interestController.clear();
-                    nameController.clear();
-                    selectedDate = null;
-                  },
-                  child: const Text('Add Pension Pot'),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: amountController,
+                    decoration:
+                        const InputDecoration(labelText: 'Amount (£)'),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Enter amount' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: dateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Date',
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    readOnly: true,
+                    onTap: () => _pickDate(context),
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Select date' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: interestController,
+                    decoration: const InputDecoration(
+                        labelText: 'Interest Rate (%)'),
+                    keyboardType: TextInputType.number,
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Enter rate' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (!_formKey.currentState!.validate()) return;
+                      final amount =
+                          double.tryParse(amountController.text);
+                      final rate = double.tryParse(interestController.text);
+                      if (amount == null || rate == null || selectedDate == null) {
+                        return;
+                      }
+                      provider.addPensionPot({
+                        'name': nameController.text, // Include name
+                        'amount': amount,
+                        'date': selectedDate!.toIso8601String(),
+                        'interest_rate': rate / 100.0,
+                      });
+                      amountController.clear();
+                      dateController.clear();
+                      interestController.clear();
+                      nameController.clear();
+                      selectedDate = null;
+                    },
+                    child: const Text('Add Pension Pot'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   void _editPensionPot(Map<String, dynamic> pot) {

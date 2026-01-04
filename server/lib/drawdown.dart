@@ -18,7 +18,14 @@ Future<Response> createDrawdown(Request req) async {
     [userId, body['pension_pot_id'], body['amount'], body['start_date'], body['end_date'] ?? null, body['interest_rate']],
   );
 
-  return Response.ok('Drawdown created');
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'Drawdown created',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
 
 // Update an existing drawdown
@@ -89,6 +96,13 @@ Future<Response> listDrawdowns(Request req) async {
 Future<Response> deleteDrawdown(Request req, String id) async {
   final Database db = pension.getDb();
   db.execute("DELETE FROM drawdowns WHERE id=? AND user_id=?", [id, req.context['uid']]);
-  return Response.ok('Deleted');
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'Drawdown deleted',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
 

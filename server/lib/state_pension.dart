@@ -18,19 +18,25 @@ Future<Response> createStatePension(Request req) async {
     [userId, body['start_age'], body['amount'], body['interest_rate']],
   );
 
-  return Response.ok('State pension created');
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'State created',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
 
 // List all state pensions
 Future<Response> listStatePensions(Request req) async {
   final Database db = pension.getDb();
   final rows = db.select("SELECT * FROM state_pensions WHERE user_id=?", [req.context['uid']]);
-  final data = rows.map((r) => {
-    'id': r['id'],
-    'start_age': r['start_age'],
-    'amount': r['amount'],
-    'interest_rate': r['interest_rate'],
-  }).toList();
-
-  return Response.ok(jsonEncode({'data': data}));
+  final data = rows.first;
+  return Response.ok(jsonEncode({
+    'id': data['id'],
+    'start_age': data['start_age'],
+    'amount': data['amount'],
+    'interest_rate': data['interest_rate'],
+  }));
 }

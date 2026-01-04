@@ -18,7 +18,14 @@ Future<Response> createPensionPot(Request req) async {
     [userId, body['name'], body['amount'], body['date'], body['interest_rate']],
   );
 
-  return Response.ok('Pension pot created');
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'Pension created',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
 }
 
 // Update an existing pension pot
@@ -88,5 +95,12 @@ Future<Response> listPensionPots(Request req) async {
 Future<Response> deletePensionPot(Request req, String id) async {
   final Database db = pension.getDb();
   db.execute("DELETE FROM pension_pots WHERE id=? AND user_id=?", [id, req.context['uid']]);
-  return Response.ok('Deleted');
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'Pension deleted',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
 }

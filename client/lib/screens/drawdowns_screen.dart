@@ -150,25 +150,7 @@ class _DrawdownsScreenState extends State<DrawdownsScreen> {
           TextButton(
             onPressed: () {
               if (!_formKey.currentState!.validate()) return;
-
-              final drawdownData = {
-                'amount': double.tryParse(amountController.text),
-                'start_date': selectedStartDate!.toIso8601String(),
-                'end_date': selectedEndDate?.toIso8601String(),
-                'interest_rate':
-                    (double.tryParse(interestController.text) ?? 0) / 100.0,
-                'pension_pot_id': selectedPensionPotId,
-              };
-
-              if (currentDrawdownId == null) {
-                Provider.of<DataProvider>(context, listen: false)
-                    .addDrawdown(drawdownData);
-              } else {
-                Provider.of<DataProvider>(context, listen: false)
-                    .updateDrawdown(currentDrawdownId!, drawdownData);
-              }
-
-              Navigator.of(ctx).pop();
+              _addDrawdownAndCloseDialog(context);
             },
             child: const Text('Save'),
           ),
@@ -176,6 +158,26 @@ class _DrawdownsScreenState extends State<DrawdownsScreen> {
       ),
     );
   }
+
+  Future<void> _addDrawdownAndCloseDialog(BuildContext context) async {
+    final drawdownData = {
+      'amount': double.tryParse(amountController.text),
+      'start_date': selectedStartDate!.toIso8601String(),
+      'end_date': selectedEndDate?.toIso8601String(),
+      'interest_rate': (double.tryParse(interestController.text) ?? 0) / 100.0,
+      'pension_pot_id': selectedPensionPotId,
+    };
+
+    // Add or update drawdown asynchronously
+    if (currentDrawdownId == null) {
+      await Provider.of<DataProvider>(context, listen: false).addDrawdown(drawdownData);
+    } else {
+      await Provider.of<DataProvider>(context, listen: false).updateDrawdown(currentDrawdownId!, drawdownData);
+    }
+
+    // After the async operation completes, close the dialog
+    Navigator.of(context).pop();  // Close the dialog after saving the data
+  }  
 
   Future<void> _pickDate(BuildContext context, bool isStartDate) async {
     final picked = await showDatePicker(
@@ -199,56 +201,67 @@ class _DrawdownsScreenState extends State<DrawdownsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<DataProvider>(context);
+    // Use Consumer to listen to changes in DataProvider
+    return Consumer<DataProvider>(
+      builder: (ctx, provider, _) {
+      if (provider.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-    if (provider.pensionPots.isEmpty || provider.drawdowns.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text('Drawdowns', style: TextStyle(fontSize: 24)),
+            Expanded(
+              child: ListView.builder(
+                key: Key('drawdowns_${provider.drawdowns.length}'),
+                itemCount: provider.drawdowns.length,
+                itemBuilder: (ctx, i) {
+                  final d = provider.drawdowns[i];
+                  final potName = provider.pensionPots
+                      .firstWhere(
+                        (pot) => pot['id'] == d['pension_pot_id'],
+                        orElse: () => {'name': 'No Pension Pot'},
+                      )['name'];
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const Text('Drawdowns', style: TextStyle(fontSize: 24)),
-          Expanded(
-            child: ListView.builder(
-              itemCount: provider.drawdowns.length,
-              itemBuilder: (ctx, i) {
-                final d = provider.drawdowns[i];
-                final potName = provider.pensionPots
-                    .firstWhere(
-                      (pot) => pot['id'] == d['pension_pot_id'],
-                      orElse: () => {'name': 'No Pension Pot'},
-                    )['name'];
-
-                return ListTile(
-                  title: Text(potName),
-                  subtitle: Text(
-                    'Amount: £${d['amount']} | Start: ${d['start_date']} | End: ${d['end_date'] ?? 'Indefinite'}',
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _openDrawdownDialog(d),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => provider.deleteDrawdown(d['id']),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                  return ListTile(
+                    title: Text(potName),
+                    subtitle: Text(
+                      'Amount: £${d['amount']} | Start: ${d['start_date']} | End: ${d['end_date'] ?? 'Indefinite'}',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _openDrawdownDialog(d),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => provider.deleteDrawdown(d['id']),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () => _openDrawdownDialog(null),
-            child: const Text('Add Drawdown'),
-          ),
-        ],
-      ),
-    );
+
+            // If there are no pension pots, show the message to add a pension first
+            if (provider.pensionPots.isEmpty)
+              const Text(
+                'You need to add a pension first before you can add a drawdown.',
+                style: TextStyle(color: Colors.red, fontSize: 16),
+              ),          
+
+            ElevatedButton(
+              onPressed: provider.pensionPots.isEmpty ? null : () => _openDrawdownDialog(null),
+              child: const Text('Add Drawdown'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

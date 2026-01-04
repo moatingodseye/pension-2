@@ -28,6 +28,7 @@ class DataProvider extends ChangeNotifier {
     if (res['success'] == true) {
       await fetchPensionPots();
     }
+    notifyListeners();
   }
 
   Future<void> updatePensionPot(int id, Map<String, dynamic> updatedPot) async {
@@ -47,7 +48,11 @@ class DataProvider extends ChangeNotifier {
   // ───────── Drawdowns ─────────
 
   Future<void> fetchDrawdowns() async {
+    isLoading = true;
+    notifyListeners();
+    
     drawdowns = await ApiService.getList('drawdowns');
+    isLoading = false;
     notifyListeners();
   }
 
@@ -76,11 +81,7 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> fetchStatePension() async {
     final res = await ApiService.getOne('state_pension');
-    if (res['success'] == true && res['data'] != null) {
-      statePension = res['data'];
-    } else {
-      statePension = {};
-    }
+    statePension = res;
     notifyListeners();
   }
 
