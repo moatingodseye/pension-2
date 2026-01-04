@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:bcrypt/bcrypt.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 
 // Get a list of all users (Admin only)
 Future<Response> getUsers(Request req) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }
@@ -22,6 +24,7 @@ Future<Response> getUsers(Request req) async {
 
 // Lock a user (Admin only)
 Future<Response> lockUser(Request req) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }
@@ -35,6 +38,7 @@ Future<Response> lockUser(Request req) async {
 
 // Unlock a user (Admin only)
 Future<Response> unlockUser(Request req) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }
@@ -48,6 +52,7 @@ Future<Response> unlockUser(Request req) async {
 
 // Reset user password (Admin only)
 Future<Response> resetPassword(Request req) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }
@@ -64,6 +69,7 @@ Future<Response> resetPassword(Request req) async {
 
 /// Update user details
 Future<Response> updateUser(Request req, String id) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }
@@ -131,6 +137,7 @@ Future<Response> updateUser(Request req, String id) async {
 
 // Get full user details by ID
 Future<Response> getUser(Request req, String id) async {
+  final Database db = pension.getDb();
   if (req.context['admin'] != true) {
     return Response(403, body: 'Admin only');
   }

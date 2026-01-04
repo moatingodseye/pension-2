@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 
 // Create a pension pot
 Future<Response> createPensionPot(Request req) async {
+  final Database db = pension.getDb();
   final body = jsonDecode(await req.readAsString());
   final userId = req.context['uid'];
 
@@ -21,6 +23,7 @@ Future<Response> createPensionPot(Request req) async {
 
 // Update an existing pension pot
 Future<Response> updatePensionPot(Request req, String id) async {
+  final Database db = pension.getDb();
   final body = jsonDecode(await req.readAsString());
   final userId = req.context['uid'];
 
@@ -68,6 +71,7 @@ Future<Response> updatePensionPot(Request req, String id) async {
 
 // List all pension pots
 Future<Response> listPensionPots(Request req) async {
+  final Database db = pension.getDb();
   final rows = db.select("SELECT * FROM pension_pots WHERE user_id=?", [req.context['uid']]);
   final data = rows.map((r) => {
     'id': r['id'],
@@ -82,6 +86,7 @@ Future<Response> listPensionPots(Request req) async {
 
 // Delete a pension pot
 Future<Response> deletePensionPot(Request req, String id) async {
+  final Database db = pension.getDb();
   db.execute("DELETE FROM pension_pots WHERE id=? AND user_id=?", [id, req.context['uid']]);
   return Response.ok('Deleted');
 }

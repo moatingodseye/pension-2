@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 
 // Create a drawdown
 Future<Response> createDrawdown(Request req) async {
+  final Database db = pension.getDb();
   final body = jsonDecode(await req.readAsString());
   final userId = req.context['uid'];
 
@@ -21,6 +23,7 @@ Future<Response> createDrawdown(Request req) async {
 
 // Update an existing drawdown
 Future<Response> updateDrawdown(Request req, String id) async {
+  final Database db = pension.getDb();
   final body = jsonDecode(await req.readAsString());
   final userId = req.context['uid'];
 
@@ -68,6 +71,7 @@ Future<Response> updateDrawdown(Request req, String id) async {
 
 // List all drawdowns
 Future<Response> listDrawdowns(Request req) async {
+  final Database db = pension.getDb();
   final rows = db.select("SELECT * FROM drawdowns WHERE user_id=?", [req.context['uid']]);
   final data = rows.map((r) => {
     'id': r['id'],
@@ -83,6 +87,7 @@ Future<Response> listDrawdowns(Request req) async {
 
 // Delete a drawdown
 Future<Response> deleteDrawdown(Request req, String id) async {
+  final Database db = pension.getDb();
   db.execute("DELETE FROM drawdowns WHERE id=? AND user_id=?", [id, req.context['uid']]);
   return Response.ok('Deleted');
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:shelf/shelf.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:bcrypt/bcrypt.dart';
@@ -33,6 +34,34 @@ Middleware authMiddleware() {
   };
 }
 
+/* import 'dart:io';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_router/shelf_router.dart';
+ */
+// Middleware to check API key in the Authorization header
+Middleware apiKeyAuth(String validApiKey) {
+  return (Handler handler) {
+    return (Request request) async {
+      final header = request.headers['Authorization'];
+
+      if (header == null || !header.startsWith('Bearer ')) {
+        return Response.forbidden('Invalid API key');
+      }
+
+      // Remove the 'Bearer ' prefix
+      final apiKey = header.substring('Bearer '.length);
+
+      if (apiKey != validApiKey) {
+        return Response.forbidden('Invalid API key');
+      }
+
+      // If the API key is valid, continue with the request
+      return await handler(request);
+    };
+  };
+}
+
 // Register user
 Future<Response> register(Request req) async {
   final body = jsonDecode(await req.readAsString());
@@ -50,6 +79,7 @@ Future<Response> register(Request req) async {
 
   final hash = BCrypt.hashpw(password, BCrypt.gensalt());
 
+  Database db = pension.getDb();
   try {
     // create user default to none admin and locked so anyone can register but admin has to approve
     db.execute(
@@ -79,6 +109,7 @@ Future<Response> login(Request req) async {
     return Response(400, body: jsonEncode({'success': false, 'error': 'Username and password are required'}));
   }
 
+  Database db = pension.getDb();
   try {
     // Query to fetch user details based on username
     final result = await db.select(
@@ -98,7 +129,7 @@ Future<Response> login(Request req) async {
     }
 
     // Check if the password matches
-    final isPasswordCorrect = BCrypt.checkpw(password!, user['password']);
+    final isPasswordCorrect = BCrypt.checkpw(password, user['password']);
     if (!isPasswordCorrect) {
       return Response(401, body: jsonEncode({'success': false, 'error': 'Invalid username or password'}));
     }

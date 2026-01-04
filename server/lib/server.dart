@@ -12,12 +12,13 @@ import 'drawdown.dart';
 import 'state_pension.dart';
 import 'simulate.dart';
 import 'debuglogger.dart';
+import 'backup.dart';
 
 void main() async {
   setupClientLogging();
 
   // Initialize the database and run migrations
-  initDb();
+  pension.open();
 
   final pub = Router();
   final prot = Router();
@@ -43,6 +44,13 @@ void main() async {
   pub
     ..post('/register', register)
     ..post('/login', login);
+    
+  const validApiKey = 'your-secure-api-key';
+
+  // Add routes with API key authentication
+  pub.post('/backup', apiKeyAuth(validApiKey)(backupHandler));
+  pub.post('/restore', apiKeyAuth(validApiKey)(restoreHandler));
+
 
   pub.mount('/', protected);
 
@@ -70,9 +78,7 @@ void main() async {
     ..post('/admin/unlock_user', unlockUser)
     ..post('/admin/reset_password', resetPassword);
 
-  
   final int port = int.parse(Platform.environment['PORT'] ?? '8080');
-//  final server = await serve(cas, InternetAddress.anyIPv4, port);
   final server = await serve(public, InternetAddress.anyIPv4, port);
 
   logTo('Listen:${server.address.address}:${server.port}');

@@ -1,5 +1,4 @@
 import 'package:logging/logging.dart';
-import 'package:http/http.dart' as http;
 
 final log = Logger('server');
 

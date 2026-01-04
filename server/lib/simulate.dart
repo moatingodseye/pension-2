@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 import 'date.dart';
 
 Future<Response> simulate(Request req) async {
+  final Database db = pension.getDb();
   final uid = req.context['uid'];
   final users = await db.select("SELECT * FROM users WHERE id=?", [uid]);
   if (users.isEmpty) return Response.notFound('User not found');

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 
 // Create a state pension
 Future<Response> createStatePension(Request req) async {
+  final Database db = pension.getDb();
   final body = jsonDecode(await req.readAsString());
   final userId = req.context['uid'];
 
@@ -21,6 +23,7 @@ Future<Response> createStatePension(Request req) async {
 
 // List all state pensions
 Future<Response> listStatePensions(Request req) async {
+  final Database db = pension.getDb();
   final rows = db.select("SELECT * FROM state_pensions WHERE user_id=?", [req.context['uid']]);
   final data = rows.map((r) => {
     'id': r['id'],
