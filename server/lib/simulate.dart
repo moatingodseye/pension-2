@@ -5,6 +5,13 @@ import 'package:sqlite3/sqlite3.dart';
 import 'db.dart';
 import 'date.dart';
 
+// Box-Muller transform to generate a standard normal (mean=0, std=1)
+double normal(Random rand) {
+  final u1 = rand.nextDouble();
+  final u2 = rand.nextDouble();
+  return sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+}
+
 Future<Response> simulate(Request req) async {
   final Database db = pension.getDb();
   final uid = req.context['uid'];
@@ -122,22 +129,31 @@ Future<Response> simulate(Request req) async {
   }
 
   // Monte Carlo simulation
-  int mcRuns = 500;
+  int mcRuns = 10000;
   List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(count, 0));
   Random rand = Random();
 
   for (int run=0; run<mcRuns; run++){
     List<double> mcPots = pots.map((p)=>p['amount'] as double).toList();
-    for (int y=0;y<count;y++){
+    for (int y=0;y<count;y++) {
       double total=0;
-      for (int i=0;i<mcPots.length;i++){
+      for (int i=0;i<mcPots.length;i++) {
+//        if (y>0)
+//          mcPots[i][y] = mcPots[i][y-1];
+
         // Apply drawdowns same as deterministic
         Map<int,double> map = draw[id[i]] as Map<int,double>;
         mcPots[i] -= map[y] as double;
 
         // Yearly interest plus random normal variation
-        double noise = rand.nextDouble() * 0.24 - 0.12; // ±12% per year
-        mcPots[i] *= (1 + noise);  // Apply correctly scaled APR
+        //double noise = rand.nextDouble() * 0.24 - 0.12; // ±12% per year
+        //mcPots[i] *= (1 + noise);  // Apply correctly scaled APR
+
+        double sigma = 0.12;
+        double shock = normal(rand);
+        double noise = -0.5 * sigma * sigma + sigma * shock;
+        mcPots[i] *= exp(noise);
+
 
         if (mcPots[i]<0) mcPots[i]=0;
         total+=mcPots[i];
@@ -171,3 +187,76 @@ Future<Response> simulate(Request req) async {
     }
   }), headers: {'Content-Type':'application/json'});
 }
+
+/*
+
+import 'dart:math';
+
+/// Generate a standard normal random number using Box-Muller
+double normal(Random rand) {
+  final u1 = rand.nextDouble();
+  final u2 = rand.nextDouble();
+  return sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+}
+
+/// Linear interpolation for percentiles
+double percentile(List<double> sorted, double p) {
+  double pos = (sorted.length - 1) * p;
+  int lower = pos.floor();
+  int upper = pos.ceil();
+  if (lower == upper) return sorted[lower];
+  return sorted[lower] + (pos - lower) * (sorted[upper] - sorted[lower]);
+}
+
+// Monte Carlo simulation
+void runMonteCarlo({
+  required List<Map<String, dynamic>> pots,
+  required Map<int, Map<int, double>> draw,
+  required int count,
+  required int mcRuns,
+  required double sigma, // annual volatility e.g., 0.12 for 12%
+  required Random rand,
+  required List<double> mc25,
+  required List<double> mc75,
+}) {
+  // Store all MC results temporarily
+  List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(count, 0));
+
+  for (int run = 0; run < mcRuns; run++) {
+    // Start with initial pot balances
+    List<double> mcPots = pots.map((p) => p['amount'] as double).toList();
+
+    for (int y = 0; y < count; y++) {
+      double total = 0;
+
+      for (int i = 0; i < mcPots.length; i++) {
+        // Apply drawdowns (same as deterministic)
+        Map<int, double> map = draw[pots[i]['id'] as int]!;
+        mcPots[i] -= map[y] ?? 0;
+
+        if (mcPots[i] < 0) mcPots[i] = 0;
+
+        // Apply stochastic return using lognormal (geometrically unbiased)
+        double shock = normal(rand);
+        double noise = -0.5 * sigma * sigma + sigma * shock;
+        mcPots[i] *= exp(noise);
+
+        if (mcPots[i] < 0) mcPots[i] = 0;
+
+        total += mcPots[i];
+      }
+
+      mcResults[run][y] = total;
+    }
+  }
+
+  // Compute 25% and 75% percentiles for each year
+  for (int y = 0; y < count; y++) {
+    List<double> yearResults = List.generate(mcRuns, (r) => mcResults[r][y]);
+    yearResults.sort();
+    mc25[y] = percentile(yearResults, 0.25);
+    mc75[y] = percentile(yearResults, 0.75);
+  }
+}
+
+*/
