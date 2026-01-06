@@ -43,3 +43,29 @@ Future<Response> listStatePensions(Request req) async {
     'interest_rate': data['interest_rate'],
   }));
 }
+
+// Update a state pension
+Future<Response> updateStatePension(Request req, String id) async {
+  final Database db = pension.getDb();
+  final body = jsonDecode(await req.readAsString());
+  final userId = req.context['uid'];
+
+  if (userId == null || body['start_age'] == null || body['amount'] == null || body['interest_rate'] == null) {
+    return Response(400, body: 'Missing fields');
+  }
+
+  db.execute(
+    "UPDATE state_pensions set start_age=?, amount=?, interest_rate=? WHERE id=? AND user_id=?",
+    [body['start_age'], body['amount'], body['interest_rate'],id,userId],
+  );
+
+  return Response(
+    200,
+    body: jsonEncode({
+      'success': true,
+      'message': 'State updated',
+    }),
+    headers: {'Content-Type': 'application/json'},
+  );
+}
+

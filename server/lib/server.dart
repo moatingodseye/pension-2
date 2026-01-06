@@ -68,6 +68,7 @@ void main() async {
 
     ..post('/state_pension', createStatePension)
     ..get('/state_pension', listStatePensions)
+    ..put('/state_pension/<id>',updateStatePension)
 
     ..post('/simulate', simulate)
 

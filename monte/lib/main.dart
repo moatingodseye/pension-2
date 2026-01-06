@@ -91,11 +91,11 @@ class _MonteCarloPageState extends State<MonteCarloPage> {
   void runSimulation() {
     final r = runMonteCarlo(
       initialPot: 100000,
-      years: 10,
+      years: 100,
       simulations: 10000,
       annualReturn: 0.07,
       annualVolatility: 0.15,
-      monthlyContribution: 500,
+      monthlyContribution: 0,
     );
 
     setState(() => result = r);

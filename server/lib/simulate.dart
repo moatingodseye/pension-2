@@ -129,7 +129,7 @@ Future<Response> simulate(Request req) async {
   }
 
   // Monte Carlo simulation
-  int mcRuns = 10000;
+  int mcRuns = 20000;
   List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(count, 0));
   Random rand = Random();
 

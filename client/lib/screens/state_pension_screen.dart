@@ -73,11 +73,18 @@ class _StatePensionScreenState extends State<StatePensionScreen> {
 
               if (age == null || amount == null || rate == null) return;
 
-              provider.setStatePension({
-                'start_age': age,
-                'amount': amount,
-                'interest_rate': rate / 100,
-              });
+              if (sp == []) 
+                provider.createStatePension({
+                  'start_age': age,
+                  'amount': amount,
+                  'interest_rate': rate / 100,
+                });
+              else
+                provider.updateStatePension(sp['id'],{
+                  'start_age': age,
+                  'amount': amount,
+                  'interest_rate': rate / 100,
+                });
             },
             child: const Text('Save State Pension'),
           ),

@@ -85,11 +85,17 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setStatePension(Map<String, dynamic> sp) async {
+  Future<void> createStatePension(Map<String, dynamic> sp) async {
     final res = await ApiService.post('state_pension', sp);
     if (res['success'] == true) {
       await fetchStatePension();
     }
+  }
+
+  Future<void> updateStatePension(int id, Map<String,dynamic> sp) async {
+    final res = await ApiService.put('state_pension/$id',sp);
+    if (res['success']== true)
+      await fetchStatePension();
   }
 
   // ───────── Simulation ─────────
