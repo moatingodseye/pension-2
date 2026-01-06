@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/data_provider.dart';
 
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
@@ -42,6 +43,8 @@ class Sidebar extends StatelessWidget {
             if (index == 5 && !auth.isAdmin) return;
             // Logout
             if (index == 6) {
+              final provider = context.read<DataProvider>();
+              provider.clear();
               auth.logout();
               return;
             }

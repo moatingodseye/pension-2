@@ -94,8 +94,9 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> updateStatePension(int id, Map<String,dynamic> sp) async {
     final res = await ApiService.put('state_pension/$id',sp);
-    if (res['success']== true)
+    if (res['success']== true) {
       await fetchStatePension();
+    }
   }
 
   // ───────── Simulation ─────────
@@ -238,4 +239,12 @@ class DataProvider extends ChangeNotifier {
       throw Exception('Error fetching user details: ${e.toString()}');
     }
   }  
+
+  void clear() {
+    isLoading = false; // Flag for loading state
+    pensionPots = [];
+    drawdowns = [];
+    statePension = {};
+     users = [];
+  }
 }
