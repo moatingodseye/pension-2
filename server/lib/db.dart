@@ -26,39 +26,73 @@ class PensionDb {
   void _initDb() {  
     Database db = getDb();
     db.execute('''
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE IF NOT EXISTS user (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
         password TEXT,
         dob TEXT,
-        is_admin INTEGER,
-        locked INTEGER DEFAULT 0
+        isadmin INTEGER DEFAULT 0,
+        islocked INTEGER DEFAULT 0
       )
     ''');
 
+    // accounts, one for each pension pot, one for current account, one for savings account etc
     db.execute('''
-      CREATE TABLE IF NOT EXISTS pension_pots (
+      CREATE TABLE IF NOT EXISTS account (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        userid INTEGER,
+        istype INTEGER, 
         name TEXT,
         amount REAL,
-        date TEXT,
-        interest_rate REAL
+        amountat TEXT,
+        rate REAL
       )
-    ''');
+    '''); // istype=0 pension, 2=current
 
+    // income, money coming in from an external source (not pension)
     db.execute('''
-      CREATE TABLE IF NOT EXISTS drawdowns (
+      CREATE TABLE IF NOT EXISTS income (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        userid INTEGER,
+        name TEXT,
+        intoid INTEGER,
         amount REAL,
-        start_date TEXT,
-        end_date TEXT,
-        interest_rate REAL
+        startat TEXT,
+        endat TEXT,
+        rate REAL
       )
     ''');
 
+    // outgoing, spending, should be coming from current or savings.
     db.execute('''
+      CREATE TABLE IF NOT EXISTS outgoing (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userid INTEGER,
+        name TEXT,
+        fromid INTEGER,
+        amount REAL,
+        startat TEXT,
+        endat TEXT,
+        rate REAL
+      )
+    '''); 
+
+    // drawdown, transfer from one account to another on regular basis
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS transfer (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userid INTEGER,
+        name TEXT,
+        fromid INTEGER,
+        intoid INTEGER,
+        amount REAL,
+        startat TEXT,
+        endat TEXT,
+        rate REAL
+      )
+    '''); 
+
+/*     db.execute('''
       CREATE TABLE IF NOT EXISTS state_pensions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -66,21 +100,21 @@ class PensionDb {
         amount REAL,
         interest_rate REAL
       )
-    ''');
+    '''); */
 
     migrate();
 
-    final admin = db.select("SELECT * FROM users WHERE username='admin'");
+    final admin = db.select("SELECT * FROM user WHERE username='admin'");
     if (admin.isEmpty) {
       final hash = BCrypt.hashpw('admin', BCrypt.gensalt());
       db.execute(
-        "INSERT INTO users (username, password, dob, is_admin) VALUES (?, ?, ?, 1)",
+        "INSERT INTO user (username, password, dob, isadmin, islocked) VALUES (?, ?, ?, 1, 0)",
         ['admin', hash, '1970-01-01'],
       );
     }
   }
 
-  // Migration to add the "name" column to pension_pots if it doesn't exist
+/*   // Migration to add the "name" column to pension_pots if it doesn't exist
   void _addPensionPotNameColumn() {
     Database db = getDb();
     try {
@@ -109,10 +143,11 @@ class PensionDb {
     } catch (e) {
       logTo("Migration failed: $e");
     }
-  }
+  } */
 
   void migrate() {
-    _addPensionPotNameColumn();
+/*     _addPensionPotNameColumn();
     _addPensionPotToDrawdowns();
+ */  
   }
 }

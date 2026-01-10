@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:full_pension_server/monitor.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
@@ -13,6 +14,13 @@ import 'state_pension.dart';
 import 'simulate.dart';
 import 'debuglogger.dart';
 import 'backup.dart';
+import 'account.dart';
+import 'income.dart';
+import 'outgoing.dart';
+import 'transfer.dart';
+import 'admin.dart';
+import 'middleware/auth.dart';
+import 'middleware/api.dart';
 
 void main() async {
   setupClientLogging();
@@ -40,44 +48,59 @@ void main() async {
 
   final cas = Cascade().add(public).add(protected).handler;
 
+  final auth = new Authentication(pension.getDb());
+
   // --- Public routes ---
   pub
-    ..post('/register', register)
-    ..post('/login', login);
+    ..post('/register', auth.register)
+    ..post('/login', auth.login);
     
-  const validApiKey = 'your-secure-api-key';
+  const validApiKey = 'your-secure-api-key-which-no-one-can-guess';
 
   // Add routes with API key authentication
-  pub.post('/backup', apiKeyAuth(validApiKey)(backupHandler));
-  pub.post('/restore', apiKeyAuth(validApiKey)(restoreHandler));
-
-
+  pub.post('/backup', apiKeyMiddleware(validApiKey)(backupHandler));
+  pub.post('/restore', apiKeyMiddleware(validApiKey)(restoreHandler));
   pub.mount('/', protected);
+
+  final account = new Account(pension.getDb());
+  final income = new Income(pension.getDb());
+  final outgoing = new Outgoing(pension.getDb());
+  final transfer = new Transfer(pension.getDb());
+  final user = new User(pension.getDb());
+  final admin = new Admin(pension.getDb());
 
   // --- Protected routes ---
   prot
-    ..post('/pension_pots', createPensionPot)
-    ..get('/pension_pots', listPensionPots)
-    ..delete('/pension_pots/<id>', deletePensionPot)
-    ..put('/pension_pots/<id>', updatePensionPot)
+    ..post('/account', account.insert)
+    ..put('/account/<id>', account.update)
+    ..get('/account', account.select)
+    ..delete('/account/<id>', account.delete)
 
-    ..post('/drawdowns', createDrawdown)
-    ..get('/drawdowns', listDrawdowns)
-    ..delete('/drawdowns/<id>', deleteDrawdown)
-    ..put('/drawdowns/<id>', updateDrawdown)
+    ..post('/income', income.insert)
+    ..put('/income/<id>', income.update)
+    ..get('/income', income.select)
+    ..delete('/income/<id>', income.delete)
 
-    ..post('/state_pension', createStatePension)
-    ..get('/state_pension', listStatePensions)
-    ..put('/state_pension/<id>',updateStatePension)
+    ..post('/outgoing', outgoing.insert)
+    ..put('/outgoing/<id>', outgoing.update)
+    ..get('/outgoing', outgoing.select)
+    ..delete('/outgoing/<id>', outgoing.delete)
 
-    ..post('/simulate', simulate)
+    ..post('/transfer', transfer.insert)
+    ..put('/transfer/<id>', transfer.update)
+    ..get('/transfer', transfer.select)
+    ..delete('/transfer/<id>', transfer.delete)
 
-    ..get('/admin/users', getUsers)
-    ..get('/admin/user/<id>', getUser)
-    ..put('/admin/user/<id>', updateUser)
-    ..post('/admin/lock_user', lockUser)
-    ..post('/admin/unlock_user', unlockUser)
-    ..post('/admin/reset_password', resetPassword);
+    ..post('/user', user.insert)
+    ..get('/user', user.select)
+    ..get('/user/<id>', user.selectOne)
+    ..put('/user/<id>', user.update)
+//    ..delete('/user/<id>', user.delete)
+    ..post('/admin/lock/<id>', admin.lock)
+    ..post('/admin/unlock/<id>', admin.unlock)
+    ..post('/admin/reset/<id>', admin.reset)
+        
+    ..post('/simulate', simulate);
 
   final int port = int.parse(Platform.environment['PORT'] ?? '8080');
   final server = await serve(public, InternetAddress.anyIPv4, port);

@@ -10,7 +10,7 @@ echo
 echo "=== 1. Ensure admin user exists (manual fallback) ==="
 if [ -f "$DB_FILE" ]; then
   sqlite3 "$DB_FILE" <<'SQL'
-INSERT OR IGNORE INTO users (username, password, dob, is_admin)
+INSERT OR IGNORE INTO users (username, password, dob, isadmin)
 VALUES (
   'admin',
   '$2b$10$C9z8dD6WwU9sK9fKqvZkMuZ9q1QYx0G0yYy1YyYyYyYyYyYyY',

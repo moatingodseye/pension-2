@@ -46,8 +46,8 @@ class _AdminScreenState extends State<AdminScreen> {
     final usernameController = TextEditingController(text: userDetails['username']);
     final dobController = TextEditingController(text: userDetails['dob']);  // Pre-fill DOB
     final passwordController = TextEditingController();
-    bool isAdmin = userDetails['is_admin'] == 1;
-    bool isLocked = userDetails['locked'] == 1;
+    bool isAdmin = userDetails['isadmin'] == 1;
+    bool isLocked = userDetails['islocked'] == 1;
 
     String dialogError = '';
 
@@ -257,9 +257,9 @@ class _AdminScreenState extends State<AdminScreen> {
                   final username =
                       (u['username']?.toString() ?? '');
                   final isAdmin =
-                      (u['is_admin']?.toString() ?? '0') == '1';
+                      (u['isadmin']?.toString() ?? '0') == '1';
                   final isLocked =
-                      (u['locked']?.toString() ?? '0') == '1';
+                      (u['islocked']?.toString() ?? '0') == '1';
 
                   return Card(
                     key: ValueKey(u['id'] ?? i),

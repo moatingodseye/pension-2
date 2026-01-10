@@ -9,7 +9,7 @@ Write-Host "=== API TEST SCRIPT START ==="
 if (Test-Path $DbFile) {
     Write-Host "Ensuring admin user exists..."
     $sql = @"
-INSERT OR IGNORE INTO users (username, password, dob, is_admin)
+INSERT OR IGNORE INTO users (username, password, dob, isadmin)
 VALUES (
   'admin',
   '\$2b\$10\$C9z8dD6WwU9sK9fKqvZkMuZ9q1QYx0G0yYy1YyYyYyYyYyYyY',

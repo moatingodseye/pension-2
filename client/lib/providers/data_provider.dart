@@ -164,13 +164,13 @@ class DataProvider extends ChangeNotifier {
   // ───────── Admin Users ─────────
 
   Future<void> fetchUsers() async {
-    users = await ApiService.getList('admin/users');
+    users = await ApiService.getList('user');
     notifyListeners();
   }
 
   Future<void> lockUser(int userId) async {
     final res =
-        await ApiService.post('admin/lock_user', {'user_id': userId});
+        await ApiService.post('admin/lock/$userId', {});
     if (res['success'] == true) {
       await fetchUsers();
     }
@@ -178,15 +178,14 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> unlockUser(int userId) async {
     final res =
-        await ApiService.post('admin/unlock_user', {'user_id': userId});
+        await ApiService.post('admin/unlock/$userId',{});
     if (res['success'] == true) {
       await fetchUsers();
     }
   }
 
   Future<void> resetUserPassword(int userId, String newPassword) async {
-    final res = await ApiService.post('admin/reset_password', {
-      'user_id': userId,
+    final res = await ApiService.post('admin/reset/$userId', {
       'new_password': newPassword,
     });
     if (res['success'] == true) {
@@ -207,8 +206,8 @@ class DataProvider extends ChangeNotifier {
     final Map<String, dynamic> userData = {
       'username': username,
       'dob': dob,
-      'is_admin': isAdmin ? 1 : 0,
-      'locked': isLocked ? 1 : 0,
+      'isadmin': isAdmin ? 1 : 0,
+      'islocked': isLocked ? 1 : 0,
     };
 
     // If password is provided, include it in the update request
@@ -217,7 +216,7 @@ class DataProvider extends ChangeNotifier {
     }
 
     try {
-      final response = await ApiService.put('admin/user/$userId', userData);
+      final response = await ApiService.put('user/$userId', userData);
 
       if (response['success'] == true) {
         // If the update is successful, fetch the updated users
@@ -233,7 +232,7 @@ class DataProvider extends ChangeNotifier {
   // Get a user's full details by ID (including DOB)
   Future<Map<String, dynamic>> getUser(int userId) async {
     try {
-      final response = await ApiService.getOne('admin/user/$userId');
+      final response = await ApiService.getOne('user/$userId');
       return response;  // This should return user details including dob, is_admin, etc.
     } catch (e) {
       throw Exception('Error fetching user details: ${e.toString()}');
