@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:sqlite3/sqlite3.dart';
-import 'db.dart';
 import 'access.dart';
 
 class Account extends Access {
-  Account(Database db) : super(db);
+  Account(super.db);
 
   Future<Response> insert(Request req) async {
     final body = jsonDecode(await req.readAsString());

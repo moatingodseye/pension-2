@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'package:sqlite3/sqlite3.dart';
-import 'db.dart';
 import 'access.dart';
 
 class Admin extends Access {
-  Admin(Database db) : super(db);
+  Admin(super.db);
 
   // Lock a user (Admin only)
   Future<Response> lock(Request req, String id) async {

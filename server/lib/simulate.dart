@@ -15,17 +15,18 @@ double normal(Random rand) {
 Future<Response> simulate(Request req) async {
   final Database db = pension.getDb();
   final uid = req.context['uid'];
-  final users = await db.select("SELECT * FROM users WHERE id=?", [uid]);
+  final users = db.select("SELECT * FROM users WHERE id=?", [uid]);
   if (users.isEmpty) return Response.notFound('User not found');
   final user = users.first;
   final dob = DateTime.parse(user['dob']);
 
   // Fetch pension pots, drawdowns, state pensions, and user
-  final pots = await db.select("SELECT * FROM pension_pots WHERE user_id=?", [uid]);
-  final drawdowns = await db.select("SELECT * FROM drawdowns WHERE user_id=?", [uid]);
-  final statePensions = await db.select("SELECT * FROM state_pensions WHERE user_id=?", [uid]);
+  final pots = db.select("SELECT * FROM pension_pots WHERE user_id=?", [uid]);
+  final drawdowns = db.select("SELECT * FROM drawdowns WHERE user_id=?", [uid]);
+  final statePensions = db.select("SELECT * FROM state_pensions WHERE user_id=?", [uid]);
 
-  if (pots.isEmpty) return Response.ok(jsonEncode({
+  if (pots.isEmpty) {
+    return Response.ok(jsonEncode({
     'success': true,
     'data': {
       'pots': [],
@@ -37,6 +38,7 @@ Future<Response> simulate(Request req) async {
       'count': 0,
     }
   }), headers: {'Content-Type': 'application/json'});
+  }
 
   const int maxYear = 120;
   final int endYearOffset = maxYear-(dob.year-1900); // dob + this is end of chart, start is first pot date.
@@ -53,8 +55,8 @@ Future<Response> simulate(Request req) async {
   List<int> id = List.filled(pots.length,0);
   List<double> sumValues = List.filled(count, 0);
   List<double> incomeValues = List.filled(count, 0);
-  Map<int,double> drawn = Map<int,double>(); // drawdownid, last drawnvalue
-  Map<int,Map<int,double>> draw = Map<int,Map<int,double>>(); // pot_id, year, drawn amount
+  Map<int,double> drawn = <int,double>{}; // drawdownid, last drawnvalue
+  Map<int,Map<int,double>> draw = <int,Map<int,double>>{}; // pot_id, year, drawn amount
 
   // Initialize pot balances
   for (int i=0;i<pots.length;i++){
@@ -86,10 +88,12 @@ Future<Response> simulate(Request req) async {
             if (drawn.containsKey(d['id'])) {
               amt = drawn[d['id']]!;
               amt *= (1 + ((d['interest_rate'] as double))); 
-            } else
+            } else {
               amt = (d['amount'] as double)*12;
-            if (pot[i][y] < amt) 
+            }
+            if (pot[i][y] < amt) {
               amt = pot[i][y];
+            }
             drawn[d['id']] = amt;
             pot[i][y] -= amt;
             yearIncome += amt;
@@ -99,17 +103,17 @@ Future<Response> simulate(Request req) async {
 
       // record income for
       Map<int,double> map;
-      if (draw.containsKey(id[i]))
+      if (draw.containsKey(id[i])) {
         map = draw[id[i]] as Map<int,double>;
-      else {
-        map = Map<int,double>();
+      } else {
+        map = <int,double>{};
         draw[id[i]] = map;
       }
       map[y] = yearIncome;
 
       // Yearly interest      
-      double APR = (pots[i]['interest_rate'] as double);
-      pot[i][y] *= 1 + APR;
+      double rate = (pots[i]['interest_rate'] as double);
+      pot[i][y] *= 1 + rate;
 
       yearSum += pot[i][y];
     }

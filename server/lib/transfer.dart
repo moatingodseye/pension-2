@@ -5,7 +5,7 @@ import 'db.dart';
 import 'access.dart';
 
 class Transfer extends Access{
-  Transfer(Database db) : super(db);
+  Transfer(super.db);
 
   // Create a transfer
   Future<Response> insert(Request req) async {
@@ -19,7 +19,7 @@ class Transfer extends Access{
     db.execute(
       '''INSERT INTO transfer (userid, name, fromid, intoid, amount, startat, endat, rate) 
          VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, body['name'], body['fromid'], body['intoid'], body['amount'], body['startat'], body['endat'] ?? null, body['rate']],
+      [userId, body['name'], body['fromid'], body['intoid'], body['amount'], body['startat'], body['endat'], body['rate']],
     );
 
     return ok();

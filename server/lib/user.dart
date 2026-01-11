@@ -6,13 +6,13 @@ import 'db.dart';
 import 'access.dart';
 
 class User extends Access {
-  User(Database db) : super(db);
+  User(super.db);
 
   // Create a user
   Future<Response> insert(Request req) async {
     final body = jsonDecode(await req.readAsString());
     final username = body['username']?.toString();
-    final userId = req.context['uid'];
+//    final userId = req.context['uid'];
 
     if (body['username'] == null || body['password'] == null || body['dob'] == null) {
       return fail('Invalid, missing fields');
@@ -20,7 +20,7 @@ class User extends Access {
 
     final hash = BCrypt.hashpw(body['password'].toString(), BCrypt.gensalt());
 
-    final result = await db.select(
+    final result = db.select(
       'SELECT id FROM user WHERE username = ?', [username],
     );
 
@@ -33,10 +33,11 @@ class User extends Access {
         );
         return ok();
       } catch(e) {
-        return error('${e.toString()}');
+        return error(e.toString());
       }
-    } else 
+    } else {
       return fail('Duplicate user!');
+    }
   }
 
   // Get a list of all users
@@ -68,17 +69,17 @@ class User extends Access {
     final String? username = body['username'];
     final String? dob = body['dob'];
     final String? password = body['password'];
-    final bool? isAdmin = body['isadmin'] == 1;
-    final bool? isislocked = body['islocked'] == 1;
+    final bool isAdmin = body['isadmin'] == 1;
+    final bool isislocked = body['islocked'] == 1;
 
     // If essential fields are missing, return an error
-    if (username == null || dob == null || isAdmin == null || isislocked == null) {
+    if (username == null || dob == null) {
       return fail('Invalid, Missing fields');
     }
 
     try {
       // Check if the user exists (select query)
-      final result = await db.select(
+      final result = db.select(
         'SELECT id FROM user WHERE id = ?', [userId],
       );
 
@@ -126,7 +127,7 @@ class User extends Access {
 
     try {
       // Fetch user details using db.select (ensure your db object is correctly initialized)
-      final result = await db.select(
+      final result = db.select(
         'SELECT id, username, dob, isadmin, islocked FROM user WHERE id = ?', 
         [userId]
       );

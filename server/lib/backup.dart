@@ -20,8 +20,9 @@ Future<Response> backupHandler(Request request) async {
     final backupFile = File(backup);
 
     try {
-      if (backupFile.existsSync())
+      if (backupFile.existsSync()) {
         backupFile.deleteSync();
+      }
         
       db.execute("VACUUM INTO '$backup'");
     } catch (e) {
@@ -67,8 +68,9 @@ Future<Response> restoreHandler(Request request) async {
     try {
       pension.close();
 
-      if (File(liveDB).existsSync())
+      if (File(liveDB).existsSync()) {
         File(liveDB).deleteSync();
+      }
       restore.execute("VACUUM INTO '$liveDB'");
     } finally {
       restore.dispose();

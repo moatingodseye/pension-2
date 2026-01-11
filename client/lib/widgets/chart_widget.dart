@@ -38,8 +38,6 @@ class SimulationChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double maxPot = sumPot.isNotEmpty ? sumPot.reduce((a, b) => a > b ? a : b) : sumPotMax;
-    double maxIncome = income.isNotEmpty ? income.reduce((a, b) => a > b ? a : b) : incomeMax;
 
     List<LineChartBarData> lines = [];
 

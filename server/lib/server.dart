@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'package:full_pension_server/monitor.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
@@ -8,9 +7,6 @@ import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'db.dart';
 import 'auth.dart';
 import 'user.dart';
-import 'pension.dart';
-import 'drawdown.dart';
-import 'state_pension.dart';
 import 'simulate.dart';
 import 'debuglogger.dart';
 import 'backup.dart';
@@ -36,7 +32,7 @@ void main() async {
       .addMiddleware(logRequests())
       .addMiddleware(corsHeaders())
       .addMiddleware(monitor1)
-      .addHandler(pub);
+      .addHandler(pub.call);
 
   // Protected pipeline (with auth)
   final protected = Pipeline()
@@ -44,11 +40,11 @@ void main() async {
       .addMiddleware(corsHeaders())
       .addMiddleware(authMiddleware())
       .addMiddleware(monitor2)
-      .addHandler(prot);
+      .addHandler(prot.call);
 
-  final cas = Cascade().add(public).add(protected).handler;
+//  final cas = Cascade().add(public).add(protected).handler;
 
-  final auth = new Authentication(pension.getDb());
+  final auth = Authentication(pension.getDb());
 
   // --- Public routes ---
   pub
@@ -62,12 +58,12 @@ void main() async {
   pub.post('/restore', apiKeyMiddleware(validApiKey)(restoreHandler));
   pub.mount('/', protected);
 
-  final account = new Account(pension.getDb());
-  final income = new Income(pension.getDb());
-  final outgoing = new Outgoing(pension.getDb());
-  final transfer = new Transfer(pension.getDb());
-  final user = new User(pension.getDb());
-  final admin = new Admin(pension.getDb());
+  final account = Account(pension.getDb());
+  final income = Income(pension.getDb());
+  final outgoing = Outgoing(pension.getDb());
+  final transfer = Transfer(pension.getDb());
+  final user = User(pension.getDb());
+  final admin = Admin(pension.getDb());
 
   // --- Protected routes ---
   prot

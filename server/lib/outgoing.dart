@@ -5,7 +5,7 @@ import 'db.dart';
 import 'access.dart';
 
 class Outgoing extends Access{
-  Outgoing(Database db) : super(db);
+  Outgoing(super.db);
 
   // Create a outgoing
   Future<Response> insert(Request req) async {
@@ -19,7 +19,7 @@ class Outgoing extends Access{
     db.execute(
       '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
          VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, body['name'], body['fromid'], body['amount'], body['startat'], body['endat'] ?? null, body['rate']],
+      [userId, body['name'], body['fromid'], body['amount'], body['startat'], body['endat'], body['rate']],
     );
 
     return ok();

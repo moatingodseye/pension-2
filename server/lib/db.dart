@@ -1,8 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'debuglogger.dart';
 
-final pension = new PensionDb();
+final pension = PensionDb();
 
 class PensionDb {
   Database? _db;
@@ -18,8 +17,9 @@ class PensionDb {
   }
 
   Database getDb() {
-    if (_db == null)
+    if (_db == null) {
       open();
+    }
     return _db!;
   }
 

@@ -15,7 +15,7 @@ Future<Response> createDrawdown(Request req) async {
 
   db.execute(
     "INSERT INTO drawdowns (user_id, pension_pot_id, amount, start_date, end_date, interest_rate) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, body['pension_pot_id'], body['amount'], body['start_date'], body['end_date'] ?? null, body['interest_rate']],
+    [userId, body['pension_pot_id'], body['amount'], body['start_date'], body['end_date'], body['interest_rate']],
   );
 
   return Response(

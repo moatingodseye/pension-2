@@ -1,6 +1,4 @@
 import 'package:shelf/shelf.dart';
-import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:bcrypt/bcrypt.dart';
 
 Middleware apiKeyMiddleware(String validApiKey) {
   return (Handler handler) {

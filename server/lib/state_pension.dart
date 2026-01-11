@@ -32,8 +32,9 @@ Future<Response> createStatePension(Request req) async {
 Future<Response> listStatePensions(Request req) async {
   final Database db = pension.getDb();
   final rows = db.select("SELECT * FROM state_pensions WHERE user_id=?", [req.context['uid']]);
-  if (rows.isEmpty)
+  if (rows.isEmpty) {
     return Response.ok(jsonEncode({}));
+  }
 
   final data = rows.first;
   return Response.ok(jsonEncode({

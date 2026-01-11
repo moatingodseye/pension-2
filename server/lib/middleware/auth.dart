@@ -1,6 +1,5 @@
 import 'package:shelf/shelf.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:bcrypt/bcrypt.dart';
 
 const jwtSecret = 'local-secret-key-that-you-cannot-guess-smiley';
 

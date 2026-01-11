@@ -5,7 +5,7 @@ import 'db.dart';
 import 'access.dart';
 
 class Income extends Access{
-  Income(Database db) : super(db);
+  Income(super.db);
 
   // Create a income
   Future<Response> insert(Request req) async {
@@ -19,7 +19,7 @@ class Income extends Access{
     db.execute(
       '''INSERT INTO income (userid, name, intoid, amount, startat, endat, rate) 
          VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, body['name'], body['intoid'], body['amount'], body['startat'], body['endat'] ?? null, body['rate']],
+      [userId, body['name'], body['intoid'], body['amount'], body['startat'], body['endat'], body['rate']],
     );
 
     return ok();
