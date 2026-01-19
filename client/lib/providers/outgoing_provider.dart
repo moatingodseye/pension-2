@@ -16,8 +16,11 @@ class OutgoingProvider extends ChangeNotifier {
       final list = await ApiService.getList('outgoing');
       outgoings = list.map((json) => Outgoing.fromJson(json)).toList();
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
     } finally {
       isLoading = false;
       notifyListeners();

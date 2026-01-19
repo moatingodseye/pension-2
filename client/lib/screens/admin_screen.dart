@@ -136,6 +136,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _toggleLock(User user) async {
      final provider = Provider.of<AdminProvider>(context, listen: false);
+/*
      final updated = User(
          id: user.id,
          username: user.username,
@@ -145,6 +146,11 @@ class _AdminScreenState extends State<AdminScreen> {
          isLocked: !user.isLocked
      );
      await provider.updateUser(updated);
+*/
+     if (user.isLocked)
+       await provider.unlockUser(user.id!);
+     else
+       await provider.lockUser(user.id!);
   }
 
   @override

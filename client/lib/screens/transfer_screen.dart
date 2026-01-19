@@ -81,7 +81,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 Consumer<AccountProvider>(
                   builder: (ctx, accProv, _) {
                     return DropdownButtonFormField<int>(
-                      value: selectedFromId,
+                      initialValue: selectedFromId,
                       hint: const Text('From Account'),
                       items: accProv.accounts
                           .map((a) => DropdownMenuItem<int>(
@@ -98,7 +98,7 @@ class _TransferScreenState extends State<TransferScreen> {
                 Consumer<AccountProvider>(
                   builder: (ctx, accProv, _) {
                     return DropdownButtonFormField<int>(
-                      value: selectedIntoId,
+                      initialValue: selectedIntoId,
                       hint: const Text('To Account'),
                       items: accProv.accounts
                           .map((a) => DropdownMenuItem<int>(

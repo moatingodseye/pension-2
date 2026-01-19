@@ -16,8 +16,11 @@ class TransferProvider extends ChangeNotifier {
       final list = await ApiService.getList('transfer');
       transfers = list.map((json) => Transfer.fromJson(json)).toList();
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
     } finally {
       isLoading = false;
       notifyListeners();

@@ -74,7 +74,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 Consumer<AccountProvider>(
                   builder: (ctx, accProv, _) {
                     return DropdownButtonFormField<int>(
-                      value: selectedIntoId,
+                      initialValue: selectedIntoId,
                       hint: const Text('Into Account (Optional)'),
                       items: [
                          const DropdownMenuItem<int>(value: null, child: Text('None (General Pot)')),

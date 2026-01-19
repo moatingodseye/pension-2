@@ -16,8 +16,11 @@ class AccountProvider extends ChangeNotifier {
       final list = await ApiService.getList('account');
       accounts = list.map((json) => Account.fromJson(json)).toList();
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
     } finally {
       isLoading = false;
       notifyListeners();

@@ -19,10 +19,10 @@ class User {
     return User(
       id: json['id'] as int?,
       username: json['username'] as String,
-      // password never returned from DB select
+      password: json['password'] as String, // not from db but is provided by client
       dob: json['dob'] != null ? DateTime.parse(json['dob'] as String) : null,
       isAdmin: (json['isadmin'] is int ? json['isadmin'] == 1 : json['isadmin'] as bool? ?? false),
-      isLocked: (json['islocked'] is int ? json['islocked'] == 1 : json['islocked'] as bool? ?? false),
+      isLocked: (json['islocked'] is int ? json['islocked'] == 1 : json['islocked'] as bool? ?? true),
     );
   }
 

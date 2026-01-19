@@ -108,7 +108,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<AccountType>(
-                      value: selectedType,
+                      initialValue: selectedType,
                       items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
                       onChanged: (v) => setState(() => selectedType = v!),
                       decoration: const InputDecoration(labelText: 'Type'),
@@ -201,7 +201,7 @@ class _AccountScreenState extends State<AccountScreen> {
           child: Column(
             children: [
                DropdownButtonFormField<AccountType>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
                   onChanged: (v) => selectedType = v!,
                   decoration: const InputDecoration(labelText: 'Type'),

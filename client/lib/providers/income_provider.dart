@@ -16,8 +16,11 @@ class IncomeProvider extends ChangeNotifier {
       final list = await ApiService.getList('income');
       incomes = list.map((json) => Income.fromJson(json)).toList();
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
     } finally {
       isLoading = false;
       notifyListeners();

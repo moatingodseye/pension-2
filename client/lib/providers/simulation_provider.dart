@@ -20,8 +20,11 @@ class SimulationProvider extends ChangeNotifier {
       // Reset showLines based on pots
       showLines = List<bool>.filled(3 + result!.pots.length, true);
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
     } finally {
       isLoading = false;
       notifyListeners();

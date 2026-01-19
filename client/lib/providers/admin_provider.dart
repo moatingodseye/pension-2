@@ -16,8 +16,11 @@ class AdminProvider extends ChangeNotifier {
       final list = await ApiService.getList('user');
       users = list.map((json) => User.fromJson(json)).toList();
     } catch (e) {
-       if (e is apiException) error = e.body;
-       else error = e.toString();
+       if (e is apiException) {
+         error = e.body;
+       } else {
+         error = e.toString();
+       }
     } finally {
       isLoading = false;
       notifyListeners();
@@ -47,9 +50,12 @@ class AdminProvider extends ChangeNotifier {
       await ApiService.put('user/${user.id}', user.toJson());
       await loadUsers();
     } catch (e) {
-      if (e is apiException) error = e.body;
-      else error = e.toString();
-      throw e;
+      if (e is apiException) {
+        error = e.body;
+      } else {
+        error = e.toString();
+      }
+      rethrow;
     }
   }
 }

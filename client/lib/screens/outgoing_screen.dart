@@ -74,7 +74,7 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
                 Consumer<AccountProvider>(
                   builder: (ctx, accProv, _) {
                     return DropdownButtonFormField<int>(
-                      value: selectedFromId,
+                      initialValue: selectedFromId,
                       hint: const Text('From Account (Optional)'),
                       items: [
                          const DropdownMenuItem<int>(value: null, child: Text('Any (General Pot)')),
