@@ -1,77 +1,80 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:sqlite3/sqlite3.dart';
+import 'package:shelf_router/shelf_router.dart';
+import 'package:shared/models/outgoing.dart';
 import 'db.dart';
 import 'access.dart';
 
-class Outgoing extends Access{
-  Outgoing(super.db);
+class OutgoingApi extends Access {
+  OutgoingApi(super.db);
 
-  // Create a outgoing
-  Future<Response> insert(Request req) async {
-    final body = jsonDecode(await req.readAsString());
-    final userId = req.context['uid'];
+  Router get router {
+    final router = Router();
+    router.get('/', select);
+    router.post('/', insert);
+    router.put('/<id>', update);
+    router.delete('/<id>', delete);
+    return router;
+  }
 
-    if (userId == null || body['amount'] == null || body['startat'] == null || body['rate'] == null) {
-      return fail('invalid, missing fields');
-    }
+  Future<Response> select(Request request) async {
+    final userId = request.context['uid'];
+    final rows = db.select('SELECT * FROM outgoing WHERE userid = ?', [userId]);
+
+    final list = rows.map((row) => Outgoing(
+        id: row['id'],
+        name: row['name'],
+        amount: (row['amount'] as num).toDouble(),
+        fromAccount: row['fromid'],
+        startAt: row['startat'],
+        endAt: row['endat'],
+        rate: (row['rate'] as num).toDouble(),
+    )).toList();
+
+    return Response.ok(
+       jsonEncode(list.map((o) => o.toJson()).toList()),
+       headers: {'content-type': 'application/json'}
+    );
+  }
+
+  Future<Response> insert(Request request) async {
+    final userId = request.context['uid'];
+    final body = await request.readAsString();
+    final data = jsonDecode(body);
+
+    if (data['amount'] == null || data['startat'] == null) return fail('Missing fields');
 
     db.execute(
       '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
          VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, body['name'], body['fromid'], body['amount'], body['startat'], body['endat'], body['rate']],
+      [userId, data['name'], data['fromid'], data['amount'], data['startat'], data['endat'], data['rate']],
     );
-
     return ok();
   }
 
-  // Update an existing outgoing
-  Future<Response> update(Request req, String id) async {
-    final body = jsonDecode(await req.readAsString());
-    final userId = req.context['uid'];
+  Future<Response> update(Request request, String idStr) async {
+    final userId = request.context['uid'];
+    final id = int.tryParse(idStr);
+    if (id == null) return fail('Invalid ID');
+    
+    final body = await request.readAsString();
+    final data = jsonDecode(body);
 
-    // Validate the fields
-    if (userId == null || body['amount'] == null || body['startat'] == null || body['rate'] == null) {
-      return fail('invalid, missing fields');
-    }
+    final check = db.select('SELECT id FROM outgoing WHERE id = ? AND userid = ?', [id, userId]);
+    if (check.isEmpty) return fail('Not found');
 
-    // Ensure the drawdown exists for the given user and id
-    final existing = db.select("SELECT * FROM outgoing WHERE id=? AND userid=?", [id, userId]);
-
-    if (existing.isEmpty) {
-      return fail('No outgoing found with that id');
-    }
-
-    // Update the drawdown with the new values
     db.execute(
       '''UPDATE outgoing SET name=?, fromid=?, amount=?, startat=?, endat=?, rate=? 
-        WHERE id=? AND userid=?''',
-      [body['name'], body['fromid'], body['amount'], body['startat'], body['endat'], body['rate'], id, userId],
+        WHERE id=?''',
+      [data['name'], data['fromid'], data['amount'], data['startat'], data['endat'], data['rate'], id],
     );
 
     return ok();
   }
 
-  // List all outgoing
-  Future<Response> select(Request req) async {
-    final rows = db.select("SELECT * FROM outgoing WHERE userid=?", [req.context['uid']]);
-    final data = rows.map((r) => {
-      'id': r['id'],
-      'name': r['name'],
-      'fromid': r['fromid'],
-      'amount': r['amount'],
-      'startat': r['startat'],
-      'endat': r['endat'],
-      'rate': r['rate'],
-    }).toList();
-
-    return Response.ok(jsonEncode({'data': data}));
-  }
-
-  // Delete a outgoing
-  Future<Response> delete(Request req, String id) async {
-    final Database db = pension.getDb();
-    db.execute("DELETE FROM outgoing WHERE id=? AND userid=?", [id, req.context['uid']]);
+  Future<Response> delete(Request request, String idStr) async {
+    final userId = request.context['uid'];
+    db.execute("DELETE FROM outgoing WHERE id=? AND userid=?", [idStr, userId]);
     return ok();
   }
 }

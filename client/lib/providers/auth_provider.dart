@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
+import '../services/apiService.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool loggedIn = false;

@@ -2,83 +2,121 @@ import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:shared/models/user.dart' as models;
 import 'db.dart';
 import 'access.dart';
 
-class User extends Access {
-  User(super.db);
+class UserApi extends Access {
+  UserApi(super.db);
 
   // Create a user
   Future<Response> insert(Request req) async {
-    final body = jsonDecode(await req.readAsString());
-    final username = body['username']?.toString();
-//    final userId = req.context['uid'];
-
-    if (body['username'] == null || body['password'] == null || body['dob'] == null) {
-      return fail('Invalid, missing fields');
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await req.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
     }
 
-    final hash = BCrypt.hashpw(body['password'].toString(), BCrypt.gensalt());
+    // Parse into User model for validation
+    final models.User newUser;
+    try {
+      newUser = models.User.fromJson(body);
+    } catch (e) {
+      return fail('Invalid user data: ${e.toString()}');
+    }
 
+    // Validate required fields
+    if (newUser.password == null || newUser.password!.isEmpty) {
+      return fail('Password is required');
+    }
+
+    // Check for duplicate username
     final result = db.select(
-      'SELECT id FROM user WHERE username = ?', [username],
+      'SELECT id FROM user WHERE username = ?', [newUser.username],
     );
 
-    if (result.isEmpty) {
-      try {
-        db.execute(
-          '''INSERT INTO user (username, password, dob, isadmin, islocked)
-          VALUES (?, ?, ?, ?, ?)''',
-          [body['username'], hash, body['dob'], body['isadmin'] ?? 0, body['islocked'] ?? 1],
-        );
-        return ok();
-      } catch(e) {
-        return error(e.toString());
-      }
-    } else {
+    if (result.isNotEmpty) {
       return fail('Duplicate user!');
+    }
+
+    // Hash password
+    final hash = BCrypt.hashpw(newUser.password!, BCrypt.gensalt());
+
+    // Validate dob is present for registration
+    if (newUser.dob == null) {
+      return fail('Date of birth is required');
+    }
+
+    // Insert using model fields
+    try {
+      db.execute(
+        '''INSERT INTO user (username, password, dob, isadmin, islocked)
+        VALUES (?, ?, ?, ?, ?)''',
+        [
+          newUser.username,
+          hash,
+          newUser.dob!.toIso8601String().split('T')[0],
+          newUser.isAdmin ? 1 : 0,
+          newUser.isLocked ? 1 : 0
+        ],
+      );
+      return ok();
+    } catch(e) {
+      return error(e.toString());
     }
   }
 
   // Get a list of all users
   Future<Response> select(Request req) async {
     final rows = db.select("SELECT id, username, isadmin, islocked FROM user");
-    final users = rows.map((r) => {
-      'id': r['id'],
-      'username': r['username'],
-      'isadmin': r['isadmin'],
-      'islocked': r['islocked'],
-    }).toList();
+    
+    // Convert rows to User models (without dob for list view)
+    final users = rows.map((r) => models.User(
+      id: r['id'] as int,
+      username: r['username'] as String,
+      isAdmin: r['isadmin'] == 1,
+      isLocked: r['islocked'] == 1,
+      // dob is null for list endpoint
+    )).toList();
 
-    return Response.ok(jsonEncode({'data': users}));
+    // Convert models to JSON
+    final usersJson = users.map((u) => u.toJson()).toList();
+    
+    return Response.ok(jsonEncode({'data': usersJson}));
   }
 
   /// Update user details
   Future<Response> update(Request req, String id) async {
-    final Database db = pension.getDb();
-    // Convert the user ID to an integer
     final userId = int.tryParse(id);
     
     if (userId == null) {
       return fail('Invalid user ID');
     }
 
-    // Read and parse the request body
-    final body = jsonDecode(await req.readAsString());
+    // Parse request body
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await req.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
 
-    final String? username = body['username'];
-    final String? dob = body['dob'];
-    final String? password = body['password'];
-    final bool isAdmin = body['isadmin'] == 1;
-    final bool isislocked = body['islocked'] == 1;
+    // Parse into User model
+    final models.User updatedUser;
+    try {
+      updatedUser = models.User.fromJson(body);
+    } catch (e) {
+      return fail('Invalid user data: ${e.toString()}');
+    }
 
-    // If essential fields are missing, return an error
-    if (username == null || dob == null) {
-      return fail('Invalid, Missing fields');
+    // Validate required fields
+    if (updatedUser.dob == null) {
+      return fail('Date of birth is required for update');
     }
 
     try {
-      // Check if the user exists (select query)
+      // Check if the user exists
       final result = db.select(
         'SELECT id FROM user WHERE id = ?', [userId],
       );
@@ -87,38 +125,41 @@ class User extends Access {
         return fail('No such user');
       }
 
-      // Prepare the SQL query for updating user details
-      final List<dynamic> params = [
-        username,
-        dob,
-        isAdmin ? 1 : 0, // Convert bool to int (1 for true, 0 for false)
-        isislocked ? 1 : 0,
-        userId
-      ];
-
-      String sql = "UPDATE user SET username = ?, dob = ?, isadmin = ?, islocked = ? WHERE id = ?";
-
-      // If a password is provided, hash it and include it in the update query
-      if (password != null && password.isNotEmpty) {
-        final hash = BCrypt.hashpw(password, BCrypt.gensalt());
-        sql = "UPDATE user SET username = ?, dob = ?, password = ?, isadmin = ?, islocked = ? WHERE id = ?";
-        params.insert(2, hash); // Insert password hash in the correct position
+      // Build update query based on whether password is provided
+      if (updatedUser.password != null && updatedUser.password!.isNotEmpty) {
+        final hash = BCrypt.hashpw(updatedUser.password!, BCrypt.gensalt());
+        db.execute(
+          "UPDATE user SET username = ?, dob = ?, password = ?, isadmin = ?, islocked = ? WHERE id = ?",
+          [
+            updatedUser.username,
+            updatedUser.dob!.toIso8601String().split('T')[0],
+            hash,
+            updatedUser.isAdmin ? 1 : 0,
+            updatedUser.isLocked ? 1 : 0,
+            userId
+          ]
+        );
+      } else {
+        db.execute(
+          "UPDATE user SET username = ?, dob = ?, isadmin = ?, islocked = ? WHERE id = ?",
+          [
+            updatedUser.username,
+            updatedUser.dob!.toIso8601String().split('T')[0],
+            updatedUser.isAdmin ? 1 : 0,
+            updatedUser.isLocked ? 1 : 0,
+            userId
+          ]
+        );
       }
 
-      // Execute the update query
-      db.execute(sql, params);
-
-      // Return a success message
       return ok();
     } catch (e) {
-      // Catch any errors and return a failure response
       return fail('Failed to update user: ${e.toString()}');
     }
   }
 
   // Get full user details by ID
   Future<Response> selectOne(Request req, String id) async {
-    final Database db = pension.getDb();
     final userId = int.tryParse(id);
 
     if (userId == null) {
@@ -126,7 +167,7 @@ class User extends Access {
     }
 
     try {
-      // Fetch user details using db.select (ensure your db object is correctly initialized)
+      // Fetch user details
       final result = db.select(
         'SELECT id, username, dob, isadmin, islocked FROM user WHERE id = ?', 
         [userId]
@@ -136,16 +177,19 @@ class User extends Access {
         return fail('No such user');
       }
 
-      final user = result.first;
+      final row = result.first;
+      
+      // Convert to User model
+      final user = models.User(
+        id: row['id'] as int,
+        username: row['username'] as String,
+        dob: DateTime.parse(row['dob'] as String),
+        isAdmin: row['isadmin'] == 1,
+        isLocked: row['islocked'] == 1,
+      );
 
-      // Return user data as a JSON response
-      return Response.ok(jsonEncode({
-        'id': user['id'],
-        'username': user['username'],
-        'dob': user['dob'],
-        'isadmin': user['isadmin'],
-        'islocked': user['islocked'],
-      }));
+      // Return user as JSON
+      return Response.ok(jsonEncode(user.toJson()));
     } catch (e) {
       return fail('Error retrieving user details: ${e.toString()}');
     }

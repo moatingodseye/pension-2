@@ -12,3 +12,8 @@ dependencies:
   http: ^1.6.0
   path: ^1.9.1
   lints: ^6.0.0
+  shared:
+    path: ../shared
+
+dev_dependencies:
+  test: ^1.29.0

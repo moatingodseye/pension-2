@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/data_provider.dart';
+import '../providers/admin_provider.dart';
+import 'package:shared/models/user.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -10,44 +11,23 @@ class AdminScreen extends StatefulWidget {
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  bool _isLoading = false;
-  String _error = '';
-
+  
   @override
   void initState() {
     super.initState();
-    _loadUsers();
-  }
-
-  Future<void> _loadUsers() async {
-    setState(() {
-      _isLoading = true;
-      _error = '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+        Provider.of<AdminProvider>(context, listen: false).loadUsers();
     });
-    try {
-      await Provider.of<DataProvider>(context, listen: false).fetchUsers();
-    } catch (e) {
-      setState(() {
-        _error = 'Error loading users: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
-  Future<void> _showUpdateUserDialog(int userId) async {
-    final provider = Provider.of<DataProvider>(context, listen: false);
+  Future<void> _showUpdateUserDialog(User user) async {
+    final provider = Provider.of<AdminProvider>(context, listen: false);
     
-    // Fetch the full user details (including DOB)
-    final userDetails = await provider.getUser(userId);
-
-    final usernameController = TextEditingController(text: userDetails['username']);
-    final dobController = TextEditingController(text: userDetails['dob']);  // Pre-fill DOB
+    final usernameController = TextEditingController(text: user.username);
+    final dobController = TextEditingController(text: user.dob?.toIso8601String().split('T')[0] ?? '');
     final passwordController = TextEditingController();
-    bool isAdmin = userDetails['isadmin'] == 1;
-    bool isLocked = userDetails['islocked'] == 1;
+    bool isAdmin = user.isAdmin;
+    bool isLocked = user.isLocked;
 
     String dialogError = '';
 
@@ -66,16 +46,16 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
                 TextField(
                   controller: dobController,  // This will pre-fill the DOB
-                  decoration: const InputDecoration(labelText: 'Date of Birth'),
+                  decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)'),
                 ),
                 TextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(labelText: 'New Password'),
+                  decoration: const InputDecoration(labelText: 'New Password (Optional)'),
                   obscureText: true,
                 ),
                 Row(
                   children: [
-                    Text('Admin'),
+                    const Text('Admin'),
                     Switch(
                       value: isAdmin,
                       onChanged: (value) {
@@ -88,7 +68,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
                 Row(
                   children: [
-                    Text('Locked'),
+                    const Text('Locked'),
                     Switch(
                       value: isLocked,
                       onChanged: (value) {
@@ -117,26 +97,28 @@ class _AdminScreenState extends State<AdminScreen> {
               ElevatedButton(
                 onPressed: () async {
                   final username = usernameController.text.trim();
-                  final dob = dobController.text.trim();
+                  final dobStr = dobController.text.trim();
                   final password = passwordController.text.trim();
 
-                  if (username.isEmpty || dob.isEmpty) {
+                  if (username.isEmpty || dobStr.isEmpty) {
                     setState(() {
                       dialogError = 'Please fill all required fields';
                     });
                     return;
                   }
-
+                  
                   try {
-                    await provider.updateUser(
-                      userId,
-                      username,
-                      dob,
-                      password.isEmpty ? null : password,  // Send null if password is empty
-                      isAdmin,
-                      isLocked
-                    );
-                    Navigator.of(dialogCtx).pop();
+                      final updated = User(
+                          id: user.id,
+                          username: username,
+                          dob: DateTime.parse(dobStr),
+                          password: password.isEmpty ? null : password,
+                          isAdmin: isAdmin,
+                          isLocked: isLocked
+                      );
+
+                      await provider.updateUser(updated);
+                      if (context.mounted) Navigator.of(dialogCtx).pop();
                   } catch (e) {
                     setState(() {
                       dialogError = 'Update failed: ${e.toString()}';
@@ -152,84 +134,22 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
-  Future<void> _showResetPasswordDialog(int userId) async {
-    final TextEditingController passwordController =
-        TextEditingController();
-    String dialogError = '';
-
-    await showDialog(
-      context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Reset Password'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'New Password',
-                  ),
-                  obscureText: true,
-                ),
-                if (dialogError.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      dialogError,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final newPass = passwordController.text.trim();
-                  if (newPass.isEmpty) {
-                    setState(() {
-                      dialogError = 'Please enter a new password';
-                    });
-                    return;
-                  }
-                  try {
-                    await Provider.of<DataProvider>(context,
-                            listen: false)
-                        .resetUserPassword(userId, newPass);
-                    Navigator.of(dialogCtx).pop();
-                  } catch (e) {
-                    setState(() {
-                      dialogError = 'Reset failed: ${e.toString()}';
-                    });
-                  }
-                },
-                child: const Text('Reset'),
-              ),
-            ],
-          );
-        });
-      },
-    );
-  }
-
-  Future<void> _toggleLock(int userId, bool currentlyLocked) async {
-    if (currentlyLocked) {
-      await Provider.of<DataProvider>(context, listen: false)
-          .unlockUser(userId);
-    } else {
-      await Provider.of<DataProvider>(context, listen: false)
-          .lockUser(userId);
-    }
+  Future<void> _toggleLock(User user) async {
+     final provider = Provider.of<AdminProvider>(context, listen: false);
+     final updated = User(
+         id: user.id,
+         username: user.username,
+         dob: user.dob,
+         password: null, // Don't change password
+         isAdmin: user.isAdmin,
+         isLocked: !user.isLocked
+     );
+     await provider.updateUser(updated);
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<DataProvider>(context);
+    final provider = Provider.of<AdminProvider>(context);
     final users = provider.users;
 
     return Padding(
@@ -238,59 +158,50 @@ class _AdminScreenState extends State<AdminScreen> {
         children: [
           const Text('Admin Panel', style: TextStyle(fontSize: 26)),
           const SizedBox(height: 12),
-          if (_isLoading) const CircularProgressIndicator(),
-          if (_error.isNotEmpty)
+          if (provider.isLoading) const CircularProgressIndicator(),
+          if (provider.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(_error,
+              child: Text(provider.error!,
                   style: const TextStyle(color: Colors.red)),
             ),
-          if (!_isLoading && users.isEmpty)
+          if (!provider.isLoading && users.isEmpty)
             const Text('No users found.'),
-          if (!_isLoading && users.isNotEmpty)
+          if (!provider.isLoading && users.isNotEmpty)
             Expanded(
               child: ListView.builder(
                 itemCount: users.length,
                 itemBuilder: (ctx, i) {
-                  final dynamic u = users[i];
-
-                  final username =
-                      (u['username']?.toString() ?? '');
-                  final isAdmin =
-                      (u['isadmin']?.toString() ?? '0') == '1';
-                  final isLocked =
-                      (u['islocked']?.toString() ?? '0') == '1';
+                  final u = users[i];
 
                   return Card(
-                    key: ValueKey(u['id'] ?? i),
+                    key: ValueKey(u.id),
                     margin:
                         const EdgeInsets.symmetric(vertical: 6),
                     child: ListTile(
-                      title: Text(username),
-                      subtitle: Text(isAdmin ? 'Admin' : 'User'),
+                      title: Text(u.username),
+                      subtitle: Text(u.isAdmin ? 'Admin' : 'User'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             icon: Icon(
-                              isLocked
-                                  ? Icons.lock_open
-                                  : Icons.lock,
-                              color: isLocked
-                                  ? Colors.green
-                                  : Colors.red,
+                              u.isLocked
+                                  ? Icons.lock
+                                  : Icons.lock_open,
+                              color: u.isLocked
+                                  ? Colors.red
+                                  : Colors.green,
                             ),
-                            tooltip: isLocked
+                            tooltip: u.isLocked
                                 ? 'Unlock User'
                                 : 'Lock User',
-                            onPressed: () =>
-                                _toggleLock(u['id'] as int, isLocked),
+                            onPressed: () => _toggleLock(u),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.password),
+                            icon: const Icon(Icons.edit),
                             tooltip: 'Edit User',
-                            onPressed: () =>
-                                _showUpdateUserDialog(u['id'] as int),
+                            onPressed: () => _showUpdateUserDialog(u),
                           ),
                         ],
                       ),
@@ -301,7 +212,7 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           const SizedBox(height: 10),
           ElevatedButton(
-            onPressed: _loadUsers,
+            onPressed: () => provider.loadUsers(),
             child: const Text('Reload Users'),
           ),
         ],

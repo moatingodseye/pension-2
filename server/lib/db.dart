@@ -23,6 +23,10 @@ class PensionDb {
     return _db!;
   }
 
+  void mockDb(Database db) {
+    _db = db;
+  }
+
   void _initDb() {  
     Database db = getDb();
     db.execute('''

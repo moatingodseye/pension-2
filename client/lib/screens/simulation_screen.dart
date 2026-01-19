@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'axisInputScreen.dart';
-import '../providers/data_provider.dart';
+import '../providers/simulation_provider.dart';
 import '../widgets/chart_widget.dart';
 
 class SimulationScreen extends StatefulWidget {
@@ -12,53 +12,63 @@ class SimulationScreen extends StatefulWidget {
 }
 
 class _SimulationScreenState extends State<SimulationScreen> {
-  late DataProvider dp;
-
-  // Default axis min/max values
-  double sumPotMin = 0.0;
-  double sumPotMax = 2000000.0;
-  double incomeMin = 0.0;
-  double incomeMax = 50000.0;
-  double xAxisMin = 0.0;
-  double xAxisMax = 120.0;
+  // Axis values state, initially null or defaults, updated by Provider result or AxisInputScreen
+  double? sumPotMin;
+  double? sumPotMax;
+  double? incomeMin;
+  double? incomeMax;
+  double? xAxisMin;
+  double? xAxisMax;
 
   @override
   void initState() {
     super.initState();
-    dp = Provider.of<DataProvider>(context, listen: false);
-    dp.simulate().then((_) {
-      setState(() {
-        sumPotMin = dp.simulationResults['sumMin'] ?? 0.0;
-        sumPotMax = dp.simulationResults['sumMax'] ?? 2000000.0;
-        incomeMin = dp.simulationResults['incomeMin'] ?? 0.0;
-        incomeMax = dp.simulationResults['incomeMax'] ?? 50000.0;
-        xAxisMin = dp.simulationResults['xAxisMin'] ?? 0.0;
-        xAxisMax = dp.simulationResults['xAxisMax'] ?? 120.0;
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       final prov = Provider.of<SimulationProvider>(context, listen: false);
+       prov.run().then((_) {
+         if (mounted && prov.result != null) {
+           setState(() {
+              sumPotMin = prov.result!.sumPotMin;
+              sumPotMax = prov.result!.sumPotMax;
+              incomeMin = prov.result!.incomeMin;
+              incomeMax = prov.result!.incomeMax;
+              xAxisMin = prov.result!.xAxisMin;
+              xAxisMax = prov.result!.xAxisMax;
+           });
+         }
+       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dp = Provider.of<DataProvider>(context);
-    if (dp.simulationResults.isEmpty) {
+    final provider = Provider.of<SimulationProvider>(context);
+    final result = provider.result;
+
+    if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+    
+    if (provider.error != null) {
+        return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
+    }
 
-    List<bool> showLines = dp.showLines;
+    if (result == null) {
+        return const Center(child: Text('No simulation data.'));
+    }
 
-    // Properly cast all data from dynamic to strongly typed
-    final sum = List<double>.from(dp.simulationResults['sum']!);
-    final income = List<double>.from(dp.simulationResults['income']!);
-    final pots = (dp.simulationResults['pots']! as List)
-        .map((p) => List<double>.from(p))
-        .toList();
-    final monteMin = List<double>.from(dp.simulationResults['monte_min']!);
-    final monteMax = List<double>.from(dp.simulationResults['monte_max']!);
-    final ages = List<double>.from(dp.simulationResults['ages']!);
+    List<bool> showLines = provider.showLines;
+    
+    // Fallback defaults if null
+    final curSumMin = sumPotMin ?? result.sumPotMin;
+    final curSumMax = sumPotMax ?? result.sumPotMax;
+    final curIncMin = incomeMin ?? result.incomeMin;
+    final curIncMax = incomeMax ?? result.incomeMax;
+    final curXMin = xAxisMin ?? result.xAxisMin;
+    final curXMax = xAxisMax ?? result.xAxisMax;
 
     return DefaultTabController(
-      length: 2,  // Two tabs: One for Pension, another for Income
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Simulation'),
@@ -71,43 +81,42 @@ class _SimulationScreenState extends State<SimulationScreen> {
         ),
         body: Column(
           children: [
-            // TabBarView to switch between charts
             Expanded(
               child: TabBarView(
                 children: [
                   // Tab 1: Pension chart
                   SimulationChart(
-                    sumPot: sum,
-                    income: income,
-                    pots: pots,
-                    mcMin: monteMin,
-                    mcMax: monteMax,
-                    ages: ages,
+                    sumPot: result.sum,
+                    income: result.income,
+                    pots: result.pots,
+                    mcMin: result.monteMin,
+                    mcMax: result.monteMax,
+                    ages: result.ages,
                     showLines: showLines,
-                    sumPotMin: sumPotMin,
-                    sumPotMax: sumPotMax,
-                    incomeMin: incomeMin,
-                    incomeMax: incomeMax,
-                    xAxisMin: xAxisMin,
-                    xAxisMax: xAxisMax,
-                    isIncomeChart: false,  // Pension chart
+                    sumPotMin: curSumMin,
+                    sumPotMax: curSumMax,
+                    incomeMin: curIncMin,
+                    incomeMax: curIncMax,
+                    xAxisMin: curXMin,
+                    xAxisMax: curXMax,
+                    isIncomeChart: false,
                   ),
                   // Tab 2: Income chart
                   SimulationChart(
-                    sumPot: sum,
-                    income: income,
-                    pots: pots,
-                    mcMin: monteMin,
-                    mcMax: monteMax,
-                    ages: ages,
+                    sumPot: result.sum,
+                    income: result.income,
+                    pots: result.pots,
+                    mcMin: result.monteMin,
+                    mcMax: result.monteMax,
+                    ages: result.ages,
                     showLines: showLines,
-                    sumPotMin: sumPotMin,
-                    sumPotMax: sumPotMax,
-                    incomeMin: incomeMin,
-                    incomeMax: incomeMax,
-                    xAxisMin: xAxisMin,
-                    xAxisMax: xAxisMax,
-                    isIncomeChart: true,  // Income chart
+                    sumPotMin: curSumMin,
+                    sumPotMax: curSumMax,
+                    incomeMin: curIncMin,
+                    incomeMax: curIncMax,
+                    xAxisMin: curXMin,
+                    xAxisMax: curXMax,
+                    isIncomeChart: true,
                   ),
                 ],
               ),
@@ -121,31 +130,23 @@ class _SimulationScreenState extends State<SimulationScreen> {
                   FilterChip(
                     label: const Text('Sum of Pots'),
                     selected: showLines[0],
-                    onSelected: (v) {
-                      setState(() => showLines[0] = v);
-                    },
+                    onSelected: (v) => provider.toggleLine(0),
                   ),
                   FilterChip(
                     label: const Text('Income'),
                     selected: showLines[1],
-                    onSelected: (v) {
-                      setState(() => showLines[1] = v);
-                    },
+                    onSelected: (v) => provider.toggleLine(1),
                   ),
                   FilterChip(
                     label: const Text('Monte Carlo'),
                     selected: showLines[2],
-                    onSelected: (v) {
-                      setState(() => showLines[2] = v);
-                    },
+                    onSelected: (v) => provider.toggleLine(2),
                   ),
-                  ...List.generate(pots.length, (i) {
+                  ...List.generate(result.pots.length, (i) {
                     return FilterChip(
                       label: Text('Pot ${i + 1}'),
-                      selected: showLines[i + 3],
-                      onSelected: (v) {
-                        setState(() => showLines[i + 3] = v);
-                      },
+                      selected: i + 3 < showLines.length ? showLines[i + 3] : false, // Safety check
+                      onSelected: (v) => provider.toggleLine(i + 3),
                     );
                   }),
                 ],
@@ -156,25 +157,24 @@ class _SimulationScreenState extends State<SimulationScreen> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed: () {
-                  // Open the AxisInputScreen as a dialog
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
                       return AxisInputScreen(
-                        sumPotMin: sumPotMin,
-                        sumPotMax: sumPotMax,
-                        incomeMin: incomeMin,
-                        incomeMax: incomeMax,
-                        xAxisMin: xAxisMin,
-                        xAxisMax: xAxisMax,
+                        sumPotMin: curSumMin,
+                        sumPotMax: curSumMax,
+                        incomeMin: curIncMin,
+                        incomeMax: curIncMax,
+                        xAxisMin: curXMin,
+                        xAxisMax: curXMax,
                         onSave: (newValues) {
                           setState(() {
-                            sumPotMin = newValues['sumPotMin']!;
-                            sumPotMax = newValues['sumPotMax']!;
-                            incomeMin = newValues['incomeMin']!;
-                            incomeMax = newValues['incomeMax']!;
-                            xAxisMin = newValues['xAxisMin']!;
-                            xAxisMax = newValues['xAxisMax']!;
+                            sumPotMin = newValues['sumPotMin'];
+                            sumPotMax = newValues['sumPotMax'];
+                            incomeMin = newValues['incomeMin'];
+                            incomeMax = newValues['incomeMax'];
+                            xAxisMin = newValues['xAxisMin'];
+                            xAxisMax = newValues['xAxisMax'];
                           });
                         },
                       );

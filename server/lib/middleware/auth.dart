@@ -7,6 +7,11 @@ const jwtSecret = 'local-secret-key-that-you-cannot-guess-smiley';
 Middleware authMiddleware() {
   return (Handler inner) {
     return (Request req) async {
+      // Allow CORS preflight requests
+      if (req.method == 'OPTIONS') {
+        return inner(req);
+      }
+
       final auth = req.headers['authorization'];
       if (auth == null || !auth.startsWith('Bearer ')) {
         return Response.forbidden('Missing token');

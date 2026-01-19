@@ -11,13 +11,19 @@ class Authentication extends Access {
 
   // Register user
   Future<Response> register(Request req) async {
-    final user = User(db);
+    final user = UserApi(db);
     return await user.insert(req);
   }
 
   // Login user
   Future<Response> login(Request req) async {
-    final body = jsonDecode(await req.readAsString());
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await req.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+
     final username = body['username']?.toString();
     final password = body['password']?.toString();
 
@@ -39,7 +45,7 @@ class Authentication extends Access {
       final user = result.first;
 
       // Check if the account is locked
-      if (user['locked'] == 1) {
+      if (user['islocked'] == 1) {
         return forbidden('Acount locked');
       }
 

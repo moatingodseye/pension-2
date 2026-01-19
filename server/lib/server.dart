@@ -49,7 +49,8 @@ void main() async {
   // --- Public routes ---
   pub
     ..post('/register', auth.register)
-    ..post('/login', auth.login);
+    ..post('/login', auth.login)
+    ..options('/<ignored|.*>', (Request request) => Response.ok(''));
     
   const validApiKey = 'your-secure-api-key-which-no-one-can-guess';
 
@@ -58,34 +59,19 @@ void main() async {
   pub.post('/restore', apiKeyMiddleware(validApiKey)(restoreHandler));
   pub.mount('/', protected);
 
-  final account = Account(pension.getDb());
-  final income = Income(pension.getDb());
-  final outgoing = Outgoing(pension.getDb());
-  final transfer = Transfer(pension.getDb());
-  final user = User(pension.getDb());
+  final account = AccountApi(pension.getDb());
+  final income = IncomeApi(pension.getDb());
+  final outgoing = OutgoingApi(pension.getDb());
+  final transfer = TransferApi(pension.getDb());
+  final user = UserApi(pension.getDb());
   final admin = Admin(pension.getDb());
 
   // --- Protected routes ---
   prot
-    ..post('/account', account.insert)
-    ..put('/account/<id>', account.update)
-    ..get('/account', account.select)
-    ..delete('/account/<id>', account.delete)
-
-    ..post('/income', income.insert)
-    ..put('/income/<id>', income.update)
-    ..get('/income', income.select)
-    ..delete('/income/<id>', income.delete)
-
-    ..post('/outgoing', outgoing.insert)
-    ..put('/outgoing/<id>', outgoing.update)
-    ..get('/outgoing', outgoing.select)
-    ..delete('/outgoing/<id>', outgoing.delete)
-
-    ..post('/transfer', transfer.insert)
-    ..put('/transfer/<id>', transfer.update)
-    ..get('/transfer', transfer.select)
-    ..delete('/transfer/<id>', transfer.delete)
+    ..mount('/account', account.router)
+    ..mount('/income', income.router)
+    ..mount('/outgoing', outgoing.router)
+    ..mount('/transfer', transfer.router)
 
     ..post('/user', user.insert)
     ..get('/user', user.select)
