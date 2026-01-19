@@ -1,15 +1,21 @@
+import 'package:client/services/aprException.dart';
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../services/apiService.dart';
 
 class DataProvider extends ChangeNotifier {
   bool isLoading = false; // Flag for loading state
-  List<dynamic> pensionPots = [];
-  List<dynamic> drawdowns = [];
+  List<dynamic> pension = [];
+  List<dynamic> drawdown = [];
   Map<String, dynamic> statePension = {};
 //  List<double> simulationResults = [];
 //  Map<String, List<double>> simulationResults = {};
 //  Map<String, dynamic>? simulationResults;
   List<dynamic> users = [];
+  String? error;
+
+  void clean() {
+    error = null;
+  }
 
   // ───────── Pension Pots ─────────
 
@@ -17,10 +23,17 @@ class DataProvider extends ChangeNotifier {
     isLoading = true; // Start loading
     notifyListeners();
     
-    pensionPots = await ApiService.getList('pension_pots');
-    
-    isLoading = false; // Finished loading
-    notifyListeners();
+    try {
+      pension = await ApiService.getList('account');
+    } catch(e) {
+      if (e is apiException)
+        error = e.body;
+      else
+        error = e.toString();
+    } finally {    
+      isLoading = false; // Finished loading
+      notifyListeners();
+    }
   }
 
   Future<void> addPensionPot(Map<String, dynamic> pot) async {

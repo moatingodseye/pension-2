@@ -4,9 +4,10 @@ import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'home_container.dart';
 import 'core/theme.dart';
+import 'widgets/exceptionWidget.dart';
 
-class App extends StatelessWidget {
-  const App({super.key});
+class ErrorApp extends StatelessWidget {
+  const ErrorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +16,24 @@ class App extends StatelessWidget {
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           return MaterialApp(
+            scaffoldMessengerKey: messengerKey,
             title: 'Pension Web App',
             theme: appTheme,
             home: auth.loggedIn ? const HomeContainer() : const LoginScreen(),
           );
         },
       ),
+    );
+  }
+}
+
+class App extends StatelessWidget {
+  const App({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ErrorListener(
+      child: ErrorApp(),
     );
   }
 }

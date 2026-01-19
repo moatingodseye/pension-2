@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'debuglogger.dart';
-import 'apiresponse.dart';
+import 'debugLogger.dart';
+import 'apiResponse.dart';
+import 'aprException.dart';
 
 class ApiService {
   static String? token = "";
@@ -56,13 +57,17 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    final decoded = _tryDecode(res);
+    if (res.statusCode==200) {
+      final decoded = _tryDecode(res);
 
-    if (decoded is Map<String, dynamic> && decoded['data'] is List) {
-      return decoded['data'];
+      if (decoded is Map<String, dynamic> && decoded['data'] is List) {
+        return decoded['data'];
+      }
+
+      return [];
+    } else {
+      throw apiException(res.body);
     }
-
-    return [];
   }
 
   /// GET single object
