@@ -3,22 +3,68 @@ import 'package:shared/models/simulation_result.dart';
 import '../services/apiService.dart';
 import '../services/aprException.dart';
 
+import 'package:shared/models/account.dart';
+import 'package:shared/models/income.dart';
+import 'package:shared/models/outgoing.dart';
+import 'package:shared/models/transfer.dart';
+import '../services/simulation_service.dart';
+
 class SimulationProvider extends ChangeNotifier {
   SimulationResult? result;
   bool isLoading = false;
   String? error;
   List<bool> showLines = [];
 
-  Future<void> run({double volatility = 0.12, double rateAdjustment = 0.0}) async {
+  Future<void> run({
+    double volatility = 0.12, 
+    double rateAdjustment = 0.0,
+    // Pass data needed for client-side viz
+    required List<Account> accounts,
+    required List<Income> incomes,
+    required List<Outgoing> outgoings,
+    required List<Transfer> transfers,
+    required DateTime dob, // Needed for ages
+  }) async {
     isLoading = true;
     error = null;
     notifyListeners();
     try {
+      // 1. Server Run (Official Data)
       final res = await ApiService.post('simulate', {
         'volatility': volatility,
         'rate_adjustment': rateAdjustment,
       });
-      result = SimulationResult.fromJson(res);
+      final serverResult = SimulationResult.fromJson(res);
+
+      // 2. Client Run (Visual Cloud)
+      // We run the local simulation just to get the 'montePaths'
+      final clientResult = SimulationService.run(
+        accounts: accounts,
+        incomes: incomes,
+        outgoings: outgoings,
+        transfers: transfers,
+        dob: dob,
+        volatility: volatility,
+        rateAdjustment: rateAdjustment,
+      );
+
+      // 3. Merge
+      // We keep server stats but overlay client monte paths
+      result = SimulationResult(
+        sumPotMin: serverResult.sumPotMin,
+        sumPotMax: serverResult.sumPotMax, 
+        incomeMin: serverResult.incomeMin,
+        incomeMax: serverResult.incomeMax, 
+        xAxisMin: serverResult.xAxisMin, 
+        xAxisMax: serverResult.xAxisMax, 
+        sum: serverResult.sum, 
+        income: serverResult.income, 
+        pots: serverResult.pots, 
+        monteMin: serverResult.monteMin, 
+        monteMax: serverResult.monteMax, 
+        ages: serverResult.ages,
+        montePaths: clientResult.montePaths, // The cloud!
+      );
       
       // Reset showLines based on pots
       showLines = List<bool>.filled(3 + result!.pots.length, true);

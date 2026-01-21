@@ -34,7 +34,7 @@ class Authentication extends Access {
     try {
       // Query to fetch user details based on username
       final result = db.select(
-        'SELECT id, password, isadmin, islocked FROM user WHERE username = ?',
+        'SELECT id, password, isadmin, islocked, dob FROM user WHERE username = ?',
         [username],
       );
 
@@ -56,7 +56,11 @@ class Authentication extends Access {
       }
 
       final jwt = JWT({'id': user['id'], 'admin': user['isadmin'] == 1});
-      return Response.ok(jsonEncode({'token': jwt.sign(SecretKey(jwtSecret)), 'isAdmin': user['isadmin']}));
+      return Response.ok(jsonEncode({
+        'token': jwt.sign(SecretKey(jwtSecret)), 
+        'isAdmin': user['isadmin'] == 1,
+        'dob': user['dob'] // Return DOB string
+      }));
     } catch (e) {
       return error(e.toString());
     }

@@ -5,6 +5,7 @@ import '../services/apiService.dart';
 class AuthProvider extends ChangeNotifier {
   bool loggedIn = false;
   bool isAdmin = false;
+  DateTime? dob;
 
   Future<void> login(String username, String password) async {
     final res = await ApiService.post('login', {
@@ -16,8 +17,11 @@ class AuthProvider extends ChangeNotifier {
       await prefs.setString('token', res['token']); // ✅ changed: await added
       await ApiService.initToken(); // ✅ changed: await added
 
-      loggedIn = true; // ✅ changed: set before notifyListeners
-      isAdmin = res['isAdmin'] == 1; // ✅ changed: set before notifyListeners
+      loggedIn = true; 
+      isAdmin = res['isAdmin'] == 1; 
+      if (res['dob'] != null) {
+        dob = DateTime.tryParse(res['dob'].toString());
+      }
 
       notifyListeners();
     }
