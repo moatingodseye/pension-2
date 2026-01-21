@@ -31,6 +31,26 @@ class Account {
     );
   }
 
+  Account copyWith({
+    int? id,
+    String? name,
+    double? amount,
+    AccountType? type,
+    DateTime? amountAt,
+    double? rate,
+    int? age,
+  }) {
+    return Account(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      amountAt: amountAt ?? this.amountAt,
+      rate: rate ?? this.rate,
+      age: age ?? this.age,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

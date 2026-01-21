@@ -32,6 +32,28 @@ class Transfer {
     );
   }
 
+  Transfer copyWith({
+    int? id,
+    String? name,
+    double? amount,
+    int? fromAccount,
+    int? intoAccount,
+    String? startAt,
+    String? endAt,
+    double? rate,
+  }) {
+    return Transfer(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      fromAccount: fromAccount ?? this.fromAccount,
+      intoAccount: intoAccount ?? this.intoAccount,
+      startAt: startAt ?? this.startAt,
+      endAt: endAt ?? this.endAt,
+      rate: rate ?? this.rate,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

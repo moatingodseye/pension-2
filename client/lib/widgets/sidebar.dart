@@ -24,6 +24,7 @@ class Sidebar extends StatelessWidget {
       const NavigationRailDestination(icon: Icon(Icons.money_off), label: Text('Outgoings')),
       const NavigationRailDestination(icon: Icon(Icons.compare_arrows), label: Text('Transfers')),
       const NavigationRailDestination(icon: Icon(Icons.bar_chart), label: Text('Sim')),
+      const NavigationRailDestination(icon: Icon(Icons.storage), label: Text('Data')),
       // Admin button always visible
       NavigationRailDestination(
         icon: Icon(Icons.admin_panel_settings,
@@ -41,9 +42,9 @@ class Sidebar extends StatelessWidget {
           selectedIndex: selectedIndex,
           onDestinationSelected: (index) {
             // Disable admin click for non-admin
-            if (index == 6 && !auth.isAdmin) return;
+            if (index == 7 && !auth.isAdmin) return;
             // Logout
-            if (index == 7) {
+            if (index == 8) {
               auth.logout();
               return;
             }

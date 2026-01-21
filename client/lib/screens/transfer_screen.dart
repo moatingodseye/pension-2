@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/transfer_provider.dart';
 import '../providers/account_provider.dart';
 import 'package:shared/models/transfer.dart';
+import '../widgets/currency_input.dart';
+import '../widgets/age_or_date_input.dart';
+import '../widgets/account_dropdown.dart';
+import '../widgets/screen_layout.dart';
+import '../widgets/pagination_controls.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -13,17 +18,15 @@ class TransferScreen extends StatefulWidget {
 
 class _TransferScreenState extends State<TransferScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController startDateController = TextEditingController();
-  final TextEditingController endDateController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-
-  DateTime? selectedStartDate;
-  DateTime? selectedEndDate;
+  
+  // Add Form State
+  final nameController = TextEditingController();
+  
+  double? amount;
+  String? startAt;
+  String? endAt;
   int? selectedFromId;
   int? selectedIntoId;
-  
-  int? currentTransferId;
 
   @override
   void initState() {
@@ -33,227 +36,238 @@ class _TransferScreenState extends State<TransferScreen> {
       Provider.of<AccountProvider>(context, listen: false).load();
     });
   }
-
-  void _openDialog(Transfer? item) {
-    if (item != null) {
-      nameController.text = item.name;
-      amountController.text = item.amount.toString();
-      startDateController.text = item.startAt;
-      endDateController.text = item.endAt ?? '';
-      selectedFromId = item.fromAccount;
-      selectedIntoId = item.intoAccount;
-      currentTransferId = item.id;
-      
-      if (item.startAt.isNotEmpty && item.startAt.contains('-')) {
-          selectedStartDate = DateTime.tryParse(item.startAt);
-      }
-      if (item.endAt != null && item.endAt!.contains('-')) {
-          selectedEndDate = DateTime.tryParse(item.endAt!);
-      }
-
-    } else {
-      nameController.clear();
-      amountController.clear();
-      startDateController.clear();
-      endDateController.clear();
+  
+  void _clearForm() {
+    nameController.clear();
+    setState(() {
+      amount = null;
+      startAt = null;
+      endAt = null;
       selectedFromId = null;
       selectedIntoId = null;
-      selectedStartDate = null;
-      selectedEndDate = null;
-      currentTransferId = null;
-    }
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(item == null ? 'Add Transfer' : 'Edit Transfer'),
-        content: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                const SizedBox(height: 8),
-                Consumer<AccountProvider>(
-                  builder: (ctx, accProv, _) {
-                    return DropdownButtonFormField<int>(
-                      initialValue: selectedFromId,
-                      hint: const Text('From Account'),
-                      items: accProv.accounts
-                          .map((a) => DropdownMenuItem<int>(
-                                value: a.id,
-                                child: Text(a.name),
-                              ))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedFromId = v),
-                      validator: (v) => v == null ? 'Select source' : null,
-                    );
-                  }
-                ),
-                const SizedBox(height: 8),
-                Consumer<AccountProvider>(
-                  builder: (ctx, accProv, _) {
-                    return DropdownButtonFormField<int>(
-                      initialValue: selectedIntoId,
-                      hint: const Text('To Account'),
-                      items: accProv.accounts
-                          .map((a) => DropdownMenuItem<int>(
-                                value: a.id,
-                                child: Text(a.name),
-                              ))
-                          .toList(),
-                      onChanged: (v) => setState(() => selectedIntoId = v),
-                      validator: (v) => v == null ? 'Select dest' : null,
-                    );
-                  }
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Amount (£)'),
-                  keyboardType: TextInputType.number,
-                  validator: (val) => val == null || val.isEmpty ? 'Enter amount' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: startDateController,
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Start Date',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  onTap: () => _pickDate(ctx, true),
-                  validator: (val) => val == null || val.isEmpty ? 'Select start date' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: endDateController,
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'End Date (Optional)',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  onTap: () => _pickDate(ctx, false),
-                ),
-                TextButton(
-                  onPressed: () { startDateController.clear(); endDateController.clear(); }, 
-                  child: const Text("Clear Dates")
-                )
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              if (!_formKey.currentState!.validate()) return;
-              _save(ctx);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickDate(BuildContext context, bool isStart) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      final str = picked.toIso8601String().split('T')[0];
-      if (isStart) {
-        selectedStartDate = picked;
-        startDateController.text = str;
-      } else {
-        selectedEndDate = picked;
-        endDateController.text = str;
-      }
-    }
-  }
-
-  Future<void> _save(BuildContext ctx) async {
-       final transfer = Transfer(
-          id: currentTransferId,
-          name: nameController.text.isEmpty ? 'Transfer' : nameController.text,
-          fromAccount: selectedFromId!, // Validator checked this
-          intoAccount: selectedIntoId!, // Validator checked this
-          amount: double.tryParse(amountController.text) ?? 0.0,
-          startAt: startDateController.text,
-          endAt: endDateController.text.isEmpty ? null : endDateController.text,
-          rate: 0.0,
-      );
-      
-      final prov = Provider.of<TransferProvider>(context, listen: false);
-      if (currentTransferId == null) {
-          await prov.add(transfer);
-      } else {
-          await prov.update(transfer);
-      }
-      if (ctx.mounted) Navigator.pop(ctx);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<TransferProvider, AccountProvider>(
       builder: (ctx, transferProv, accountProv, _) {
-       if (transferProv.isLoading) return const Center(child: CircularProgressIndicator());
-       
-       if (transferProv.error != null) {
-            return Center(child: Text('Error: ${transferProv.error}', style: const TextStyle(color: Colors.red)));
-       }
+       final content = transferProv.isLoading 
+         ? const Center(child: CircularProgressIndicator())
+         : transferProv.error != null
+             ? Center(child: Text('Error: ${transferProv.error}', style: const TextStyle(color: Colors.red)))
+             : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: transferProv.transfers.length,
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemBuilder: (ctx, i) {
+                        final t = transferProv.transfers[i];
+                        
+                        // Resolve names
+                        final fromName = accountProv.accounts
+                            .where((a) => a.id == t.fromAccount)
+                            .map((a) => a.name)
+                            .firstOrNull ?? 'Unknown';
+                            
+                        final intoName = accountProv.accounts
+                            .where((a) => a.id == t.intoAccount)
+                            .map((a) => a.name)
+                            .firstOrNull ?? 'External';
+                        
+                        return ListTile(
+                            title: Text(t.name),
+                            subtitle: Text('$fromName -> $intoName | £${t.amount.toStringAsFixed(2)} | ${t.startAt}'),
+                            trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _editTransfer(t)),
+                                    IconButton(icon: const Icon(Icons.delete), onPressed: () => transferProv.delete(t.id!)),
+                                ]
+                            ),
+                        );
+                    },
+                );
 
-       return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-            children: [
-                const Text('Transfers', style: TextStyle(fontSize: 24)),
-                Expanded(
-                    child: ListView.builder(
-                        itemCount: transferProv.transfers.length,
-                        itemBuilder: (ctx, i) {
-                            final t = transferProv.transfers[i];
-                            
-                            // Resolve names using AccountProvider
-                            // Note: accountProv.accounts might be empty if not loaded.
-                            // But we call load() in initState.
-                            
-                            final fromName = accountProv.accounts
-                                .where((a) => a.id == t.fromAccount)
-                                .map((a) => a.name)
-                                .firstOrNull ?? 'Unknown';
-                                
-                            final intoName = accountProv.accounts
-                                .where((a) => a.id == t.intoAccount)
-                                .map((a) => a.name)
-                                .firstOrNull ?? 'External';
-                            
-                            return ListTile(
-                                title: Text(t.name),
-                                subtitle: Text('$fromName -> $intoName | £${t.amount} | ${t.startAt}'),
-                                trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                        IconButton(icon: const Icon(Icons.edit), onPressed: () => _openDialog(t)),
-                                        IconButton(icon: const Icon(Icons.delete), onPressed: () => transferProv.delete(t.id!)),
-                                    ]
-                                ),
-                            );
-                        },
-                    ),
-                ),
-                ElevatedButton(onPressed: () => _openDialog(null), child: const Text('Add Transfer'))
-            ]
-        )
+       return ScreenLayout(
+         body: Column(
+           children: [
+             Padding(
+               padding: const EdgeInsets.all(16.0),
+               child: Align(alignment: Alignment.centerLeft, child: Text('Transfers (${transferProv.transfers.length})', style: Theme.of(context).textTheme.headlineSmall)),
+             ),
+             Expanded(child: content),
+             PaginationControls(
+               page: transferProv.page,
+               totalCount: transferProv.totalCount,
+               limit: transferProv.limit,
+               onPageChanged: transferProv.setPage,
+               isLoading: transferProv.isLoading,
+             ),
+             const SizedBox(height: 8),
+           ],
+         ),
+         sidebar: SingleChildScrollView(
+           padding: const EdgeInsets.all(16),
+           child: Form(
+             key: _formKey,
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.stretch,
+               children: [
+                 Text('Add Transfer', style: Theme.of(context).textTheme.titleLarge),
+                 const SizedBox(height: 20),
+                 TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Enter name' : null,
+                 ),
+                 const SizedBox(height: 12),
+                 AccountDropdown(
+                   selectedId: selectedFromId,
+                   onChanged: (v) => setState(() => selectedFromId = v),
+                   label: 'From Account',
+                   nullable: false,
+                 ),
+                 const SizedBox(height: 12),
+                 AccountDropdown(
+                   selectedId: selectedIntoId,
+                   onChanged: (v) => setState(() => selectedIntoId = v),
+                   label: 'To Account',
+                   nullable: false,
+                 ),
+                 const SizedBox(height: 12),
+                 CurrencyInput(
+                   value: amount,
+                   onChanged: (v) => setState(() => amount = v),
+                   label: 'Amount (£)',
+                   hint: '0.00',
+                 ),
+                 const SizedBox(height: 12),
+                 AgeOrDateInput(
+                   value: startAt,
+                   onChanged: (v) => setState(() => startAt = v),
+                   label: 'Start Date',
+                   nullable: false,
+                 ),
+                 const SizedBox(height: 12),
+                 AgeOrDateInput(
+                   value: endAt,
+                   onChanged: (v) => setState(() => endAt = v),
+                   label: 'End Date (Optional)',
+                   nullable: true,
+                 ),
+                 const SizedBox(height: 20),
+                 ElevatedButton.icon(
+                   icon: const Icon(Icons.add),
+                   label: const Text('Add Transfer'),
+                   style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                   ),
+                   onPressed: _saveNew,
+                 ),
+               ],
+             ),
+           ),
+         ),
        );
       });
+  }
+
+  Future<void> _saveNew() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (amount == null || startAt == null || selectedFromId == null || selectedIntoId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
+        return;
+    }
+    
+    final transfer = Transfer(
+       name: nameController.text.isEmpty ? 'Transfer' : nameController.text,
+       fromAccount: selectedFromId!,
+       intoAccount: selectedIntoId!,
+       amount: amount!,
+       startAt: startAt!,
+       endAt: endAt,
+       rate: 0.0,
+    );
+    
+    final prov = Provider.of<TransferProvider>(context, listen: false);
+    await prov.add(transfer);
+    _clearForm();
+  }
+
+  void _editTransfer(Transfer item) {
+    final nameCtl = TextEditingController(text: item.name);
+    double? amt = item.amount;
+    String? start = item.startAt;
+    String? end = item.endAt;
+    int? from = item.fromAccount;
+    int? into = item.intoAccount;
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Transfer'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+                TextFormField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                AccountDropdown(
+                   selectedId: from,
+                   onChanged: (v) => from = v,
+                   label: 'From Account',
+                ),
+                AccountDropdown(
+                   selectedId: into,
+                   onChanged: (v) => into = v,
+                   label: 'To Account',
+                ),
+                CurrencyInput(
+                   value: amt,
+                   onChanged: (v) => amt = v,
+                   label: 'Amount',
+                ),
+                AgeOrDateInput(
+                   value: start,
+                   onChanged: (v) => start = v,
+                   label: 'Start Date',
+                   nullable: false,
+                ),
+                AgeOrDateInput(
+                   value: end,
+                   onChanged: (v) => end = v,
+                   label: 'End Date',
+                   nullable: true,
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+               if (amt==null || start==null || from==null || into==null) return;
+                
+               final updated = Transfer(
+                  id: item.id,
+                  name: nameCtl.text,
+                  fromAccount: from!,
+                  intoAccount: into!,
+                  amount: amt!,
+                  startAt: start!,
+                  endAt: end,
+                  rate: 0.0
+               );
+               
+               await Provider.of<TransferProvider>(context, listen: false).update(updated);
+               if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'axisInputScreen.dart';
 import '../providers/simulation_provider.dart';
 import '../widgets/chart_widget.dart';
+import '../widgets/screen_layout.dart';
+import '../services/csv_service.dart'; // Assuming we'll use this or similar for export
 
 class SimulationScreen extends StatefulWidget {
   const SimulationScreen({super.key});
@@ -12,31 +13,47 @@ class SimulationScreen extends StatefulWidget {
 }
 
 class _SimulationScreenState extends State<SimulationScreen> {
-  // Axis values state, initially null or defaults, updated by Provider result or AxisInputScreen
-  double? sumPotMin;
-  double? sumPotMax;
-  double? incomeMin;
-  double? incomeMax;
-  double? xAxisMin;
-  double? xAxisMax;
+  // What-If Parameters
+  double _volatility = 0.12;
+  double _rateAdjustment = 0.0;
+
+  // Axis Parameters
+  double _sumPotMin = 0.0;
+  double _sumPotMax = 2000000.0;
+  double _incomeMin = 0.0;
+  double _incomeMax = 50000.0;
+  double _xAxisMin = 0.0;
+  double _xAxisMax = 120.0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       final prov = Provider.of<SimulationProvider>(context, listen: false);
-       prov.run().then((_) {
-         if (mounted && prov.result != null) {
-           setState(() {
-              sumPotMin = prov.result!.sumPotMin;
-              sumPotMax = prov.result!.sumPotMax;
-              incomeMin = prov.result!.incomeMin;
-              incomeMax = prov.result!.incomeMax;
-              xAxisMin = prov.result!.xAxisMin;
-              xAxisMax = prov.result!.xAxisMax;
-           });
-         }
-       });
+      _runSimulation();
+    });
+  }
+
+  void _runSimulation() {
+    final provider = Provider.of<SimulationProvider>(context, listen: false);
+    provider.run(
+      volatility: _volatility,
+      rateAdjustment: _rateAdjustment,
+    ).then((_) {
+      if (mounted && provider.result != null) {
+        setState(() {
+          // Auto-set defaults from result if needed, or keep user overrides
+          // For now, let's keep user overrides or init if zero?
+          // Actually, let's just respect the result defaults if valid
+          if (_sumPotMax == 2000000.0 && provider.result!.sumPotMax != 100) {
+             _sumPotMin = provider.result!.sumPotMin;
+             _sumPotMax = provider.result!.sumPotMax;
+             _incomeMin = provider.result!.incomeMin;
+             _incomeMax = provider.result!.incomeMax;
+             _xAxisMin = provider.result!.xAxisMin;
+             _xAxisMax = provider.result!.xAxisMax;
+          }
+        });
+      }
     });
   }
 
@@ -45,147 +62,221 @@ class _SimulationScreenState extends State<SimulationScreen> {
     final provider = Provider.of<SimulationProvider>(context);
     final result = provider.result;
 
+    Widget content;
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    
-    if (provider.error != null) {
-        return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
-    }
-
-    if (result == null) {
-        return const Center(child: Text('No simulation data.'));
-    }
-
-    List<bool> showLines = provider.showLines;
-    
-    // Fallback defaults if null
-    final curSumMin = sumPotMin ?? result.sumPotMin;
-    final curSumMax = sumPotMax ?? result.sumPotMax;
-    final curIncMin = incomeMin ?? result.incomeMin;
-    final curIncMax = incomeMax ?? result.incomeMax;
-    final curXMin = xAxisMin ?? result.xAxisMin;
-    final curXMax = xAxisMax ?? result.xAxisMax;
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Simulation'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Pension'),
-              Tab(text: 'Income'),
-            ],
-          ),
-        ),
-        body: Column(
+      content = const Center(child: CircularProgressIndicator());
+    } else if (provider.error != null) {
+      content = Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
+    } else if (result == null) {
+      content = const Center(child: Text('No simulation data.'));
+    } else {
+      content = DefaultTabController(
+        length: 2,
+        child: Column(
           children: [
+             const TabBar(
+              tabs: [
+                Tab(text: 'Pension Value'),
+                Tab(text: 'Income'),
+              ],
+              labelColor: Colors.blue,
+            ),
             Expanded(
               child: TabBarView(
                 children: [
-                  // Tab 1: Pension chart
-                  SimulationChart(
-                    sumPot: result.sum,
-                    income: result.income,
-                    pots: result.pots,
-                    mcMin: result.monteMin,
-                    mcMax: result.monteMax,
-                    ages: result.ages,
-                    showLines: showLines,
-                    sumPotMin: curSumMin,
-                    sumPotMax: curSumMax,
-                    incomeMin: curIncMin,
-                    incomeMax: curIncMax,
-                    xAxisMin: curXMin,
-                    xAxisMax: curXMax,
-                    isIncomeChart: false,
+                  // Pension Chart
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SimulationChart(
+                      sumPot: result.sum,
+                      income: result.income,
+                      pots: result.pots,
+                      mcMin: result.monteMin,
+                      mcMax: result.monteMax,
+                      ages: result.ages,
+                      showLines: provider.showLines,
+                      sumPotMin: _sumPotMin,
+                      sumPotMax: _sumPotMax,
+                      incomeMin: _incomeMin,
+                      incomeMax: _incomeMax,
+                      xAxisMin: _xAxisMin,
+                      xAxisMax: _xAxisMax,
+                      isIncomeChart: false,
+                    ),
                   ),
-                  // Tab 2: Income chart
-                  SimulationChart(
-                    sumPot: result.sum,
-                    income: result.income,
-                    pots: result.pots,
-                    mcMin: result.monteMin,
-                    mcMax: result.monteMax,
-                    ages: result.ages,
-                    showLines: showLines,
-                    sumPotMin: curSumMin,
-                    sumPotMax: curSumMax,
-                    incomeMin: curIncMin,
-                    incomeMax: curIncMax,
-                    xAxisMin: curXMin,
-                    xAxisMax: curXMax,
-                    isIncomeChart: true,
+                  // Income Chart
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SimulationChart(
+                      sumPot: result.sum,
+                      income: result.income,
+                      pots: result.pots,
+                      mcMin: result.monteMin,
+                      mcMax: result.monteMax,
+                      ages: result.ages,
+                      showLines: provider.showLines,
+                      sumPotMin: _sumPotMin,
+                      sumPotMax: _sumPotMax,
+                      incomeMin: _incomeMin,
+                      incomeMax: _incomeMax,
+                      xAxisMin: _xAxisMin,
+                      xAxisMax: _xAxisMax,
+                      isIncomeChart: true,
+                    ),
                   ),
                 ],
-              ),
-            ),
-            // Show lines toggles
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  FilterChip(
-                    label: const Text('Sum of Pots'),
-                    selected: showLines[0],
-                    onSelected: (v) => provider.toggleLine(0),
-                  ),
-                  FilterChip(
-                    label: const Text('Income'),
-                    selected: showLines[1],
-                    onSelected: (v) => provider.toggleLine(1),
-                  ),
-                  FilterChip(
-                    label: const Text('Monte Carlo'),
-                    selected: showLines[2],
-                    onSelected: (v) => provider.toggleLine(2),
-                  ),
-                  ...List.generate(result.pots.length, (i) {
-                    return FilterChip(
-                      label: Text('Pot ${i + 1}'),
-                      selected: i + 3 < showLines.length ? showLines[i + 3] : false, // Safety check
-                      onSelected: (v) => provider.toggleLine(i + 3),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            // Edit Axis Button
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AxisInputScreen(
-                        sumPotMin: curSumMin,
-                        sumPotMax: curSumMax,
-                        incomeMin: curIncMin,
-                        incomeMax: curIncMax,
-                        xAxisMin: curXMin,
-                        xAxisMax: curXMax,
-                        onSave: (newValues) {
-                          setState(() {
-                            sumPotMin = newValues['sumPotMin'];
-                            sumPotMax = newValues['sumPotMax'];
-                            incomeMin = newValues['incomeMin'];
-                            incomeMax = newValues['incomeMax'];
-                            xAxisMin = newValues['xAxisMin'];
-                            xAxisMax = newValues['xAxisMax'];
-                          });
-                        },
-                      );
-                    },
-                  );
-                },
-                child: const Text('Edit Axis Values'),
               ),
             ),
           ],
         ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Simulation')),
+      // Use ScreenLayout with body and sidebar
+      body: ScreenLayout(
+        body: content,
+        sidebar: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Controls', style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 16),
+              
+              // 1. What-If Analysis
+              ExpansionTile(
+                title: const Text('What-If Analysis', style: TextStyle(fontWeight: FontWeight.bold)),
+                initiallyExpanded: true,
+                children: [
+                   const Text('Volatility (Risk)'),
+                   Slider(
+                     value: _volatility,
+                     min: 0.0,
+                     max: 0.5,
+                     divisions: 50,
+                     label: (_volatility * 100).toStringAsFixed(1) + '%',
+                     onChanged: (v) => setState(() => _volatility = v),
+                   ),
+                   Text('Value: ${(_volatility * 100).toStringAsFixed(1)}%'),
+                   const SizedBox(height: 10),
+                   
+                   const Text('Growth Adjustment'),
+                   Slider(
+                     value: _rateAdjustment,
+                     min: -0.05,
+                     max: 0.05,
+                     divisions: 20,
+                     label: (_rateAdjustment * 100).toStringAsFixed(1) + '%',
+                     onChanged: (v) => setState(() => _rateAdjustment = v),
+                   ),
+                   Text('Value: ${(_rateAdjustment * 100).toStringAsFixed(1)}%'),
+                   
+                   const SizedBox(height: 10),
+                   SizedBox(
+                     width: double.infinity,
+                     child: ElevatedButton.icon(
+                       icon: const Icon(Icons.play_arrow),
+                       label: const Text('Run Simulation'),
+                       onPressed: _runSimulation,
+                     ),
+                   ),
+                ],
+              ),
+              
+              const Divider(),
+              
+              // 2. Chart Options
+              ExpansionTile(
+                title: const Text('Chart Options', style: TextStyle(fontWeight: FontWeight.bold)),
+                children: [
+                  // Toggles
+                  if (result != null) ...[
+                     Wrap(
+                        spacing: 8,
+                        children: [
+                           FilterChip(
+                             label: const Text('Sum'),
+                             selected: provider.showLines[0],
+                             onSelected: (v) => provider.toggleLine(0),
+                           ),
+                           FilterChip(
+                             label: const Text('Income'),
+                             selected: provider.showLines[1],
+                             onSelected: (v) => provider.toggleLine(1),
+                           ),
+                           FilterChip(
+                             label: const Text('Monte Carlo'),
+                             selected: provider.showLines[2],
+                             onSelected: (v) => provider.toggleLine(2),
+                           ),
+                           ...List.generate(result.pots.length, (i) {
+                             return FilterChip(
+                               label: Text('Pot ${i+1}'),
+                               selected: i+3 < provider.showLines.length ? provider.showLines[i+3] : false,
+                               onSelected: (v) => provider.toggleLine(i+3),
+                             );
+                           }),
+                        ],
+                     ),
+                  ],
+                  const SizedBox(height: 10),
+                  // Axis Config
+                  const Text('Axis Limits', style: TextStyle(fontWeight: FontWeight.bold)),
+                  _buildAxisInput('Pot Max', _sumPotMax, (v) => setState(() => _sumPotMax = v)),
+                  _buildAxisInput('Income Max', _incomeMax, (v) => setState(() => _incomeMax = v)),
+                  _buildAxisInput('Age Max', _xAxisMax, (v) => setState(() => _xAxisMax = v)),
+                ],
+              ),
+              
+              const Divider(),
+              
+              // 3. Export
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.download),
+                  label: const Text('Export Results (CSV)'),
+                  onPressed: () {
+                     // Implement simple export or use CsvService
+                     if (result != null) {
+                       final csv = CsvService.exportSimulation(result); // Need to add this method to CsvService
+                       CsvService.copyToClipboard(context, csv);
+                     }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAxisInput(String label, double val, Function(double) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          SizedBox(
+            width: 80,
+            child: TextFormField(
+              initialValue: val.toStringAsFixed(0),
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.all(8),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) {
+                final d = double.tryParse(v);
+                if (d != null) onChanged(d);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

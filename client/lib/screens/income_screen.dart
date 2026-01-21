@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 import '../providers/income_provider.dart';
 import '../providers/account_provider.dart';
 import 'package:shared/models/income.dart';
+import '../widgets/currency_input.dart';
+import '../widgets/age_or_date_input.dart';
+import '../widgets/account_dropdown.dart';
+import '../widgets/screen_layout.dart';
+import '../widgets/pagination_controls.dart';
 
 class IncomeScreen extends StatefulWidget {
   const IncomeScreen({super.key});
@@ -13,14 +18,16 @@ class IncomeScreen extends StatefulWidget {
 
 class _IncomeScreenState extends State<IncomeScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController startController = TextEditingController();
-  final TextEditingController endController = TextEditingController();
-  final TextEditingController rateController = TextEditingController();
+  
+  // Add Form State
+  final nameController = TextEditingController();
+  final rateController = TextEditingController(); 
+  
+  double? amount; 
+  String? startAt; 
+  String? endAt; 
   
   int? selectedIntoId;
-  int? currentId;
 
   @override
   void initState() {
@@ -30,151 +37,225 @@ class _IncomeScreenState extends State<IncomeScreen> {
       Provider.of<AccountProvider>(context, listen: false).load();
     });
   }
-
-  void _openDialog(Income? item) {
-    if (item != null) {
-      currentId = item.id;
-      nameController.text = item.name;
-      amountController.text = item.amount.toString();
-      startController.text = item.startAt;
-      endController.text = item.endAt ?? '';
-      rateController.text = (item.rate * 100).toString();
-      selectedIntoId = item.intoAccount;
-    } else {
-      currentId = null;
-      nameController.clear();
-      amountController.clear();
-      startController.clear();
-      endController.clear();
-      rateController.clear();
+  
+  void _clearForm() {
+    nameController.clear();
+    rateController.clear();
+    setState(() {
+      amount = null;
+      startAt = null;
+      endAt = null;
       selectedIntoId = null;
-    }
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(item == null ? 'Add Income' : 'Edit Income'),
-        content: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name (e.g. Salary, State Pension)'),
-                  validator: (v) => v!.isEmpty ? 'Enter name' : null,
-                ),
-                TextFormField(
-                  controller: amountController,
-                  decoration: const InputDecoration(labelText: 'Monthly Amount (£)'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) => v!.isEmpty ? 'Enter amount' : null,
-                ),
-                Consumer<AccountProvider>(
-                  builder: (ctx, accProv, _) {
-                    return DropdownButtonFormField<int>(
-                      initialValue: selectedIntoId,
-                      hint: const Text('Into Account (Optional)'),
-                      items: [
-                         const DropdownMenuItem<int>(value: null, child: Text('None (General Pot)')),
-                         ...accProv.accounts.map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.name))),
-                      ],
-                      onChanged: (v) => setState(() => selectedIntoId = v),
-                    );
-                  }
-                ),
-                TextFormField(
-                  controller: startController,
-                  decoration: const InputDecoration(labelText: 'Start (Age e.g. 68 or Date YYYY-MM-DD)'),
-                  validator: (v) => v!.isEmpty ? 'Enter start' : null,
-                ),
-                TextFormField(
-                  controller: endController,
-                  decoration: const InputDecoration(labelText: 'End (Optional: Age/Date/Empty)'),
-                ),
-                TextFormField(
-                  controller: rateController,
-                  decoration: const InputDecoration(labelText: 'Growth Rate (%)'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              if (!_formKey.currentState!.validate()) return;
-              _save(ctx);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _save(BuildContext ctx) async {
-    final income = Income(
-      id: currentId,
-      name: nameController.text,
-      amount: double.tryParse(amountController.text) ?? 0.0,
-      intoAccount: selectedIntoId,
-      startAt: startController.text,
-      endAt: endController.text.isEmpty ? null : endController.text,
-      rate: (double.tryParse(rateController.text) ?? 0.0) / 100.0,
-    );
-
-    final prov = Provider.of<IncomeProvider>(context, listen: false);
-    if (currentId == null) {
-      await prov.add(income);
-    } else {
-      await prov.update(income);
-    }
-    if (ctx.mounted) Navigator.pop(ctx);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<IncomeProvider>(
       builder: (ctx, provider, _) {
-        if (provider.isLoading) return const Center(child: CircularProgressIndicator());
-        
-        if (provider.error != null) {
-            return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
-        }
-
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Text('Incomes', style: TextStyle(fontSize: 24)),
-              Expanded(
-                child: ListView.builder(
+        final content = provider.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : provider.error != null
+              ? Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
                   itemCount: provider.incomes.length,
+                  separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (ctx, i) {
                     final inc = provider.incomes[i];
                     return ListTile(
                       title: Text(inc.name),
-                      subtitle: Text('£${inc.amount}/mo | Start: ${inc.startAt}'),
+                      subtitle: Text('£${inc.amount.toStringAsFixed(2)}/mo | Start: ${inc.startAt}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _openDialog(inc)),
+                          IconButton(icon: const Icon(Icons.edit), onPressed: () => _editIncome(inc)),
                           IconButton(icon: const Icon(Icons.delete), onPressed: () => provider.delete(inc.id!)),
                         ],
                       ),
                     );
                   },
-                ),
-              ),
-              ElevatedButton(onPressed: () => _openDialog(null), child: const Text('Add Income')),
+                );
+
+        return ScreenLayout(
+          body: Column(
+            children: [
+               Padding(
+                 padding: const EdgeInsets.all(16.0),
+                 child: Align(alignment: Alignment.centerLeft, child: Text('Incomes (${provider.incomes.length})', style: Theme.of(context).textTheme.headlineSmall)),
+               ),
+               Expanded(child: content),
+               PaginationControls(
+                 page: provider.page,
+                 totalCount: provider.totalCount,
+                 limit: provider.limit,
+                 onPageChanged: provider.setPage,
+                 isLoading: provider.isLoading,
+               ),
+               const SizedBox(height: 8),
             ],
+          ),
+          sidebar: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Add Income', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? 'Enter name' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  CurrencyInput(
+                    value: amount,
+                    onChanged: (v) => setState(() => amount = v),
+                    label: 'Monthly Amount',
+                    hint: '0.00',
+                  ),
+                  const SizedBox(height: 12),
+                  AccountDropdown(
+                    selectedId: selectedIntoId,
+                    onChanged: (v) => setState(() => selectedIntoId = v),
+                    label: 'Into Account (Optional)',
+                    hint: 'None (General Pot)',
+                  ),
+                  const SizedBox(height: 12),
+                  AgeOrDateInput(
+                    value: startAt,
+                    onChanged: (v) => setState(() => startAt = v),
+                    label: 'Start (Age/Date)',
+                    nullable: false,
+                  ),
+                  const SizedBox(height: 12),
+                  AgeOrDateInput(
+                    value: endAt,
+                    onChanged: (v) => setState(() => endAt = v),
+                    label: 'End (Optional)',
+                    nullable: true,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: rateController,
+                    decoration: const InputDecoration(labelText: 'Growth Rate (%)', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Income'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: _saveNew,
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
+    );
+  }
+
+  Future<void> _saveNew() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (amount == null || startAt == null) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Amount and Start Date are required')));
+       return;
+    }
+    
+    final income = Income(
+      name: nameController.text,
+      amount: amount!,
+      intoAccount: selectedIntoId,
+      startAt: startAt!,
+      endAt: endAt,
+      rate: (double.tryParse(rateController.text) ?? 0.0) / 100.0,
+    );
+
+    final prov = Provider.of<IncomeProvider>(context, listen: false);
+    await prov.add(income);
+    _clearForm();
+  }
+  
+  void _editIncome(Income item) {
+    // Local controllers
+    final nameCtl = TextEditingController(text: item.name);
+    final rateCtl = TextEditingController(text: (item.rate * 100).toString());
+    double? amt = item.amount;
+    String? start = item.startAt;
+    String? end = item.endAt;
+    int? into = item.intoAccount;
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Income'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+                TextFormField(
+                  controller: nameCtl,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                CurrencyInput(
+                  value: amt,
+                  onChanged: (v) => amt = v,
+                  label: 'Monthly Amount',
+                ),
+                AccountDropdown(
+                  selectedId: into,
+                  onChanged: (v) => into = v,
+                  label: 'Into Account',
+                ),
+                AgeOrDateInput(
+                  value: start,
+                  onChanged: (v) => start = v,
+                  label: 'Start',
+                  nullable: false,
+                ),
+                AgeOrDateInput(
+                  value: end,
+                  onChanged: (v) => end = v,
+                  label: 'End',
+                  nullable: true,
+                ),
+                TextFormField(
+                  controller: rateCtl,
+                  decoration: const InputDecoration(labelText: 'Growth Rate (%)'),
+                  keyboardType: TextInputType.number,
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              if (amt == null || start == null) return;
+              
+              final updated = Income(
+                id: item.id,
+                name: nameCtl.text,
+                amount: amt!,
+                intoAccount: into,
+                startAt: start!,
+                endAt: end,
+                rate: (double.tryParse(rateCtl.text) ?? 0.0) / 100.0,
+              );
+              
+              await Provider.of<IncomeProvider>(context, listen: false).update(updated);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

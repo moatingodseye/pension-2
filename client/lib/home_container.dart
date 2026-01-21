@@ -8,6 +8,7 @@ import 'screens/transfer_screen.dart';
 import 'screens/income_screen.dart';
 import 'screens/outgoing_screen.dart';
 import 'screens/simulation_screen.dart';
+import 'screens/data_management_screen.dart';
 import 'screens/admin_screen.dart';
 
 class HomeContainer extends StatefulWidget {
@@ -28,8 +29,9 @@ class _HomeContainerState extends State<HomeContainer> {
       const OutgoingScreen(),
       const TransferScreen(),
       const SimulationScreen(),
-      const AdminScreen(), // index 6
-      Container(),         // logout index 7
+      const DataManagementScreen(), // index 6
+      const AdminScreen(), // index 7
+      Container(),         // logout index 8
     ];
   }
 
@@ -41,10 +43,10 @@ class _HomeContainerState extends State<HomeContainer> {
     int safeIndex = selectedIndex;
 
     // Prevent non-admin from viewing admin screen
-    if (!auth.isAdmin && selectedIndex == 6) safeIndex = 0;
+    if (!auth.isAdmin && selectedIndex == 7) safeIndex = 0;
 
     // Logout index triggers logout
-    if (selectedIndex == 7) {
+    if (selectedIndex == 8) {
       WidgetsBinding.instance.addPostFrameCallback((_) => auth.logout());
       safeIndex = 0;
     }

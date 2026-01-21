@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/account_provider.dart';
+import '../widgets/currency_input.dart';
+import '../widgets/date_input.dart';
+import '../widgets/screen_layout.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
+import '../widgets/pagination_controls.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -13,13 +17,14 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController amountController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController interestController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   
+  // Edit logic controllers (simpler to keep local or re-init)
+  // For the properties:
   AccountType selectedType = AccountType.pension;
   DateTime? selectedDate;
+  double? amount;
+  double? interestRate;
 
   @override
   void initState() {
@@ -29,29 +34,13 @@ class _AccountScreenState extends State<AccountScreen> {
     });
   }
 
-  Future<void> _pickDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-        dateController.text = picked.toIso8601String().split('T')[0];
-      });
-    }
-  }
-  
   void _clearForm() {
-    amountController.clear();
-    dateController.clear();
-    interestController.clear();
     nameController.clear();
     setState(() {
          selectedDate = null;
          selectedType = AccountType.pension;
+         amount = null;
+         interestRate = null;
     });
   }
 
@@ -59,30 +48,22 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Consumer<AccountProvider>(
       builder: (ctx, provider, _) {
-      if (provider.isLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      
-      if (provider.error != null) {
-          return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
-      }
-
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Text('Accounts', style: TextStyle(fontSize: 24)),
-            Expanded(
-              child: ListView.builder(
+       
+      final content = provider.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : provider.error != null
+             ? Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)))
+             : ListView.separated(
+                padding: const EdgeInsets.all(16),
                 itemCount: provider.accounts.length,
+                separatorBuilder: (_, __) => const Divider(),
                 itemBuilder: (ctx, i) {
                   final acc = provider.accounts[i];
-                  
                   return ListTile(
                     leading: CircleAvatar(child: Text(acc.type.label[0])),
                     title: Text('${acc.name} (${acc.type.label})'),
                     subtitle: Text(
-                        '£${acc.amount} | Date: ${acc.amountAt.toIso8601String().split('T')[0]} | Rate: ${(acc.rate*100).toStringAsFixed(1)}%'),
+                        '£${acc.amount.toStringAsFixed(2)} | Date: ${acc.amountAt.toIso8601String().split('T')[0]} | Rate: ${(acc.rate*100).toStringAsFixed(1)}%'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -92,105 +73,123 @@ class _AccountScreenState extends State<AccountScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete),
-                          onPressed: () =>
-                              provider.delete(acc.id!),
+                          onPressed: () => provider.delete(acc.id!),
                         ),
                       ],
                     ),
                   );
                 },
-              ),
-            ),
-            const Divider(),
-            Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<AccountType>(
-                      initialValue: selectedType,
-                      items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
-                      onChanged: (v) => setState(() => selectedType = v!),
-                      decoration: const InputDecoration(labelText: 'Type'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Enter a name' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: amountController,
-                      decoration:
-                          const InputDecoration(labelText: 'Amount (£)'),
-                      keyboardType: TextInputType.number,
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Enter amount' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: dateController,
-                      decoration: const InputDecoration(
-                        labelText: 'Date (amountat)',
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      readOnly: true,
-                      onTap: () => _pickDate(context),
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Select date' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: interestController,
-                      decoration: const InputDecoration(
-                          labelText: 'Interest Rate (%)'),
-                      keyboardType: TextInputType.number,
-                      validator: (val) =>
-                          val == null || val.isEmpty ? 'Enter rate' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (!_formKey.currentState!.validate()) return;
-                        final amount = double.tryParse(amountController.text);
-                        final rate = double.tryParse(interestController.text);
-                        if (amount == null || rate == null || selectedDate == null) {
-                          return;
-                        }
-                        
-                        final newAccount = Account(
-                          name: nameController.text,
-                          amount: amount,
-                          type: selectedType,
-                          amountAt: selectedDate!,
-                          rate: rate / 100.0,
-                          age: 0
-                        );
-                        
-                        provider.add(newAccount);
-                        _clearForm();
-                      },
-                      child: const Text('Add Account'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+              );
+
+      return ScreenLayout(
+        body: Column(
+          children: [
+             Padding(
+               padding: const EdgeInsets.all(16.0),
+               child: Align(alignment: Alignment.centerLeft, child: Text('Accounts (${provider.accounts.length})', style: Theme.of(context).textTheme.headlineSmall)),
+             ),
+             Expanded(child: content),
+             PaginationControls(
+               page: provider.page,
+               totalCount: provider.totalCount,
+               limit: provider.limit,
+               onPageChanged: provider.setPage,
+               isLoading: provider.isLoading,
+             ),
+             const SizedBox(height: 8),
           ],
+        ),
+        sidebar: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Add Account', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<AccountType>(
+                  value: selectedType,
+                  items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
+                  onChanged: (v) => setState(() => selectedType = v!),
+                  decoration: const InputDecoration(labelText: 'Type', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
+                  validator: (val) => val == null || val.isEmpty ? 'Enter a name' : null,
+                ),
+                const SizedBox(height: 12),
+                CurrencyInput(
+                  value: amount,
+                  onChanged: (val) => setState(() => amount = val),
+                  label: 'Amount (£)',
+                  hint: '0.00',
+                ),
+                const SizedBox(height: 12),
+                DateInput(
+                  value: selectedDate,
+                  onChanged: (val) => setState(() => selectedDate = val),
+                  label: 'Date (Balance At)',
+                  nullable: false,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: interestRate != null ? (interestRate! * 100).toStringAsFixed(1) : '',
+                  decoration: const InputDecoration(labelText: 'Interest Rate (%)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (val) {
+                    final parsed = double.tryParse(val);
+                    setState(() => interestRate = parsed != null ? parsed / 100 : null);
+                  },
+                  validator: (val) => val == null || val.isEmpty ? 'Enter rate' : null,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Account'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    if (!_formKey.currentState!.validate()) return;
+                    if (amount == null || interestRate == null || selectedDate == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please fill all fields')),
+                      );
+                      return;
+                    }
+                    
+                    final newAccount = Account(
+                      name: nameController.text,
+                      amount: amount!,
+                      type: selectedType,
+                      amountAt: selectedDate!,
+                      rate: interestRate!,
+                      age: 0
+                    );
+                    
+                    provider.add(newAccount);
+                    _clearForm();
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });
   }
 
   void _editAccount(Account acc) {
-    nameController.text = acc.name;
-    amountController.text = acc.amount.toString();
-    dateController.text = acc.amountAt.toIso8601String().split('T')[0];
-    interestController.text = (acc.rate * 100).toString();
-    selectedType = acc.type;
-    selectedDate = acc.amountAt;
+    // Local controllers for dialog
+    final nameCtl = TextEditingController(text: acc.name);
+    final amountCtl = TextEditingController(text: acc.amount.toString());
+    final dateCtl = TextEditingController(text: acc.amountAt.toIso8601String().split('T')[0]);
+    final rateCtl = TextEditingController(text: (acc.rate * 100).toString());
+    AccountType type = acc.type;
+    DateTime? date = acc.amountAt;
     
     showDialog(
       context: context,
@@ -199,34 +198,36 @@ class _AccountScreenState extends State<AccountScreen> {
         content: Form(
           child: SingleChildScrollView(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
                DropdownButtonFormField<AccountType>(
-                  initialValue: selectedType,
+                  value: type,
                   items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
-                  onChanged: (v) => selectedType = v!,
+                  onChanged: (v) => type = v!,
                   decoration: const InputDecoration(labelText: 'Type'),
               ),
               TextFormField(
-                controller: nameController,
+                controller: nameCtl,
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
               TextFormField(
-                controller: amountController,
-                decoration:
-                    const InputDecoration(labelText: 'Amount (£)'),
+                controller: amountCtl,
+                decoration: const InputDecoration(labelText: 'Amount (£)'),
               ),
               TextFormField(
-                controller: dateController,
+                controller: dateCtl,
                 decoration: const InputDecoration(labelText: 'Date'),
                 onTap: () async {
-                   final picked = await showDatePicker(context: context, initialDate: selectedDate ?? DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime(2100));
-                   if(picked!=null) dateController.text = picked.toIso8601String().split('T')[0];
+                   final picked = await showDatePicker(context: context, initialDate: date ?? DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime(2100));
+                   if(picked!=null) {
+                     date = picked;
+                     dateCtl.text = picked.toIso8601String().split('T')[0];
+                   }
                 }
               ),
               TextFormField(
-                controller: interestController,
-                decoration:
-                    const InputDecoration(labelText: 'Interest Rate'),
+                controller: rateCtl,
+                decoration: const InputDecoration(labelText: 'Interest Rate'),
               ),
             ],
           ),
@@ -234,30 +235,27 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
+            onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-               final amount = double.tryParse(amountController.text) ?? acc.amount;
-               final rate = (double.tryParse(interestController.text) ?? (acc.rate * 100)) / 100.0;
-               final date = DateTime.tryParse(dateController.text) ?? acc.amountAt;
+               final amount = double.tryParse(amountCtl.text) ?? acc.amount;
+               final rate = (double.tryParse(rateCtl.text) ?? (acc.rate * 100)) / 100.0;
+               final d = date ?? acc.amountAt;
             
                final updated = Account(
                  id: acc.id,
-                 name: nameController.text,
+                 name: nameCtl.text,
                  amount: amount,
-                 type: selectedType,
-                 amountAt: date,
+                 type: type,
+                 amountAt: d,
                  rate: rate,
                  age: acc.age
                );
 
               Provider.of<AccountProvider>(context, listen: false).update(updated); 
               Navigator.of(ctx).pop();
-              _clearForm(); 
             },
             child: const Text('Save'),
           ),

@@ -7,14 +7,25 @@ class TransferProvider extends ChangeNotifier {
   List<Transfer> transfers = [];
   bool isLoading = false;
   String? error;
+  
+  // Pagination
+  int page = 1;
+  int limit = 20;
+  int totalCount = 0;
 
-  Future<void> load() async {
+  Future<void> load({int? newPage}) async {
+    if (newPage != null) page = newPage;
+
     isLoading = true;
     error = null;
     notifyListeners();
     try {
-      final list = await ApiService.getList('transfer');
+      final offset = (page - 1) * limit;
+      final res = await ApiService.getPaged('transfer?limit=$limit&offset=$offset');
+      
+      final list = res['data'] as List;
       transfers = list.map((json) => Transfer.fromJson(json)).toList();
+      totalCount = res['count'] as int? ?? transfers.length;
     } catch (e) {
       if (e is apiException) {
         error = e.body;
@@ -25,6 +36,10 @@ class TransferProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  void setPage(int p) {
+    load(newPage: p);
   }
 
   Future<void> add(Transfer item) async {

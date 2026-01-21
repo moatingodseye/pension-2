@@ -9,12 +9,15 @@ class SimulationProvider extends ChangeNotifier {
   String? error;
   List<bool> showLines = [];
 
-  Future<void> run() async {
+  Future<void> run({double volatility = 0.12, double rateAdjustment = 0.0}) async {
     isLoading = true;
     error = null;
     notifyListeners();
     try {
-      final res = await ApiService.post('simulate', {});
+      final res = await ApiService.post('simulate', {
+        'volatility': volatility,
+        'rate_adjustment': rateAdjustment,
+      });
       result = SimulationResult.fromJson(res);
       
       // Reset showLines based on pots

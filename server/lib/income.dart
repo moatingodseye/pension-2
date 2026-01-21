@@ -19,7 +19,17 @@ class IncomeApi extends Access {
 
   Future<Response> select(Request request) async {
     final userId = request.context['uid'];
-    final rows = db.select('SELECT * FROM income WHERE userid = ?', [userId]);
+    
+    // Pagination params
+    final params = request.url.queryParameters;
+    final limit = int.tryParse(params['limit'] ?? '20') ?? 20;
+    final offset = int.tryParse(params['offset'] ?? '0') ?? 0;
+
+    final rows = db.select('SELECT * FROM income WHERE userid = ? LIMIT ? OFFSET ?', [userId, limit, offset]);
+    
+    // Get Total Count
+    final countRows = db.select('SELECT COUNT(*) as c FROM income WHERE userid = ?', [userId]);
+    final totalCount = countRows.first['c'] as int;
 
     final list = rows.map((row) => Income(
         id: row['id'],
@@ -32,7 +42,12 @@ class IncomeApi extends Access {
     )).toList();
 
     return Response.ok(
-      jsonEncode(list.map((i) => i.toJson()).toList()),
+      jsonEncode({
+          'data': list.map((i) => i.toJson()).toList(),
+          'count': totalCount,
+          'limit': limit,
+          'offset': offset
+      }),
       headers: {'content-type': 'application/json'}
     );
   }

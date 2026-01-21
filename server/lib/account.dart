@@ -21,7 +21,21 @@ class AccountApi extends Access {
   // List all accounts
   Future<Response> select(Request request) async {
     final userId = request.context['uid'];
-    final rows = db.select('SELECT * FROM account WHERE userid = ?', [userId]);
+    
+    // Pagination params
+    final params = request.url.queryParameters;
+    final limit = int.tryParse(params['limit'] ?? '20') ?? 20;
+    final offset = int.tryParse(params['offset'] ?? '0') ?? 0;
+
+    // Get Data
+    final rows = db.select(
+        'SELECT * FROM account WHERE userid = ? LIMIT ? OFFSET ?', 
+        [userId, limit, offset]
+    );
+
+    // Get Total Count
+    final countRows = db.select('SELECT COUNT(*) as c FROM account WHERE userid = ?', [userId]);
+    final totalCount = countRows.first['c'] as int;
 
     final accounts = rows.map((row) {
         return Account(
@@ -36,7 +50,12 @@ class AccountApi extends Access {
     }).toList();
 
     return Response.ok(
-      jsonEncode(accounts.map((a) => a.toJson()).toList()),
+      jsonEncode({
+          'data': accounts.map((a) => a.toJson()).toList(),
+          'count': totalCount,
+          'limit': limit,
+          'offset': offset
+      }),
       headers: {'content-type': 'application/json'},
     );
   }

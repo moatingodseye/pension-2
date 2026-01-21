@@ -29,6 +29,26 @@ class Outgoing {
     );
   }
 
+  Outgoing copyWith({
+    int? id,
+    String? name,
+    double? amount,
+    int? fromAccount,
+    String? startAt,
+    String? endAt,
+    double? rate,
+  }) {
+    return Outgoing(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      fromAccount: fromAccount ?? this.fromAccount,
+      startAt: startAt ?? this.startAt,
+      endAt: endAt ?? this.endAt,
+      rate: rate ?? this.rate,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

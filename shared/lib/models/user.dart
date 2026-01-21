@@ -26,6 +26,24 @@ class User {
     );
   }
 
+  User copyWith({
+    int? id,
+    String? username,
+    String? password,
+    DateTime? dob,
+    bool? isAdmin,
+    bool? isLocked,
+  }) {
+    return User(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      password: password ?? this.password,
+      dob: dob ?? this.dob,
+      isAdmin: isAdmin ?? this.isAdmin,
+      isLocked: isLocked ?? this.isLocked,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

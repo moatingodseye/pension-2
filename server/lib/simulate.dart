@@ -36,14 +36,30 @@ Future<Response> simulate(Request req) async {
   }
   final dob = user.dob!;
 
-  // 1. Fetch Data
-  
-  final accRows = db.select("SELECT * FROM account WHERE userid=?", [uid]);
-  final incRows = db.select("SELECT * FROM income WHERE userid=?", [uid]);
-  final outRows = db.select("SELECT * FROM outgoing WHERE userid=?", [uid]);
-  final trRows = db.select("SELECT * FROM transfer WHERE userid=?", [uid]);
+  // Parse Request Body for Parameters
+  double volatility = 0.12;
+  double rateAdjustment = 0.0;
+  // double inflation = 0.0; // Not using yet, but could be added
 
-  // 2. Map to Models
+  try {
+    final bodyStr = await req.readAsString();
+    if (bodyStr.isNotEmpty) {
+      final body = jsonDecode(bodyStr);
+      if (body is Map<String, dynamic>) {
+        if (body.containsKey('volatility')) {
+          volatility = (body['volatility'] as num).toDouble();
+        }
+        if (body.containsKey('rate_adjustment')) {
+          rateAdjustment = (body['rate_adjustment'] as num).toDouble();
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore body parsing errors, use defaults
+    print('Error parsing simulation params: $e');
+  }
+
+  // ... (Models mapping) ...
   final accounts = accRows.map((r) => Account.fromJson(r)).toList();
   final incomes = incRows.map((r) => Income.fromJson(r)).toList();
   final outgoings = outRows.map((r) => Outgoing.fromJson(r)).toList();
@@ -128,8 +144,9 @@ Future<Response> simulate(Request req) async {
               accountSeries[id]![y] = accountSeries[id]![y-1];
           }
           
-          // Interest
-          accountSeries[id]![y] *= (1 + a.rate);
+          // Interest (Use rate adjustment)
+          double rate = a.rate + rateAdjustment;
+          accountSeries[id]![y] *= (1 + rate);
       }
       
       // Incomes
@@ -207,10 +224,10 @@ Future<Response> simulate(Request req) async {
                  int id = p.id!;
                  double bal = tempBalances[id]!;
                  
-                 double rate = p.rate;
-                 double sigma = 0.12; 
+                 double baseRate = p.rate + rateAdjustment; // Use adjusted rate
+                 double sigma = volatility; // Use passed volatility
                  double shock = normal(rand);
-                 double mu = log(1+rate) - 0.5*sigma*sigma;
+                 double mu = log(1+baseRate) - 0.5*sigma*sigma;
                  bal *= exp(mu + sigma*shock);
                  
                  // Deduct Transfers Out

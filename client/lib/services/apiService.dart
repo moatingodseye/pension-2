@@ -73,6 +73,27 @@ class ApiService {
     }
   }
 
+  /// GET paged response {data: [], count: N}
+  static Future<Map<String, dynamic>> getPaged(String endpoint) async {
+    final res = await http.get(
+      Uri.parse('$apiBase/$endpoint'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (res.statusCode == 200) {
+      final decoded = _tryDecode(res);
+      if (decoded is Map<String, dynamic>) {
+          return decoded;
+      } else if (decoded is List) {
+          // Fallback for non-paged endpoints transparency
+          return {'data': decoded, 'count': decoded.length};
+      }
+      throw apiException('Invalid paged response format');
+    } else {
+      throw apiException(res.body);
+    }
+  }
+
   /// GET single object
   static Future<Map<String, dynamic>> getOne(String endpoint) async {
     final res = await http.get(

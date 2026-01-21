@@ -8,13 +8,24 @@ class OutgoingProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  Future<void> load() async {
+  // Pagination
+  int page = 1;
+  int limit = 20;
+  int totalCount = 0;
+
+  Future<void> load({int? newPage}) async {
+    if (newPage != null) page = newPage;
+
     isLoading = true;
     error = null;
     notifyListeners();
     try {
-      final list = await ApiService.getList('outgoing');
+      final offset = (page - 1) * limit;
+      final res = await ApiService.getPaged('outgoing?limit=$limit&offset=$offset');
+      
+      final list = res['data'] as List;
       outgoings = list.map((json) => Outgoing.fromJson(json)).toList();
+      totalCount = res['count'] as int? ?? outgoings.length;
     } catch (e) {
       if (e is apiException) {
         error = e.body;
@@ -25,6 +36,10 @@ class OutgoingProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  void setPage(int p) {
+    load(newPage: p);
   }
 
   Future<void> add(Outgoing item) async {

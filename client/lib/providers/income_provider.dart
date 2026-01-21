@@ -8,13 +8,24 @@ class IncomeProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  Future<void> load() async {
+  // Pagination
+  int page = 1;
+  int limit = 20;
+  int totalCount = 0;
+
+  Future<void> load({int? newPage}) async {
+    if (newPage != null) page = newPage;
+
     isLoading = true;
     error = null;
     notifyListeners();
     try {
-      final list = await ApiService.getList('income');
+      final offset = (page - 1) * limit;
+      final res = await ApiService.getPaged('income?limit=$limit&offset=$offset');
+      
+      final list = res['data'] as List;
       incomes = list.map((json) => Income.fromJson(json)).toList();
+      totalCount = res['count'] as int? ?? incomes.length;
     } catch (e) {
       if (e is apiException) {
         error = e.body;
@@ -25,6 +36,10 @@ class IncomeProvider extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  void setPage(int p) {
+    load(newPage: p);
   }
 
   Future<void> add(Income item) async {
