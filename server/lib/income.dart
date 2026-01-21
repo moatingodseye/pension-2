@@ -39,18 +39,34 @@ class IncomeApi extends Access {
 
   Future<Response> insert(Request request) async {
     final userId = request.context['uid'];
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Income model
+    final Income newIncome;
+    try {
+      newIncome = Income.fromJson(body);
+    } catch (e) {
+      return fail('Invalid income data: ${e.toString()}');
+    }
 
-    if (data['amount'] == null || data['startat'] == null) return fail('Missing fields');
-
-    db.execute(
-      '''INSERT INTO income (userid, name, intoid, amount, startat, endat, rate) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, data['name'], data['intoid'], data['amount'], data['startat'], data['endat'], data['rate']],
-    );
-
-    return ok();
+    // Insert using model fields
+    try {
+      db.execute(
+        '''INSERT INTO income (userid, name, intoid, amount, startat, endat, rate) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        [userId, newIncome.name, newIncome.intoAccount, newIncome.amount, newIncome.startAt, newIncome.endAt, newIncome.rate],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> update(Request request, String idStr) async {
@@ -58,19 +74,37 @@ class IncomeApi extends Access {
     final id = int.tryParse(idStr);
     if (id == null) return fail('Invalid ID');
     
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Income model
+    final Income updatedIncome;
+    try {
+      updatedIncome = Income.fromJson(body);
+    } catch (e) {
+      return fail('Invalid income data: ${e.toString()}');
+    }
 
+    // Check ownership
     final check = db.select('SELECT id FROM income WHERE id = ? AND userid = ?', [id, userId]);
     if (check.isEmpty) return fail('Not found');
 
-    db.execute(
-      '''UPDATE income SET name=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
-        WHERE id=?''',
-      [data['name'], data['intoid'], data['amount'], data['startat'], data['endat'], data['rate'], id],
-    );
-
-    return ok();
+    // Update using model fields
+    try {
+      db.execute(
+        '''UPDATE income SET name=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
+          WHERE id=?''',
+        [updatedIncome.name, updatedIncome.intoAccount, updatedIncome.amount, updatedIncome.startAt, updatedIncome.endAt, updatedIncome.rate, id],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> delete(Request request, String idStr) async {

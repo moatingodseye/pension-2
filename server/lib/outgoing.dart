@@ -39,17 +39,34 @@ class OutgoingApi extends Access {
 
   Future<Response> insert(Request request) async {
     final userId = request.context['uid'];
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Outgoing model
+    final Outgoing newOutgoing;
+    try {
+      newOutgoing = Outgoing.fromJson(body);
+    } catch (e) {
+      return fail('Invalid outgoing data: ${e.toString()}');
+    }
 
-    if (data['amount'] == null || data['startat'] == null) return fail('Missing fields');
-
-    db.execute(
-      '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)''',
-      [userId, data['name'], data['fromid'], data['amount'], data['startat'], data['endat'], data['rate']],
-    );
-    return ok();
+    // Insert using model fields
+    try {
+      db.execute(
+        '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        [userId, newOutgoing.name, newOutgoing.fromAccount, newOutgoing.amount, newOutgoing.startAt, newOutgoing.endAt, newOutgoing.rate],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> update(Request request, String idStr) async {
@@ -57,19 +74,37 @@ class OutgoingApi extends Access {
     final id = int.tryParse(idStr);
     if (id == null) return fail('Invalid ID');
     
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Outgoing model
+    final Outgoing updatedOutgoing;
+    try {
+      updatedOutgoing = Outgoing.fromJson(body);
+    } catch (e) {
+      return fail('Invalid outgoing data: ${e.toString()}');
+    }
 
+    // Check ownership
     final check = db.select('SELECT id FROM outgoing WHERE id = ? AND userid = ?', [id, userId]);
     if (check.isEmpty) return fail('Not found');
 
-    db.execute(
-      '''UPDATE outgoing SET name=?, fromid=?, amount=?, startat=?, endat=?, rate=? 
-        WHERE id=?''',
-      [data['name'], data['fromid'], data['amount'], data['startat'], data['endat'], data['rate'], id],
-    );
-
-    return ok();
+    // Update using model fields
+    try {
+      db.execute(
+        '''UPDATE outgoing SET name=?, fromid=?, amount=?, startat=?, endat=?, rate=? 
+          WHERE id=?''',
+        [updatedOutgoing.name, updatedOutgoing.fromAccount, updatedOutgoing.amount, updatedOutgoing.startAt, updatedOutgoing.endAt, updatedOutgoing.rate, id],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> delete(Request request, String idStr) async {

@@ -40,17 +40,34 @@ class TransferApi extends Access {
 
   Future<Response> insert(Request request) async {
     final userId = request.context['uid'];
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Transfer model
+    final Transfer newTransfer;
+    try {
+      newTransfer = Transfer.fromJson(body);
+    } catch (e) {
+      return fail('Invalid transfer data: ${e.toString()}');
+    }
 
-    if (data['amount'] == null || data['startat'] == null) return fail('Missing fields');
-
-    db.execute(
-      '''INSERT INTO transfer (userid, name, fromid, intoid, amount, startat, endat, rate) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-      [userId, data['name'], data['fromid'], data['intoid'], data['amount'], data['startat'], data['endat'], data['rate']],
-    );
-    return ok();
+    // Insert using model fields
+    try {
+      db.execute(
+        '''INSERT INTO transfer (userid, name, fromid, intoid, amount, startat, endat, rate) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        [userId, newTransfer.name, newTransfer.fromAccount, newTransfer.intoAccount, newTransfer.amount, newTransfer.startAt, newTransfer.endAt, newTransfer.rate],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> update(Request request, String idStr) async {
@@ -58,19 +75,37 @@ class TransferApi extends Access {
     final id = int.tryParse(idStr);
     if (id == null) return fail('Invalid ID');
     
-    final body = await request.readAsString();
-    final data = jsonDecode(body);
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await request.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+    
+    // Parse into Transfer model
+    final Transfer updatedTransfer;
+    try {
+      updatedTransfer = Transfer.fromJson(body);
+    } catch (e) {
+      return fail('Invalid transfer data: ${e.toString()}');
+    }
 
+    // Check ownership
     final check = db.select('SELECT id FROM transfer WHERE id = ? AND userid = ?', [id, userId]);
     if (check.isEmpty) return fail('Not found');
 
-    db.execute(
-      '''UPDATE transfer SET name=?, fromid=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
-        WHERE id=?''',
-      [data['name'], data['fromid'], data['intoid'], data['amount'], data['startat'], data['endat'], data['rate'], id],
-    );
-
-    return ok();
+    // Update using model fields
+    try {
+      db.execute(
+        '''UPDATE transfer SET name=?, fromid=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
+          WHERE id=?''',
+        [updatedTransfer.name, updatedTransfer.fromAccount, updatedTransfer.intoAccount, updatedTransfer.amount, updatedTransfer.startAt, updatedTransfer.endAt, updatedTransfer.rate, id],
+      );
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   Future<Response> delete(Request request, String idStr) async {

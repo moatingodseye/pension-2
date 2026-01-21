@@ -12,8 +12,15 @@ class Admin extends Access {
       return unauthorised('Admin only');
     }
 
-    db.execute("UPDATE user SET islocked=1 WHERE id=?", [id]);
-    return ok();
+    final userId = int.tryParse(id);
+    if (userId == null) return fail('Invalid user ID');
+
+    try {
+      db.execute("UPDATE user SET islocked=1 WHERE id=?", [userId]);
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   // Unlock a user (Admin only)
@@ -22,8 +29,15 @@ class Admin extends Access {
       return unauthorised('Admin only');
     }
 
-    db.execute("UPDATE user SET islocked=0 WHERE id=?", [id]);
-    return ok();
+    final userId = int.tryParse(id);
+    if (userId == null) return fail('Invalid user ID');
+
+    try {
+      db.execute("UPDATE user SET islocked=0 WHERE id=?", [userId]);
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 
   // Reset user password (Admin only)
@@ -32,12 +46,28 @@ class Admin extends Access {
       return unauthorised('Admin only');
     }
 
-    final body = jsonDecode(await req.readAsString());
+    final userId = int.tryParse(id);
+    if (userId == null) return fail('Invalid user ID');
+
+    // Parse JSON
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(await req.readAsString());
+    } catch (e) {
+      return fail('Invalid JSON format');
+    }
+
     final newPassword = body['new_password'];
+    if (newPassword == null || newPassword.isEmpty) {
+      return fail('Password is required');
+    }
 
-    final hash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
-    db.execute("UPDATE user SET password=? WHERE id=?", [hash, id]);
-
-    return ok();
+    try {
+      final hash = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+      db.execute("UPDATE user SET password=? WHERE id=?", [hash, userId]);
+      return ok();
+    } catch (e) {
+      return fail(e.toString());
+    }
   }
 }
