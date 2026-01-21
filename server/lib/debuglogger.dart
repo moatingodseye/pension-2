@@ -1,7 +1,7 @@
 import 'package:logging/logging.dart';
 import 'dart:io';
 
-final log = Logger('server');
+final glog = Logger('server');
 
 final logLevel = Platform.environment['PENSION_ENV'] == 'dev' ? 'ALL' : 'OFF';
 
@@ -27,7 +27,7 @@ Future<void> logTo(String message) async {
       body: message,
     );
  */
-    log.info(message);
+    glog.info(message);
 /*     if (response.statusCode != 204) {
       print('logTo: Unexpected status code: ${response.statusCode}');
     }

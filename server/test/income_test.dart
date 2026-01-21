@@ -2,7 +2,6 @@ import 'package:test/test.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:full_pension_server/db.dart';
 import 'package:full_pension_server/income.dart';
-import 'package:shared/models/income.dart';
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 

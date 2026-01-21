@@ -287,7 +287,7 @@ class SimulationService {
     }
     
     stopwatch.stop();
-    log.info('SimulationService: $count years simulated in ${stopwatch.elapsedMilliseconds}ms'); 
+    glog.info('SimulationService: $count years simulated in ${stopwatch.elapsedMilliseconds}ms'); 
     
     return SimulationResult(
         sumPotMin: sumMin,

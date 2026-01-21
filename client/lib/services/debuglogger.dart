@@ -1,14 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
+import 'package:flutter/foundation.dart';
 
-final log = Logger('client');
+final glog = Logger('client');
 
 const logLevel = String.fromEnvironment(
   'LOG_LEVEL',
   defaultValue: 'INFO',
 );
-
-import 'package:flutter/foundation.dart';
 
 void setupClientLogging() {
   if (kReleaseMode) {
@@ -36,7 +35,7 @@ Future<void> logTo(String message) async {
       body: message,
     );
 
-    log.info(message);
+    glog.info(message);
     if (response.statusCode != 204) {
       print('logTo: Unexpected status code: ${response.statusCode}');
     }

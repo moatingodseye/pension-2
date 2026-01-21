@@ -18,7 +18,7 @@ class AuthProvider extends ChangeNotifier {
       await ApiService.initToken(); // ✅ changed: await added
 
       loggedIn = true; 
-      isAdmin = res['isAdmin'] == 1; 
+      isAdmin = res['isAdmin'];// suddenly changed to boolean was int! == 1; 
       if (res['dob'] != null) {
         dob = DateTime.tryParse(res['dob'].toString());
       }

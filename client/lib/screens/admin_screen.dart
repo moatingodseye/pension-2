@@ -150,7 +150,7 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AdminProvider>(context);
-    final users = provider.users;
+    final users = provider.get();
     
     final content = provider.isLoading 
         ? const Center(child: CircularProgressIndicator())

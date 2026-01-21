@@ -20,7 +20,7 @@ class MockAccountProvider extends ChangeNotifier implements AccountProvider {
   ];
 
   @override
-  Future<void> load() async {
+  Future<void> load({int? newPage}) async {
     notifyListeners();
   }
 

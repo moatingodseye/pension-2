@@ -109,7 +109,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 Text('Add Account', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<AccountType>(
-                  value: selectedType,
+                  initialValue: selectedType,
                   items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
                   onChanged: (v) => setState(() => selectedType = v!),
                   decoration: const InputDecoration(labelText: 'Type', border: OutlineInputBorder()),
@@ -201,7 +201,7 @@ class _AccountScreenState extends State<AccountScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
                DropdownButtonFormField<AccountType>(
-                  value: type,
+                  initialValue: type,
                   items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
                   onChanged: (v) => type = v!,
                   decoration: const InputDecoration(labelText: 'Type'),

@@ -29,10 +29,11 @@ class Access {
       headers: {'Content-Type': 'application/json'},);
   }
 
-  Response ok() {
+  Response ok({String? message}) {
     return Response.ok(
       jsonEncode({
         'success': true,
+        if (message != null) 'message': message,
       }),
       headers: {'Content-Type': 'application/json'},
     );

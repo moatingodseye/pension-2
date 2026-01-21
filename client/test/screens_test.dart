@@ -23,7 +23,7 @@ class MockAccountProvider extends ChangeNotifier implements AccountProvider {
   ];
   @override bool isLoading = false;
   @override String? error;
-  @override Future<void> load() async { notifyListeners(); }
+  @override Future<void> load({int? newPage}) async { notifyListeners(); }
   @override dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }
 
@@ -31,7 +31,7 @@ class MockIncomeProvider extends ChangeNotifier implements IncomeProvider {
   @override List<Income> incomes = [];
   @override bool isLoading = false;
   @override String? error;
-  @override Future<void> load() async { notifyListeners(); }
+  @override Future<void> load({int? newPage}) async { notifyListeners(); }
   @override Future<void> add(Income i) async { 
       incomes.add(i.copyWith(id: 1)); 
       notifyListeners(); 
@@ -43,7 +43,7 @@ class MockOutgoingProvider extends ChangeNotifier implements OutgoingProvider {
   @override List<Outgoing> outgoings = [];
   @override bool isLoading = false;
   @override String? error;
-  @override Future<void> load() async { notifyListeners(); }
+  @override Future<void> load({int? newPage}) async { notifyListeners(); }
   @override Future<void> add(Outgoing o) async { 
       outgoings.add(o.copyWith(id: 1)); 
       notifyListeners(); 
@@ -55,7 +55,7 @@ class MockTransferProvider extends ChangeNotifier implements TransferProvider {
   @override List<Transfer> transfers = [];
   @override bool isLoading = false;
   @override String? error;
-  @override Future<void> load() async { notifyListeners(); }
+  @override Future<void> load({int? newPage}) async { notifyListeners(); }
   @override Future<void> add(Transfer t) async { 
       transfers.add(t.copyWith(id: 1)); 
       notifyListeners(); 

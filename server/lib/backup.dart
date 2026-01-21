@@ -26,7 +26,7 @@ Future<Response> backupHandler(Request request) async {
         
       db.execute("VACUUM INTO '$backup'");
     } catch (e) {
-      log.warning("Backup:$e");
+      glog.warning("Backup:$e");
     }
 
     // Read the backup file as bytes to send to the client

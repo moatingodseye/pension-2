@@ -3,24 +3,24 @@ import 'debuglogger.dart';
 
 final monitor1 = createMiddleware(
   requestHandler: (Request request) {
-    log.info('Public:${request.method}${request.url.path}');
+    glog.info('Public:${request.method}${request.url.path}');
     return null; // Continue to next handler
   },
   responseHandler: (Response response) {
     // Run after response is generated
-    log.info('Public:${response.statusCode}');
+    glog.info('Public:${response.statusCode}');
     return response.change(headers: {'X-Custom': 'value'});
   },
 );   
 
 final monitor2 = createMiddleware(
   requestHandler: (Request request) {
-    log.info('Protected:${request.method}${request.url.path}');
+    glog.info('Protected:${request.method}${request.url.path}');
     return null; // Continue to next handler
   },
   responseHandler: (Response response) {
     // Run after response is generated
-    log.info('Protected:${response.statusCode}');
+    glog.info('Protected:${response.statusCode}');
     return response;
 /*
     if (response.isEmpty) return response;

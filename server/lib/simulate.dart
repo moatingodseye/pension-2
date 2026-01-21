@@ -4,48 +4,63 @@ import 'package:shelf/shelf.dart';
 import 'db.dart';
 import 'date.dart';
 import 'debuglogger.dart'; // Import server logger
-
+import 'package:shared/models/account.dart';
+import 'package:shared/models/account_type.dart';
 import 'package:shared/models/user.dart';
-// ... checks ...
+import 'package:shared/models/income.dart';
+import 'package:shared/models/outgoing.dart';
+import 'package:shared/models/transfer.dart';
+import 'package:shared/models/simulation_result.dart';
+
+// Box-Muller transform
+double normal(Random rand) {
+  final u1 = rand.nextDouble();
+  final u2 = rand.nextDouble();
+  return sqrt(-2 * log(u1)) * cos(2 * pi * u2);
+}
 
 Future<Response> simulate(Request req) async {
   final db = pension.getDb();
   final uid = req.context['uid'];
   
-  log.info('Simulate request received for user: $uid');
+  glog.info('Simulate request received for user: $uid');
 
   final userRows = db.select("SELECT * FROM users WHERE id=?", [uid]);
   if (userRows.isEmpty) {
-     log.warning('Simulate failed: User $uid not found');
+     glog.warning('Simulate failed: User $uid not found');
      return Response.notFound('User not found');
   }
-  
+
+  final User user = User.fromJson(userRows.first);
+  final accRow = db.select("SELECT * FROM account WHERE user_id=?",[uid]);
+  final incRow = db.select("SELECT * FROM income WHERE user_id=?",[uid]);
+  final outRow = db.select("SELECT * FROM outpging WHERE user_id=?",[uid]);
+  final traRow = db.select("SELECT * FROM transfer WHERE user_id=?",[uid]);
   // ...
   
-  try {
-    final bodyStr = await req.readAsString();
-    if (bodyStr.isNotEmpty) {
-      final body = jsonDecode(bodyStr);
-      if (body is Map<String, dynamic>) {
-        if (body.containsKey('volatility')) {
-          volatility = (body['volatility'] as num).toDouble();
-        }
-        if (body.containsKey('rate_adjustment')) {
-          rateAdjustment = (body['rate_adjustment'] as num).toDouble();
-        }
-      }
-    }
-    log.info('Simulation params: vol=$volatility, rateAdj=$rateAdjustment');
-  } catch (e) {
-    // Ignore body parsing errors, use defaults
-    log.warning('Error parsing simulation params: $e');
-  }
+  final bodyStr = await req.readAsString();
+
+  final decoded = bodyStr.isNotEmpty ? jsonDecode(bodyStr) : null;
+
+  final Map<String, dynamic>? body =
+      decoded is Map<String, dynamic> ? decoded : null;
+
+  final double volatility = body != null
+      ? (body['volatility'] as num?)?.toDouble() ?? 1.0
+      : 1.0;
+
+  final double rateAdjustment = body != null
+      ? (body['rate_adjustment'] as num?)?.toDouble() ?? 1.0
+      : 1.0;
+
+  glog.info('Simulation params: vol=$volatility, rateAdj=$rateAdjustment');
+
 
   // ... (Models mapping) ...
-  final accounts = accRows.map((r) => Account.fromJson(r)).toList();
-  final incomes = incRows.map((r) => Income.fromJson(r)).toList();
-  final outgoings = outRows.map((r) => Outgoing.fromJson(r)).toList();
-  final transfers = trRows.map((r) => Transfer.fromJson(r)).toList();
+  final accounts = accRow.map((r) => Account.fromJson(r)).toList();
+  final incomes = incRow.map((r) => Income.fromJson(r)).toList();
+  final outgoings = outRow.map((r) => Outgoing.fromJson(r)).toList();
+  final transfers = traRow.map((r) => Transfer.fromJson(r)).toList();
 
   if (accounts.isEmpty) {
      return Response.ok(jsonEncode(SimulationResult(
@@ -66,7 +81,7 @@ Future<Response> simulate(Request req) async {
       earliestDate = minDate;
   }
   
-  DateTime endDate = addYear(dob, maxYear);
+  DateTime endDate = addYear(user.dob!, maxYear);
   int count = yearsBetween(earliestDate, endDate).toInt(); 
   if (count < 0) count = 0;
 
@@ -81,7 +96,7 @@ Future<Response> simulate(Request req) async {
   
   List<double> sumValues = List.filled(count, 0);
   List<double> incomeValues = List.filled(count, 0);
-  List<double> ages = List.generate(count, (i) => yearsBetween(dob, addYear(earliestDate, i)).toDouble());
+  List<double> ages = List.generate(count, (i) => yearsBetween(user.dob!, addYear(earliestDate, i)).toDouble());
 
   // Helper: Check Range
   bool isInRange(int yearIndex, String startAt, String? endAt) {
@@ -94,7 +109,7 @@ Future<Response> simulate(Request req) async {
         s = DateTime.tryParse(startAt);
     } else {
         int? age = int.tryParse(startAt);
-        if (age != null) s = addYear(dob, age);
+        if (age != null) s = addYear(user.dob!, age);
     }
     
     // Parse End
@@ -103,7 +118,7 @@ Future<Response> simulate(Request req) async {
             e = DateTime.tryParse(endAt);
         } else {
             int? age = int.tryParse(endAt);
-            if (age != null) e = addYear(dob, age);
+            if (age != null) e = addYear(user.dob!, age);
         }
     }
 
@@ -136,7 +151,7 @@ Future<Response> simulate(Request req) async {
           if (isInRange(y, inc.startAt, inc.endAt)) {
               double amount = inc.amount * 12; 
               int? intoId = inc.intoAccount;
-              if (intoId != null && accountSeries.containsKey(intoId)) {
+              if (accountSeries.containsKey(intoId)) {
                   accountSeries[intoId]![y] += amount;
               }
               yearIncomeTotal += amount; 
@@ -148,7 +163,7 @@ Future<Response> simulate(Request req) async {
           if (isInRange(y, out.startAt, out.endAt)) {
               double amount = out.amount * 12;
               int? fromId = out.fromAccount;
-              if (fromId != null && accountSeries.containsKey(fromId)) {
+              if (accountSeries.containsKey(fromId)) {
                   accountSeries[fromId]![y] -= amount;
                   if (accountSeries[fromId]![y] < 0) accountSeries[fromId]![y] = 0;
               }

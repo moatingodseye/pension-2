@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/transfer.dart';
-import 'db.dart';
 import 'access.dart';
 
 class TransferApi extends Access {

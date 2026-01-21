@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:shared/models/user.dart';
 import '../services/apiService.dart';
 import '../services/aprException.dart';
+import '../services/debugLogger.dart';
 
 class AdminProvider extends ChangeNotifier {
-  List<User> users = [];
+  List<User> _user = [];
   bool isLoading = false;
   String? error;
+
+  List<User> get() {
+    return _user;
+  }
 
   Future<void> loadUsers() async {
     isLoading = true;
@@ -14,7 +19,7 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final list = await ApiService.getList('user');
-      users = list.map((json) => User.fromJson(json)).toList();
+      _user = list.map((json) => User.fromJson(json)).toList();
     } catch (e) {
        if (e is apiException) {
          error = e.body;

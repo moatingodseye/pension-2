@@ -3,7 +3,6 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
-import 'db.dart';
 import 'access.dart';
 
 class AccountApi extends Access {

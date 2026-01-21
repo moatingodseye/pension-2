@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:bcrypt/bcrypt.dart';
-import 'package:sqlite3/sqlite3.dart';
 import 'package:shared/models/user.dart' as models;
-import 'db.dart';
 import 'access.dart';
 
 class UserApi extends Access {
@@ -61,7 +59,7 @@ class UserApi extends Access {
           newUser.isLocked ? 1 : 0
         ],
       );
-      return ok();
+      return ok(message:'User registered, now unlock them for usage');
     } catch(e) {
       return error(e.toString());
     }

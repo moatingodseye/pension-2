@@ -17,24 +17,6 @@ class SimulationChart extends StatelessWidget {
   final double xAxisMin;
   final double xAxisMax;
   // removed isIncomeChart
-
-  const SimulationChart({
-    super.key,
-    required this.sumPot,
-    required this.income,
-    required this.pots,
-    required this.mcMin,
-    required this.mcMax,
-    required this.ages,
-    required this.showLines,
-    required this.sumPotMin,
-    required this.sumPotMax,
-    required this.incomeMin,
-    required this.incomeMax,
-    required this.xAxisMin,
-    required this.xAxisMax,
-  });
-
   final List<List<double>>? montePaths; // New parameter
 
   const SimulationChart({

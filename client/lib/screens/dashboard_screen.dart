@@ -8,6 +8,7 @@ import '../providers/outgoing_provider.dart';
 import 'account_screen.dart';
 import 'income_screen.dart';
 import 'outgoing_screen.dart';
+import '../models/account_type.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

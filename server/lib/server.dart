@@ -68,10 +68,10 @@ void main() async {
 
   // --- Protected routes ---
   prot
-    ..mount('/account', account.router)
-    ..mount('/income', income.router)
-    ..mount('/outgoing', outgoing.router)
-    ..mount('/transfer', transfer.router)
+    ..mount('/account', account.router.call)
+    ..mount('/income', income.router.call)
+    ..mount('/outgoing', outgoing.router.call)
+    ..mount('/transfer', transfer.router.call)
 
     ..post('/user', user.insert)
     ..get('/user', user.select)
