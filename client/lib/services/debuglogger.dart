@@ -8,8 +8,14 @@ const logLevel = String.fromEnvironment(
   defaultValue: 'INFO',
 );
 
+import 'package:flutter/foundation.dart';
+
 void setupClientLogging() {
-  Logger.root.level = Level.ALL;
+  if (kReleaseMode) {
+    Logger.root.level = Level.OFF;
+  } else {
+    Logger.root.level = Level.ALL;
+  }
 
   Logger.root.onRecord.listen((r) {
     // Shows in browser console

@@ -9,6 +9,8 @@ import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
 import '../services/simulation_service.dart';
 
+import '../services/debugLogger.dart';
+
 class SimulationProvider extends ChangeNotifier {
   SimulationResult? result;
   bool isLoading = false;
@@ -25,19 +27,22 @@ class SimulationProvider extends ChangeNotifier {
     required List<Transfer> transfers,
     required DateTime dob, // Needed for ages
   }) async {
+    log.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment)');
     isLoading = true;
     error = null;
     notifyListeners();
     try {
       // 1. Server Run (Official Data)
+      log.info('Fetching official simulation from server...');
       final res = await ApiService.post('simulate', {
         'volatility': volatility,
         'rate_adjustment': rateAdjustment,
       });
       final serverResult = SimulationResult.fromJson(res);
+      log.info('Server simulation received.');
 
       // 2. Client Run (Visual Cloud)
-      // We run the local simulation just to get the 'montePaths'
+      log.info('Running client-side Monte Carlo (${accounts.length} accounts)...');
       final clientResult = SimulationService.run(
         accounts: accounts,
         incomes: incomes,
@@ -47,6 +52,7 @@ class SimulationProvider extends ChangeNotifier {
         volatility: volatility,
         rateAdjustment: rateAdjustment,
       );
+      log.info('Client-side simulation completed.');
 
       // 3. Merge
       // We keep server stats but overlay client monte paths
@@ -69,6 +75,7 @@ class SimulationProvider extends ChangeNotifier {
       // Reset showLines based on pots
       showLines = List<bool>.filled(3 + result!.pots.length, true);
     } catch (e) {
+      log.severe('Simulation failed: $e');
       if (e is apiException) {
         error = e.body;
       } else {

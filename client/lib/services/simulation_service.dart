@@ -1,11 +1,14 @@
 import 'dart:math';
+import 'package:logging/logging.dart'; // Direct import of Logger, or use helper?
+// The helper debugLogger exports 'log'. Let's use that.
+import 'debugLogger.dart'; 
+
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
 import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
 import 'package:shared/models/simulation_result.dart';
-import '../utils/date_utils.dart'; // We need date helpers
 
 class SimulationService {
   
@@ -25,6 +28,10 @@ class SimulationService {
     double volatility = 0.12,
     double rateAdjustment = 0.0,
   }) {
+    // We can't access instance members in static method efficiently without passing logger?
+    // 'log' from debugLogger is global.
+    final stopwatch = Stopwatch()..start();
+    
     // ---------------------------------------------------------
     // 1. SETUP & UTILS
     // ---------------------------------------------------------
@@ -98,12 +105,6 @@ class SimulationService {
 
     // Map<AccountId, List<double>>
     Map<int, List<double>> accountSeries = {};
-    // Temporary ID generation for accounts without IDs (client-side new items)
-    // We'll use a negative counter for temp IDs if needed, but optimally they have IDs.
-    // Assuming UI filters out incomplete accounts or provider assigns IDs.
-    // If IDs are null, we skip them as per server logic, or we assign temp IDs.
-    // Let's rely on provider ensuring IDs or use index as fallback if needed.
-    // Actually, server skips null IDs. We will do same.
 
     for (var a in accounts) {
       if (a.id == null) continue;
@@ -188,10 +189,7 @@ class SimulationService {
     // 3. MONTE CARLO SIMULATION
     // ---------------------------------------------------------
     
-    int mcRuns = 200; // Client-side performance: keep reasonable (User said "thousands", but lets start with 200 for perf check)
-                      // Actually, let's do 1000 but sample later? Or just do 200?
-                      // If user wants "nice output", density matters. Let's try 300.
-    mcRuns = 300; 
+    int mcRuns = 300; 
 
     List<double> mcMin = List.filled(count, 0.0);
     List<double> mcMax = List.filled(count, 0.0);
@@ -238,19 +236,8 @@ class SimulationService {
                    pensionTotal += bal;
                }
                
-               // Non-pension accounts are deterministic in this simplified MC (taken from base run), 
-               // OR we should ideally simulate them too if volatility applied? 
-               // Server logic only iterates pensionAccounts for MC. It effectively ignores non-pension assets in the MC min/max?
-               // Let's double check server logic.
-               // Server: creates mcResults[run][y] = yearTotal; where yearTotal is SUM of PENSION accounts.
-               // BUT sumValues[y] includes ALL accounts.
-               // So if we overlay MC on top of Sum, we need to be careful.
-               // If the user has non-pension savings, the MC range will look "lower" if it only counts pension.
-               // CORRECT FIX: specific MC path should include (Pension_MC + NonPension_Fixed).
-               
                double nonPensionTotal = 0;
                // Get non-pension total from the deterministic run for this year
-               // This assumes non-pension returns are fixed/deterministic.
                for (var a in accounts) {
                    if (a.type != AccountType.pension && a.id != null) {
                        nonPensionTotal += accountSeries[a.id!]![y];
@@ -264,12 +251,20 @@ class SimulationService {
         
         montePaths = mcResults;
 
-        // Calc Min/Max
+        // Calc P25 and P75 for IQR
         for(int y=0; y<count; y++) {
-            for(int r=0; r<mcRuns; r++) {
-                 double v = mcResults[r][y];
-                 if(v < mcMin[y]) mcMin[y] = v;
-                 if(v > mcMax[y]) mcMax[y] = v;
+             List<double> yearValues = [];
+             for(int r=0; r<mcRuns; r++) {
+                 yearValues.add(mcResults[r][y]);
+             }
+             yearValues.sort();
+             
+             if (yearValues.isNotEmpty) {
+                 int p25Index = (mcRuns * 0.25).floor().clamp(0, mcRuns - 1);
+                 int p75Index = (mcRuns * 0.75).floor().clamp(0, mcRuns - 1);
+                 
+                 mcMin[y] = yearValues[p25Index];
+                 mcMax[y] = yearValues[p75Index];
             }
         }
     }
@@ -290,7 +285,10 @@ class SimulationService {
         if(mcLow < sumMin) sumMin = mcLow;
         if(mcHigh > sumMax) sumMax = mcHigh;
     }
-
+    
+    stopwatch.stop();
+    log.info('SimulationService: $count years simulated in ${stopwatch.elapsedMilliseconds}ms'); 
+    
     return SimulationResult(
         sumPotMin: sumMin,
         sumPotMax: sumMax,

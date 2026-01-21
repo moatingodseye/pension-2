@@ -1,11 +1,9 @@
 import 'package:logging/logging.dart';
+import 'dart:io';
 
 final log = Logger('server');
 
-const logLevel = String.fromEnvironment(
-  'LOG_LEVEL',
-  defaultValue: 'INFO',
-);
+final logLevel = Platform.environment['PENSION_ENV'] == 'dev' ? 'ALL' : 'OFF';
 
 void setupClientLogging() {
   Logger.root.level = Level.ALL;

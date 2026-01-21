@@ -3,44 +3,25 @@ import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'db.dart';
 import 'date.dart';
-import 'package:shared/models/user.dart';
-import 'package:shared/models/account.dart';
-import 'package:shared/models/account_type.dart';
-import 'package:shared/models/income.dart';
-import 'package:shared/models/outgoing.dart';
-import 'package:shared/models/transfer.dart';
-import 'package:shared/models/simulation_result.dart';
+import 'debuglogger.dart'; // Import server logger
 
-// Box-Muller transform
-double normal(Random rand) {
-  final u1 = rand.nextDouble();
-  final u2 = rand.nextDouble();
-  return sqrt(-2 * log(u1)) * cos(2 * pi * u2);
-}
+import 'package:shared/models/user.dart';
+// ... checks ...
 
 Future<Response> simulate(Request req) async {
   final db = pension.getDb();
   final uid = req.context['uid'];
+  
+  log.info('Simulate request received for user: $uid');
+
   final userRows = db.select("SELECT * FROM users WHERE id=?", [uid]);
-  if (userRows.isEmpty) return Response.notFound('User not found');
-  
-  final user = User(
-    id: userRows.first['id'], 
-    username: userRows.first['username'] ?? '', 
-    dob: DateTime.parse(userRows.first['dob'])
-  );
-  
-  // Simulation requires user DOB
-  if (user.dob == null) {
-    return Response.badRequest(body: 'User DOB is required for simulation');
+  if (userRows.isEmpty) {
+     log.warning('Simulate failed: User $uid not found');
+     return Response.notFound('User not found');
   }
-  final dob = user.dob!;
-
-  // Parse Request Body for Parameters
-  double volatility = 0.12;
-  double rateAdjustment = 0.0;
-  // double inflation = 0.0; // Not using yet, but could be added
-
+  
+  // ...
+  
   try {
     final bodyStr = await req.readAsString();
     if (bodyStr.isNotEmpty) {
@@ -54,9 +35,10 @@ Future<Response> simulate(Request req) async {
         }
       }
     }
+    log.info('Simulation params: vol=$volatility, rateAdj=$rateAdjustment');
   } catch (e) {
     // Ignore body parsing errors, use defaults
-    print('Error parsing simulation params: $e');
+    log.warning('Error parsing simulation params: $e');
   }
 
   // ... (Models mapping) ...
@@ -247,10 +229,18 @@ Future<Response> simulate(Request req) async {
       }
       
       for(int y=0; y<count; y++) {
+          List<double> yearValues = [];
           for(int r=0; r<mcRuns; r++) {
-               double v = mcResults[r][y];
-               if(v < mcMin[y]) mcMin[y] = v;
-               if(v > mcMax[y]) mcMax[y] = v;
+              yearValues.add(mcResults[r][y]);
+          }
+          yearValues.sort();
+          if (yearValues.isNotEmpty) {
+             // 25th & 75th percentile
+             int p25Index = (mcRuns * 0.25).floor().clamp(0, mcRuns - 1);
+             int p75Index = (mcRuns * 0.75).floor().clamp(0, mcRuns - 1);
+             
+             mcMin[y] = yearValues[p25Index];
+             mcMax[y] = yearValues[p75Index];
           }
       }
   }
