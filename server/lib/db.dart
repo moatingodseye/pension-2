@@ -100,7 +100,7 @@ class PensionDb {
 /*     db.execute('''
       CREATE TABLE IF NOT EXISTS state_pensions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
+        userId INTEGER,
         start_age INTEGER,
         amount REAL,
         interest_rate REAL

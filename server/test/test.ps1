@@ -9,7 +9,7 @@ Write-Host "=== API TEST SCRIPT START ==="
 if (Test-Path $DbFile) {
     Write-Host "Ensuring admin user exists..."
     $sql = @"
-INSERT OR IGNORE INTO users (username, password, dob, isadmin)
+INSERT OR IGNORE INTO user (username, password, dob, isadmin)
 VALUES (
   'admin',
   '\$2b\$10\$C9z8dD6WwU9sK9fKqvZkMuZ9q1QYx0G0yYy1YyYyYyYyYyYyY',
@@ -59,7 +59,7 @@ Write-Host "Admin locking user..."
 Invoke-RestMethod -Method Post -Uri "$BaseUrl/admin/lock_user" `
   -Headers @{ Authorization = "Bearer $AdminToken" } `
   -ContentType "application/json" `
-  -Body '{ "user_id": 2 }'
+  -Body '{ "userId": 2 }'
 
 # 6. Admin resets user password
 Write-Host "Admin resetting password..."
@@ -68,7 +68,7 @@ Invoke-RestMethod -Method Post -Uri "$BaseUrl/admin/reset_password" `
   -ContentType "application/json" `
   -Body @"
 {
-  "user_id": 2,
+  "userId": 2,
   "new_password": "newpass123"
 }
 "@

@@ -14,7 +14,7 @@ Future<Response> createPensionPot(Request req) async {
   }
 
   db.execute(
-    "INSERT INTO pension_pots (user_id, name, amount, date, interest_rate) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO pension_pots (userId, name, amount, date, interest_rate) VALUES (?, ?, ?, ?, ?)",
     [userId, body['name'], body['amount'], body['date'], body['interest_rate']],
   );
 
@@ -47,7 +47,7 @@ Future<Response> updatePensionPot(Request req, String id) async {
   }
 
   // Ensure the pension pot exists for the given user and id
-  final existingPot = db.select("SELECT * FROM pension_pots WHERE id=? AND user_id=?", [id, userId]);
+  final existingPot = db.select("SELECT * FROM pension_pots WHERE id=? AND userId=?", [id, userId]);
 
   if (existingPot.isEmpty) {
     return Response(
@@ -62,7 +62,7 @@ Future<Response> updatePensionPot(Request req, String id) async {
 
   // Update the pension pot with the new values
   db.execute(
-    "UPDATE pension_pots SET name=?, amount=?, date=?, interest_rate=? WHERE id=? AND user_id=?",
+    "UPDATE pension_pots SET name=?, amount=?, date=?, interest_rate=? WHERE id=? AND userId=?",
     [body['name'], body['amount'], body['date'], body['interest_rate'], id, userId],
   );
 
@@ -79,7 +79,7 @@ Future<Response> updatePensionPot(Request req, String id) async {
 // List all pension pots
 Future<Response> listPensionPots(Request req) async {
   final Database db = pension.getDb();
-  final rows = db.select("SELECT * FROM pension_pots WHERE user_id=?", [req.context['uid']]);
+  final rows = db.select("SELECT * FROM pension_pots WHERE userId=?", [req.context['uid']]);
   final data = rows.map((r) => {
     'id': r['id'],
     'name': r['name'],
@@ -94,7 +94,7 @@ Future<Response> listPensionPots(Request req) async {
 // Delete a pension pot
 Future<Response> deletePensionPot(Request req, String id) async {
   final Database db = pension.getDb();
-  db.execute("DELETE FROM pension_pots WHERE id=? AND user_id=?", [id, req.context['uid']]);
+  db.execute("DELETE FROM pension_pots WHERE id=? AND userId=?", [id, req.context['uid']]);
   return Response(
     200,
     body: jsonEncode({

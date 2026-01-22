@@ -6,13 +6,14 @@ class SimulationResult {
   final double xAxisMin;
   final double xAxisMax;
   
-  final List<double> sum;
-  final List<double> income;
-  final List<List<double>> pots;
-  final List<double> monteMin;
-  final List<double> monteMax;
-  final List<List<double>>? montePaths; // New field for full traces
-  final List<double> ages;
+  final List<String> nameList;
+  final List<double> sumList;
+  final List<double> incomeList;
+  final List<List<double>> accountMap;
+  final List<double> monteMinList;
+  final List<double> monteMaxList;
+  final List<List<double>>? montePath; // New field for full traces
+  final List<double> ageList;
 
   SimulationResult({
     required this.sumPotMin,
@@ -21,33 +22,36 @@ class SimulationResult {
     required this.incomeMax,
     required this.xAxisMin,
     required this.xAxisMax,
-    required this.sum,
-    required this.income,
-    required this.pots,
-    required this.monteMin,
-    required this.monteMax,
-    this.montePaths, // Optional
-    required this.ages,
+    required this.nameList,
+    required this.sumList,
+    required this.incomeList,
+    required this.accountMap,
+    required this.monteMinList,
+    required this.monteMaxList,
+    this.montePath, // Optional
+    required this.ageList,
   });
 
   factory SimulationResult.fromJson(Map<String, dynamic> json) {
-    return SimulationResult(
+    SimulationResult test = SimulationResult(
       sumPotMin: (json['sumPotMin'] as num).toDouble(),
       sumPotMax: (json['sumPotMax'] as num).toDouble(),
       incomeMin: (json['incomeMin'] as num).toDouble(),
       incomeMax: (json['incomeMax'] as num).toDouble(),
       xAxisMin: (json['xAxisMin'] as num).toDouble(),
       xAxisMax: (json['xAxisMax'] as num).toDouble(),
-      sum: (json['sum'] as List).map((e) => (e as num).toDouble()).toList(),
-      income: (json['income'] as List).map((e) => (e as num).toDouble()).toList(),
-      pots: (json['pots'] as List).map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList(),
-      monteMin: (json['monteMin'] as List).map((e) => (e as num).toDouble()).toList(),
-      monteMax: (json['monteMax'] as List).map((e) => (e as num).toDouble()).toList(),
-      montePaths: json['montePaths'] != null 
-          ? (json['montePaths'] as List).map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList()
+      nameList: (json['name'] as List).map((e) => (e as String)).toList(),
+      sumList: (json['sum'] as List).map((e) => (e as num).toDouble()).toList(),
+      incomeList: (json['income'] as List).map((e) => (e as num).toDouble()).toList(),
+      accountMap: (json['account'] as List).map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList(),
+      monteMinList: (json['monteMin'] as List).map((e) => (e as num).toDouble()).toList(),
+      monteMaxList: (json['monteMax'] as List).map((e) => (e as num).toDouble()).toList(),
+      montePath: json['montePath'] != null 
+          ? (json['montePath'] as List).map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList()
           : null,
-      ages: (json['ages'] as List).map((e) => (e as num).toDouble()).toList(),
+      ageList: (json['age'] as List).map((e) => (e as num).toDouble()).toList(),
     );
+    return test;
   }
 
   Map<String, dynamic> toJson() {
@@ -58,13 +62,14 @@ class SimulationResult {
       'incomeMax': incomeMax,
       'xAxisMin': xAxisMin,
       'xAxisMax': xAxisMax,
-      'sum': sum,
-      'income': income,
-      'pots': pots,
-      'monteMin': monteMin,
-      'monteMax': monteMax,
-      if (montePaths != null) 'montePaths': montePaths,
-      'ages': ages,
+      'name': nameList,
+      'sum': sumList,
+      'income': incomeList,
+      'account': accountMap,
+      'monteMin': monteMinList,
+      'monteMax': monteMaxList,
+      if (montePath != null) 'montePath': montePath,
+      'age': ageList,
     };
   }
 }

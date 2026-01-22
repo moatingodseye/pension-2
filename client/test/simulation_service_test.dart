@@ -15,16 +15,17 @@ void main() {
         rate: 0.10, // 10%
       );
 
-      final result = SimulationService.run(
-        accounts: [acc],
-        incomes: [],
-        outgoings: [],
-        transfers: [],
+      SimulationService sim = new SimulationService();
+      final result = sim.run(
+        accountList: [acc],
+        incomeList: [],
+        outgoingList: [],
+        transferList: [],
         dob: DateTime(1980, 1, 1),
       );
 
-      expect(result.pots, hasLength(1));
-      final pot = result.pots[0];
+      expect(result.accountMap, hasLength(1));
+      final pot = result.accountMap[0];
       
       // Year 0: Initial amount 10000
       // Year 1: 10000 * 1.10 = 11000
@@ -49,23 +50,24 @@ void main() {
         rate: 0.05,
       );
 
-      final result = SimulationService.run(
-        accounts: [acc],
-        incomes: [],
-        outgoings: [],
-        transfers: [],
+      SimulationService sim = new SimulationService();
+      final result = sim.run(
+        accountList: [acc],
+        incomeList: [],
+        outgoingList: [],
+        transferList: [],
         dob: DateTime(1980, 1, 1),
         volatility: 0.20, // High volatility
       );
       
-      expect(result.montePaths, isNotNull);
-      expect(result.montePaths!.length, 300); // We set 300 runs
+      expect(result.montePath, isNotNull);
+      expect(result.montePath!.length, 300); // We set 300 runs
       
-      expect(result.monteMin, isNotEmpty);
-      expect(result.monteMax, isNotEmpty);
+      expect(result.monteMinList, isNotEmpty);
+      expect(result.monteMaxList, isNotEmpty);
       
       // P75 should be >= P25
-      expect(result.monteMax[0], greaterThanOrEqualTo(result.monteMin[0]));
+      expect(result.monteMaxList[0], greaterThanOrEqualTo(result.monteMinList[0]));
     });
   });
 }

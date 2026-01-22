@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class SimulationChart extends StatelessWidget {
-  final List<double> sumPot;
-  final List<double> income;
-  final List<List<double>> pots;
-  final List<double> mcMin;
-  final List<double> mcMax;
-  final List<double> ages;
-  final List<bool> showLines;
+  final List<String> nameList;
+  final List<double> sumList;
+  final List<double> incomeList;
+  final List<List<double>> accountMap;
+  final List<double> mcMinList;
+  final List<double> mcMaxList;
+  final List<double> ageList;
+  final List<bool> showList;
 
   final double sumPotMin;
   final double sumPotMax;
@@ -17,18 +18,19 @@ class SimulationChart extends StatelessWidget {
   final double xAxisMin;
   final double xAxisMax;
   // removed isIncomeChart
-  final List<List<double>>? montePaths; // New parameter
+  final List<List<double>>? montePath; // New parameter
 
   const SimulationChart({
     super.key,
-    required this.sumPot,
-    required this.income,
-    required this.pots,
-    required this.mcMin,
-    required this.mcMax,
-    this.montePaths, // Optional
-    required this.ages,
-    required this.showLines,
+    required this.nameList,
+    required this.sumList,
+    required this.incomeList,
+    required this.accountMap,
+    required this.mcMinList,
+    required this.mcMaxList,
+    this.montePath, // Optional
+    required this.ageList,
+    required this.showList,
     required this.sumPotMin,
     required this.sumPotMax,
     required this.incomeMin,
@@ -43,16 +45,18 @@ class SimulationChart extends StatelessWidget {
     // Visual Value = Real Income * Factor
     final double incomeFactor = (incomeMax == 0) ? 1.0 : (sumPotMax / incomeMax);
 
-    List<LineChartBarData> lines = [];
+    List<String> name = [];
+    List<LineChartBarData> line = [];
 
     // 0. VISUAL CLOUD (Client-Side Monte Carlo) - Render First (Background)
-    if (montePaths != null && montePaths!.isNotEmpty && showLines.length > 2 && showLines[2]) {
+    if (montePath != null && montePath!.isNotEmpty && showList.length > 2 && showList[2]) {
       // Sample if too many to prevent UI freeze? User asked for "thousands" but FL Chart might struggle.
       // Let's render as is, efficiently.
-      for (var path in montePaths!) {
-        if (path.length <= ages.length) {
-          lines.add(LineChartBarData(
-            spots: path.asMap().entries.map((e) => FlSpot(ages[e.key], e.value)).toList(),
+      for (var path in montePath!) {
+        if (path.length <= ageList.length) {
+          name.add('Age');
+          line.add(LineChartBarData(
+            spots: path.asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
             isCurved: false, // Straight lines for cloud usually look better/performant
             color: Colors.blue.withOpacity(0.03), // Very low opacity for density
             barWidth: 1,
@@ -65,17 +69,19 @@ class SimulationChart extends StatelessWidget {
     }
 
     // 1. Monte Carlo shaded area (Pot Scale)
-    if (showLines.length > 2 && showLines[2] && mcMin.isNotEmpty && mcMax.isNotEmpty && ages.length >= mcMin.length) {
-      lines.add(LineChartBarData(
-        spots: mcMax.asMap().entries.map((e) => FlSpot(ages[e.key], e.value)).toList(),
+    if (showList.length > 2 && showList[2] && mcMinList.isNotEmpty && mcMaxList.isNotEmpty && ageList.length >= mcMinList.length) {
+      name.add('Max');
+      line.add(LineChartBarData(
+        spots: mcMaxList.asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
         isCurved: true,
         color: Colors.grey.withOpacity(0.3),
         barWidth: 0,
         belowBarData: BarAreaData(show: true, color: Colors.grey.withOpacity(0.3)),
         dotData: FlDotData(show: false),
       ));
-      lines.add(LineChartBarData(
-        spots: mcMin.asMap().entries.map((e) => FlSpot(ages[e.key], e.value)).toList(),
+      name.add('Min');
+      line.add(LineChartBarData(
+        spots: mcMinList.asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
         isCurved: true,
         color: Colors.transparent,
         barWidth: 0,
@@ -85,10 +91,11 @@ class SimulationChart extends StatelessWidget {
     }
 
     // 2. Individual pots (Pot Scale)
-    for (int i = 0; i < pots.length; i++) {
-      if (i + 3 < showLines.length && showLines[i + 3] && pots[i].isNotEmpty && ages.length >= pots[i].length) {
-        lines.add(LineChartBarData(
-          spots: pots[i].asMap().entries.map((e) => FlSpot(ages[e.key], e.value)).toList(),
+    for (int i = 0; i < accountMap.length; i++) {
+      if (i + 3 < showList.length && showList[i + 3] && accountMap[i].isNotEmpty && ageList.length >= accountMap[i].length) {
+        name.add(nameList[i]);
+        line.add(LineChartBarData(
+          spots: accountMap[i].asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
           isCurved: true,
           color: Colors.primaries[i % Colors.primaries.length].withOpacity(0.5),
           barWidth: 2,
@@ -98,9 +105,10 @@ class SimulationChart extends StatelessWidget {
     }
 
     // 3. Sum Pot (Pot Scale)
-    if (showLines[0] && sumPot.isNotEmpty && ages.length >= sumPot.length) {
-      lines.add(LineChartBarData(
-        spots: sumPot.asMap().entries.map((e) => FlSpot(ages[e.key], e.value)).toList(),
+    if (showList[0] && sumList.isNotEmpty && ageList.length >= sumList.length) {
+      name.add('Sum');
+      line.add(LineChartBarData(
+        spots: sumList.asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
         isCurved: true,
         color: Colors.blue,
         barWidth: 3,
@@ -110,10 +118,11 @@ class SimulationChart extends StatelessWidget {
 
     // 4. Income (Normalized Scale -> Visual: Pot Scale)
     // We plot: Real Income * Factor
-    if (showLines[1] && income.isNotEmpty && ages.length >= income.length) {
-      lines.add(LineChartBarData(
-        spots: income.asMap().entries
-            .map((e) => FlSpot(ages[e.key], e.value * incomeFactor))
+    if (showList[1] && incomeList.isNotEmpty && ageList.length >= incomeList.length) {
+      name.add('Income');
+      line.add(LineChartBarData(
+        spots: incomeList.asMap().entries
+            .map((e) => FlSpot(ageList[e.key], e.value * incomeFactor))
             .toList(),
         isCurved: true,
         color: Colors.orange,
@@ -129,7 +138,7 @@ class SimulationChart extends StatelessWidget {
       width: double.infinity,
       child: LineChart(
         LineChartData(
-          lineBarsData: lines,
+          lineBarsData: line,
           minY: sumPotMin, // Base Scale Min
           maxY: sumPotMax, // Base Scale Max
           minX: xAxisMin,
@@ -189,16 +198,18 @@ class SimulationChart extends StatelessWidget {
                   // Identify Income line by its unique dashArray property
                   bool isIncomeLine = spot.bar.dashArray != null;
                   
+                  int index = spot.barIndex;
                   double value = spot.y;
-                  String label = "Pot";
+                  String label;
+                  label = name[index];
                   Color color = spot.bar.color ?? Colors.blue;
 
                   if (isIncomeLine) {
                     value = spot.y / incomeFactor; // Denormalize
-                    label = "Income";
+//                    label = "Income";
                     color = Colors.orange;
-                  } else if (spot.bar.barWidth == 0) {
-                     label = "MC";
+//                  } else if (spot.bar.barWidth == 0) {
+                     //label = "MC";
                   }
 
                   return LineTooltipItem(

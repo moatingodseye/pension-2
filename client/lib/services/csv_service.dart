@@ -60,13 +60,13 @@ class CsvService {
       final incomeValues = result.income;
       final mcMin = result.monteMin;
       final mcMax = result.monteMax;
-      final ages = result.ages;
+      final ageList = result.ageList;
       
-      int count = ages.length;
+      int count = ageList.length;
       if (sunValues.length < count) count = sunValues.length;
       
       for (int i = 0; i < count; i++) {
-        buffer.writeln('${ages[i].toStringAsFixed(1)},${sunValues[i].toStringAsFixed(2)},${incomeValues[i].toStringAsFixed(2)},${mcMin.isNotEmpty ? mcMin[i].toStringAsFixed(2) : ""},${mcMax.isNotEmpty ? mcMax[i].toStringAsFixed(2) : ""}');
+        buffer.writeln('${ageList[i].toStringAsFixed(1)},${sunValues[i].toStringAsFixed(2)},${incomeValues[i].toStringAsFixed(2)},${mcMin.isNotEmpty ? mcMin[i].toStringAsFixed(2) : ""},${mcMax.isNotEmpty ? mcMax[i].toStringAsFixed(2) : ""}');
       }
     }
     

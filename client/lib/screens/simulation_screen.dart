@@ -55,10 +55,10 @@ class _SimulationScreenState extends State<SimulationScreen> {
     provider.run(
       volatility: _volatility,
       rateAdjustment: _rateAdjustment,
-      accounts: accFn.accounts,
-      incomes: incFn.incomes,
-      outgoings: outFn.outgoings,
-      transfers: trFn.transfers,
+      accountList: accFn.accounts,
+      incomeList: incFn.incomes,
+      outgoingList: outFn.outgoings,
+      transferList: trFn.transfers,
       dob: authFn.dob!,
     ).then((_) {
       if (mounted && provider.result != null) {
@@ -95,13 +95,14 @@ class _SimulationScreenState extends State<SimulationScreen> {
       content = Padding(
         padding: const EdgeInsets.all(16.0),
         child: SimulationChart(
-          sumPot: result.sum,
-          income: result.income,
-          pots: result.pots,
-          mcMin: result.monteMin,
-          mcMax: result.monteMax,
-          ages: result.ages,
-          showLines: provider.showLines,
+          nameList: result.nameList,
+          sumList: result.sumList,
+          incomeList: result.incomeList,
+          accountMap: result.accountMap,
+          mcMinList: result.monteMinList,
+          mcMaxList: result.monteMaxList,
+          ageList: result.ageList,
+          showList: provider.showList,
           sumPotMin: _sumPotMin,
           sumPotMax: _sumPotMax,
           incomeMin: _incomeMin,
@@ -179,23 +180,23 @@ class _SimulationScreenState extends State<SimulationScreen> {
                         children: [
                            FilterChip(
                              label: const Text('Sum'),
-                             selected: provider.showLines[0],
+                             selected: provider.showList[0],
                              onSelected: (v) => provider.toggleLine(0),
                            ),
                            FilterChip(
                              label: const Text('Income'),
-                             selected: provider.showLines[1],
+                             selected: provider.showList[1],
                              onSelected: (v) => provider.toggleLine(1),
                            ),
                            FilterChip(
                              label: const Text('Monte Carlo'),
-                             selected: provider.showLines[2],
+                             selected: provider.showList[2],
                              onSelected: (v) => provider.toggleLine(2),
                            ),
-                           ...List.generate(result.pots.length, (i) {
+                           ...List.generate(result.accountMap.length, (i) {
                              return FilterChip(
                                label: Text('Pot ${i+1}'),
-                               selected: i+3 < provider.showLines.length ? provider.showLines[i+3] : false,
+                               selected: i+3 < provider.showList.length ? provider.showList[i+3] : false,
                                onSelected: (v) => provider.toggleLine(i+3),
                              );
                            }),
@@ -205,7 +206,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
                   const SizedBox(height: 10),
                   // Axis Config
                   const Text('Axis Limits', style: TextStyle(fontWeight: FontWeight.bold)),
-                  _buildAxisInput('Pot Max', _sumPotMax, (v) => setState(() => _sumPotMax = v)),
+                  _buildAxisInput('Account Max', _sumPotMax, (v) => setState(() => _sumPotMax = v)),
                   _buildAxisInput('Income Max', _incomeMax, (v) => setState(() => _incomeMax = v)),
                   _buildAxisInput('Age Max', _xAxisMax, (v) => setState(() => _xAxisMax = v)),
                 ],

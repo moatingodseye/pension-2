@@ -12,7 +12,7 @@ void main() {
     setUp(() {
       db = sqlite3.openInMemory();
       db.execute('''
-        CREATE TABLE users (id INTEGER PRIMARY KEY, dob TEXT);
+        CREATE TABLE user (id INTEGER PRIMARY KEY, dob TEXT);
         CREATE TABLE account (id INTEGER PRIMARY KEY, userid INTEGER, istype INTEGER, name TEXT, amount REAL, age INTEGER, amountat TEXT, rate REAL);
         CREATE TABLE income (id INTEGER PRIMARY KEY, userid INTEGER, name TEXT, intoid INTEGER, amount REAL, startat TEXT, endat TEXT, rate REAL);
         CREATE TABLE outgoing (id INTEGER PRIMARY KEY, userid INTEGER, name TEXT, fromid INTEGER, amount REAL, startat TEXT, endat TEXT, rate REAL);
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('Simulation runs with basic pension and current account', () async {
-      db.execute("INSERT INTO users (id, dob) VALUES (1, '1980-01-01')");
+      db.execute("INSERT INTO user (id, dob) VALUES (1, '1980-01-01')");
       db.execute("INSERT INTO account (id, userid, istype, name, amount, amountat, rate) VALUES (1, 1, 0, 'My Pension', 100000, '2025-01-01', 0.05)");
       db.execute("INSERT INTO account (id, userid, istype, name, amount, amountat, rate) VALUES (2, 1, 2, 'Bank', 10000, '2025-01-01', 0.0)");
       db.execute("INSERT INTO transfer (id, userid, fromid, intoid, amount, startat, rate) VALUES (1, 1, 1, 2, 500, '2030-01-01', 0)");

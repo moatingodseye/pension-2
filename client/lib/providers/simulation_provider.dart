@@ -15,19 +15,20 @@ class SimulationProvider extends ChangeNotifier {
   SimulationResult? result;
   bool isLoading = false;
   String? error;
-  List<bool> showLines = [];
+  List<bool> showList = [];
 
   Future<void> run({
     double volatility = 0.12, 
     double rateAdjustment = 0.0,
     // Pass data needed for client-side viz
-    required List<Account> accounts,
-    required List<Income> incomes,
-    required List<Outgoing> outgoings,
-    required List<Transfer> transfers,
-    required DateTime dob, // Needed for ages
+    required List<Account> accountList,
+    required List<Income> incomeList,
+    required List<Outgoing> outgoingList,
+    required List<Transfer> transferList,
+    required DateTime dob, // Needed for ageList
   }) async {
     glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment)');
+    SimulationService sim = new SimulationService();
     isLoading = true;
     error = null;
     notifyListeners();
@@ -42,12 +43,12 @@ class SimulationProvider extends ChangeNotifier {
       glog.info('Server simulation received.');
 
       // 2. Client Run (Visual Cloud)
-      glog.info('Running client-side Monte Carlo (${accounts.length} accounts)...');
-      final clientResult = SimulationService.run(
-        accounts: accounts,
-        incomes: incomes,
-        outgoings: outgoings,
-        transfers: transfers,
+      glog.info('Running client-side Monte Carlo (${accountList.length} accounts)...');
+      final clientResult = sim.run(
+        accountList: accountList,
+        incomeList: incomeList,
+        outgoingList: outgoingList,
+        transferList: transferList,
         dob: dob,
         volatility: volatility,
         rateAdjustment: rateAdjustment,
@@ -63,17 +64,18 @@ class SimulationProvider extends ChangeNotifier {
         incomeMax: serverResult.incomeMax, 
         xAxisMin: serverResult.xAxisMin, 
         xAxisMax: serverResult.xAxisMax, 
-        sum: serverResult.sum, 
-        income: serverResult.income, 
-        pots: serverResult.pots, 
-        monteMin: serverResult.monteMin, 
-        monteMax: serverResult.monteMax, 
-        ages: serverResult.ages,
-        montePaths: clientResult.montePaths, // The cloud!
+        nameList: serverResult.nameList,
+        sumList: serverResult.sumList, 
+        incomeList: serverResult.incomeList, 
+        accountMap: serverResult.accountMap, 
+        monteMinList: serverResult.monteMinList, 
+        monteMaxList: serverResult.monteMaxList, 
+        ageList: serverResult.ageList,
+        montePath: clientResult.montePath, // The cloud!
       );
       
-      // Reset showLines based on pots
-      showLines = List<bool>.filled(3 + result!.pots.length, true);
+      // Reset showList based on pots
+      showList = List<bool>.filled(3 + result!.accountMap.length, true);
     } catch (e) {
       glog.severe('Simulation failed: $e');
       if (e is apiException) {
@@ -88,8 +90,8 @@ class SimulationProvider extends ChangeNotifier {
   }
   
   void toggleLine(int index) {
-    if (index >= 0 && index < showLines.length) {
-      showLines[index] = !showLines[index];
+    if (index >= 0 && index < showList.length) {
+      showList[index] = !showList[index];
       notifyListeners();
     }
   }

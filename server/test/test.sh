@@ -10,7 +10,7 @@ echo
 echo "=== 1. Ensure admin user exists (manual fallback) ==="
 if [ -f "$DB_FILE" ]; then
   sqlite3 "$DB_FILE" <<'SQL'
-INSERT OR IGNORE INTO users (username, password, dob, isadmin)
+INSERT OR IGNORE INTO user (username, password, dob, isadmin)
 VALUES (
   'admin',
   '$2b$10$C9z8dD6WwU9sK9fKqvZkMuZ9q1QYx0G0yYy1YyYyYyYyYyYyY',
@@ -58,7 +58,7 @@ echo "=== 5. Admin locks user (id=2) ==="
 curl -s -X POST "$BASE_URL/admin/lock_user" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{ "user_id": 2 }'
+  -d '{ "userId": 2 }'
 echo
 
 echo
@@ -67,7 +67,7 @@ curl -s -X POST "$BASE_URL/admin/reset_password" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": 2,
+    "userId": 2,
     "new_password": "newpass123"
   }'
 echo

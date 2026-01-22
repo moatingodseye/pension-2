@@ -14,7 +14,7 @@ Future<Response> createStatePension(Request req) async {
   }
 
   db.execute(
-    "INSERT INTO state_pensions (user_id, start_age, amount, interest_rate) VALUES (?, ?, ?, ?)",
+    "INSERT INTO state_pensions (userId, start_age, amount, interest_rate) VALUES (?, ?, ?, ?)",
     [userId, body['start_age'], body['amount'], body['interest_rate']],
   );
 
@@ -31,7 +31,7 @@ Future<Response> createStatePension(Request req) async {
 // List all state pensions
 Future<Response> listStatePensions(Request req) async {
   final Database db = pension.getDb();
-  final rows = db.select("SELECT * FROM state_pensions WHERE user_id=?", [req.context['uid']]);
+  final rows = db.select("SELECT * FROM state_pensions WHERE userId=?", [req.context['uid']]);
   if (rows.isEmpty) {
     return Response.ok(jsonEncode({}));
   }
@@ -56,7 +56,7 @@ Future<Response> updateStatePension(Request req, String id) async {
   }
 
   db.execute(
-    "UPDATE state_pensions set start_age=?, amount=?, interest_rate=? WHERE id=? AND user_id=?",
+    "UPDATE state_pensions set start_age=?, amount=?, interest_rate=? WHERE id=? AND userId=?",
     [body['start_age'], body['amount'], body['interest_rate'],id,userId],
   );
 
