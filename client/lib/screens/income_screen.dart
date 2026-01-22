@@ -8,6 +8,7 @@ import '../widgets/age_or_date_input.dart';
 import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
 import '../widgets/pagination_controls.dart';
+import '../core/ageOrDate.dart';
 
 class IncomeScreen extends StatefulWidget {
   const IncomeScreen({super.key});
@@ -24,8 +25,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
   final rateController = TextEditingController(); 
   
   double? amount; 
-  String? startAt; 
-  String? endAt; 
+  AgeOrDate? startAt; 
+  AgeOrDate? endAt; 
   
   int? selectedIntoId;
 
@@ -125,14 +126,14 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   AgeOrDateInput(
-                    value: startAt,
+                    initialValue: startAt,
                     onChanged: (v) => setState(() => startAt = v),
                     label: 'Start (Age/Date)',
                     nullable: false,
                   ),
                   const SizedBox(height: 12),
                   AgeOrDateInput(
-                    value: endAt,
+                    initialValue: endAt,
                     onChanged: (v) => setState(() => endAt = v),
                     label: 'End (Optional)',
                     nullable: true,
@@ -171,7 +172,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
     final income = Income(
       name: nameController.text,
       amount: amount!,
-      intoAccount: selectedIntoId,
+      intoId: selectedIntoId,
       startAt: startAt!,
       endAt: endAt,
       rate: (double.tryParse(rateController.text) ?? 0.0) / 100.0,
@@ -187,9 +188,10 @@ class _IncomeScreenState extends State<IncomeScreen> {
     final nameCtl = TextEditingController(text: item.name);
     final rateCtl = TextEditingController(text: (item.rate * 100).toString());
     double? amt = item.amount;
-    String? start = item.startAt;
-    String? end = item.endAt;
-    int? into = item.intoAccount;
+    int? age = item.age;
+    DateTime? starAt = item.startAt;
+    DateTime? endAt = item.endAt;
+    int? intoId = item.intoId;
     
     showDialog(
       context: context,
@@ -209,19 +211,19 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   label: 'Monthly Amount',
                 ),
                 AccountDropdown(
-                  selectedId: into,
-                  onChanged: (v) => into = v,
+                  selectedId: intoId,
+                  onChanged: (v) => intoId = v,
                   label: 'Into Account',
                 ),
                 AgeOrDateInput(
-                  value: start,
-                  onChanged: (v) => start = v,
+                  initialValue: AgeOrDatae(date: startAt, age: age),
+                  onChanged: (v) => startAt = v,
                   label: 'Start',
                   nullable: false,
                 ),
                 AgeOrDateInput(
-                  value: end,
-                  onChanged: (v) => end = v,
+                  initialValue: AgeOrDate(date: endAt, age:null),
+                  onChanged: (v) => endAt = v,
                   label: 'End',
                   nullable: true,
                 ),
@@ -237,15 +239,16 @@ class _IncomeScreenState extends State<IncomeScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              if (amt == null || start == null) return;
+              if (amt == null || startAt == null) return;
               
               final updated = Income(
                 id: item.id,
                 name: nameCtl.text,
                 amount: amt!,
-                intoAccount: into,
-                startAt: start!,
-                endAt: end,
+                intoId: intoId,
+                age: age!,
+                startAt: startAt!,
+                endAt: endAt,
                 rate: (double.tryParse(rateCtl.text) ?? 0.0) / 100.0,
               );
               

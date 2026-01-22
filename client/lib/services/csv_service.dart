@@ -25,7 +25,7 @@ class CsvService {
     final buffer = StringBuffer();
     buffer.writeln('id,name,amount,startAt,endAt,intoAccount,rate');
     for (var i in incomes) {
-      buffer.writeln('${i.id},"${i.name}",${i.amount},${i.startAt},${i.endAt ?? ''},${i.intoAccount ?? ''},${i.rate}');
+      buffer.writeln('${i.id},"${i.name}",${i.amount},${i.startAt},${i.endAt ?? ''},${i.intoId ?? ''},${i.rate}');
     }
     return buffer.toString();
   }
@@ -34,7 +34,7 @@ class CsvService {
     final buffer = StringBuffer();
     buffer.writeln('id,name,amount,startAt,endAt,fromAccount,rate');
     for (var o in outgoings) {
-      buffer.writeln('${o.id},"${o.name}",${o.amount},${o.startAt},${o.endAt ?? ''},${o.fromAccount ?? ''},${o.rate}');
+      buffer.writeln('${o.id},"${o.name}",${o.amount},${o.startAt},${o.endAt ?? ''},${o.fromId ?? ''},${o.rate}');
     }
     return buffer.toString();
   }

@@ -24,7 +24,7 @@ void main() {
     test('Add Transfer', () async {
       final req = Request(
         'POST', 
-        Uri.parse('http://localhost/transfer'),
+        Uri.parse('http://localhost  ransfer'),
         context: {'uid': 1},
         body: jsonEncode({
           'name': 'Move Money',

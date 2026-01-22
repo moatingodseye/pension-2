@@ -2,31 +2,33 @@ class Income {
   final int? id;
   final String name;
   final double amount;
-  final int? intoAccount; // intoid
-  final String startAt;
-  final String? endAt;
+  final int? intoId;
+  final DateTime? startAt;
+  final DateTime? endAt;
   final double rate;
 
   Income({
     this.id,
     required this.name,
     required this.amount,
-    this.intoAccount,
-    required this.startAt,
+    this.intoId,
+    this.startAt,
     this.endAt,
     this.rate = 0.0,
   });
 
   factory Income.fromJson(Map<String, dynamic> json) {
-    return Income(
+    Income temp = Income(
       id: json['id'] as int?,
       name: json['name'] as String,
       amount: (json['amount'] as num).toDouble(),
-      intoAccount: json['intoid'] as int?,
+      intoId: json['intoid'] as int?,
       startAt: json['startat'] as String,
       endAt: json['endat'] as String?,
+      endAt: DateTime.parse(json['amountat'] as String),
       rate: ((json['rate'] ?? 0.0) as num).toDouble(),
     );
+    return temp;
   }
 
   Income copyWith({
@@ -34,8 +36,9 @@ class Income {
     String? name,
     double? amount,
     int? intoAccount,
-    String? startAt,
-    String? endAt,
+    int? age;
+    DateTime? startAt,
+    DateTime? endAt,
     double? rate,
   }) {
     return Income(

@@ -2,16 +2,16 @@ class Outgoing {
   final int? id;
   final String name;
   final double amount;
-  final int? fromAccount; // fromid
-  final String startAt;
-  final String? endAt;
+  final int fromId;
+  final DateTime startAt;
+  final DateTime? endAt;
   final double rate;
 
   Outgoing({
     this.id,
     required this.name,
     required this.amount,
-    this.fromAccount,
+    required this.fromId,
     required this.startAt,
     this.endAt,
     this.rate = 0.0,
@@ -22,7 +22,7 @@ class Outgoing {
       id: json['id'] as int?,
       name: json['name'] as String,
       amount: (json['amount'] as num).toDouble(),
-      fromAccount: json['fromid'] as int?,
+      fromId: json['fromid'] as int?,
       startAt: json['startat'] as String,
       endAt: json['endat'] as String?,
       rate: ((json['rate'] ?? 0.0) as num).toDouble(),

@@ -24,6 +24,7 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
   final rateController = TextEditingController(); 
   
   double? amount; 
+  int? age;
   String? startAt; 
   String? endAt; 
   
@@ -125,7 +126,8 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
                   ),
                   const SizedBox(height: 12),
                   AgeOrDateInput(
-                    value: startAt,
+                    date: startAt,
+                    age: age;
                     onChanged: (v) => setState(() => startAt = v),
                     label: 'Start (Age/Date)',
                     nullable: false,

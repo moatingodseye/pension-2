@@ -8,6 +8,7 @@ import '../widgets/age_or_date_input.dart';
 import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
 import '../widgets/pagination_controls.dart';
+import '../core/ageOrDate.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -23,8 +24,8 @@ class _TransferScreenState extends State<TransferScreen> {
   final nameController = TextEditingController();
   
   double? amount;
-  String? startAt;
-  String? endAt;
+  AgeOrDate? startAt;
+  DateTime? endAt;
   int? selectedFromId;
   int? selectedIntoId;
 
@@ -143,7 +144,7 @@ class _TransferScreenState extends State<TransferScreen> {
                  ),
                  const SizedBox(height: 12),
                  AgeOrDateInput(
-                   value: startAt,
+                   initialValue: startAt,
                    onChanged: (v) => setState(() => startAt = v),
                    label: 'Start Date',
                    nullable: false,

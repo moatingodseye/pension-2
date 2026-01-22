@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/ageOrDate.dart';
 
 /// A flexible input widget that accepts either an age (number) or a date (YYYY-MM-DD).
 /// Used for Income/Outgoing/Transfer start/end fields where user can specify:
 /// - Age relative to user (e.g., "68" for state pension age)
 /// - Specific date (e.g., "2025-01-01" for work start date)
 class AgeOrDateInput extends StatefulWidget {
-  final String? value;
-  final ValueChanged<String?> onChanged;
+  final AgeOrDate? initialValue;
+  final ValueChanged<AgeOrDate> onChanged;
   final String? label;
   final String? hint;
   final bool nullable;
@@ -16,7 +17,7 @@ class AgeOrDateInput extends StatefulWidget {
 
   const AgeOrDateInput({
     super.key,
-    this.value,
+    this.initialValue,
     required this.onChanged,
     this.label,
     this.hint,
@@ -34,19 +35,23 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
   final _dateFormat = RegExp(r'^\d{4}-\d{2}-\d{2}$');
   final _ageFormat = RegExp(r'^\d{1,3}$');
   bool _isEditing = false;
+  AgeOrDate? _currentValue;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.value ?? '');
-  }
+    _currentValue = widget.initialValue;
+    _controller = TextEditingController(
+      text: _currentValue?.toString() ?? '',
+    );  }
 
   @override
   void didUpdateWidget(AgeOrDateInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_isEditing) return;
-    if (widget.value != oldWidget.value) {
-      _controller.text = widget.value ?? '';
+    if (widget.initialValue != oldWidget.initialValue) {
+      _currentValue = widget.initialValue;
+      _controller.text = _currentValue?.toString() ?? '';
     }
   }
 
@@ -69,14 +74,17 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
 
     if (value.isEmpty) {
       if (widget.nullable) {
-        widget.onChanged(null);
+        widget.onChanged(AgeOrDate(date:null,age:null));
       }
       return;
     }
 
     // Accept both age and date formats
-    if (_isAge(value) || _isDate(value)) {
-      widget.onChanged(value);
+    if (_isAge(value)) {
+      widget.onChanged(AgeOrDate(date:null, age:int.tryParse(value)));  // Set age, null for date
+    } else if (_isDate(value)) {
+      final date = DateTime.tryParse(value);
+      widget.onChanged(AgeOrDate(date:date, age: null));  // Set date, null for age
     }
   }
 
@@ -97,7 +105,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
       setState(() {
         _controller.text = formatted;
       });
-      widget.onChanged(formatted);
+      widget.onChanged(AgeOrDate(date:picked,age:null));
     }
   }
 
@@ -106,7 +114,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
       setState(() {
         _controller.text = '';
       });
-      widget.onChanged(null);
+      widget.onChanged(AgeOrDate(date:null,age:null));
     }
   }
 

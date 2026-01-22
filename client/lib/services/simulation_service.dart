@@ -34,29 +34,31 @@ class SimulationService {
     DateTime dob,
     DateTime earliest,
     int yearIndex,
-    String startAt,
-    String? endAt,
+    int? age,
+    DateTime? startAt,
+    DateTime? endAt,
   ) {
     DateTime currentYearDate = addYear(earliest, yearIndex);
-    DateTime? s;
+    DateTime s;
     DateTime? e;
 
     // Parse Start
-    if (startAt.contains('-')) {
-      s = DateTime.tryParse(startAt);
-    } else {
-      int? age = int.tryParse(startAt);
-      if (age != null) s = addYear(dob, age);
+//    if (startAt.contains('-')) {
+//      s = DateTime.tryParse(startAt);
+//    } else {
+
+    if (startAt != null) {
+      s = startAt;
+    }
+
+    if (age != null) {
+      //      int? age = int.tryParse(startAt);
+      s = addYear(dob, age);
     }
 
     // Parse End
-    if (endAt != null && endAt.isNotEmpty) {
-      if (endAt.contains('-')) {
-        e = DateTime.tryParse(endAt);
-      } else {
-        int? age = int.tryParse(endAt);
-        if (age != null) e = addYear(dob, age);
-      }
+    if (endAt != null) {
+      e = endAt;
     }
 
     if (s != null && currentYearDate.isBefore(s)) return false;
@@ -149,55 +151,53 @@ class SimulationService {
           accountSeries[id]![y] = accountSeries[id]![y - 1];
         }
 
+        // Incomes
+        for (Income inc in incomeList) {
+          if (isInRange(dob, earliestDate, y, inc.age, inc.startAt, inc.endAt)) {
+            double amount = inc.amount * 12;
+            int? intoId = inc.intoId;
+            if (id==intoId) {
+              accountSeries[id]![y] += amount;
+            }
+            yearIncomeTotal += amount;
+          }
+        }
+
+        // Outgoings
+        for (Outgoing out in outgoingList) {
+          if (isInRange(dob, earliestDate, y, null, out.startAt, out.endAt)) {
+            double amount = out.amount * 12;
+            int? fromId = out.fromAccount;
+            if (id==fromId) {
+              accountSeries[id]![y] -= amount;
+              if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+            }
+          }
+        }
+
+        // Transfers
+        for (Transfer tr in transferList) {
+          if (isInRange(dob, earliestDate, y, tr.startAt, tr.endAt)) {
+            double amount = tr.amount * 12;
+            int fromId = tr.fromAccount;
+            int intoId = tr.intoAccount;
+
+            if (id==fromId) {
+//              double avail = accountSeries[fromId]![y];
+//              double actual = (avail < amount) ? avail : amount;
+
+              accountSeries[id]![y] -= amount;
+            }
+            if (id==id) {
+              accountSeries[id]![y] += amount;
+            }
+          }
+        }
+
         // Interest (Use rate adjustment)
         double rate = a.rate + rateAdjustment;
         accountSeries[id]![y] *= (1 + rate);
       }
-
-      // Incomes
-      for (Income inc in incomeList) {
-        if (isInRange(dob, earliestDate, y, inc.startAt, inc.endAt)) {
-          double amount = inc.amount * 12;
-          int? intoId = inc.intoAccount;
-          if (intoId != null && accountSeries.containsKey(intoId)) {
-            accountSeries[intoId]![y] += amount;
-          }
-          yearIncomeTotal += amount;
-        }
-      }
-
-      // Outgoings
-      for (Outgoing out in outgoingList) {
-        if (isInRange(dob, earliestDate, y, out.startAt, out.endAt)) {
-          double amount = out.amount * 12;
-          int? fromId = out.fromAccount;
-          if (fromId != null && accountSeries.containsKey(fromId)) {
-            accountSeries[fromId]![y] -= amount;
-            if (accountSeries[fromId]![y] < 0) accountSeries[fromId]![y] = 0;
-          }
-        }
-      }
-
-      // Transfers
-      for (Transfer tr in transferList) {
-        if (isInRange(dob, earliestDate, y, tr.startAt, tr.endAt)) {
-          double amount = tr.amount * 12;
-          int fromId = tr.fromAccount;
-          int intoId = tr.intoAccount;
-
-          if (accountSeries.containsKey(fromId)) {
-            double avail = accountSeries[fromId]![y];
-            double actual = (avail < amount) ? avail : amount;
-
-            accountSeries[fromId]![y] -= actual;
-
-            if (accountSeries.containsKey(intoId)) {
-              accountSeries[intoId]![y] += actual;
-            }
-          }
-        }
-      }
-
       incomeLine[y] = yearIncomeTotal;
       double total = 0;
       for (Account a in accountList) {

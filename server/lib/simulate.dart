@@ -116,7 +116,7 @@ Future<Response> simulate(Request req) async {
   DateTime earliestDate = DateTime.now();
   if (account.isNotEmpty) {
     DateTime minDate = account.first.amountAt;
-    for (var a in account) {
+    for (Account a in account) {
       if (a.amountAt.isBefore(minDate)) minDate = a.amountAt;
     }
     earliestDate = minDate;
@@ -129,7 +129,7 @@ Future<Response> simulate(Request req) async {
   // Init series
   // Map<AccountId, List<double>>
   Map<int, List<double>> accountSeries = {};
-  for (var a in account) {
+  for (Account a in account) {
     if (a.id == null) continue;
     accountSeries[a.id!] = List.filled(count, 0.0);
     accountSeries[a.id!]![0] = a.amount;
@@ -145,7 +145,7 @@ Future<Response> simulate(Request req) async {
     double yearIncomeTotal = 0;
 
     // Init year value (copy prev) & Interest
-    for (var a in account) {
+    for (Account a in account) {
       if (a.id == null) continue;
       int id = a.id!;
 
@@ -153,58 +153,57 @@ Future<Response> simulate(Request req) async {
         accountSeries[id]![y] = accountSeries[id]![y - 1];
       }
 
+      // Incomes
+      for (Income inc in income) {
+        if (isInRange(user, earliestDate, y, inc.startAt, inc.endAt)) {
+          double amount = inc.amount * 12;
+          int? intoId = inc.intoAccount;
+          if (id==intoId) {
+            accountSeries[id]![y] += amount;
+          }
+          yearIncomeTotal += amount;
+        }
+      }
+
+      // Outgoings
+      for (Outgoing out in outgoing) {
+        if (isInRange(user, earliestDate, y, out.startAt, out.endAt)) {
+          double amount = out.amount * 12;
+          int? fromId = out.fromAccount;
+          if (id==fromId) {
+            accountSeries[id]![y] -= amount;
+            if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+          }
+        }
+      }
+
+      // Transfers
+      for (Transfer tr in transfer) {
+        if (isInRange(user, earliestDate, y, tr.startAt, tr.endAt)) {
+          double amount = tr.amount * 12;
+          int fromId = tr.fromAccount;
+          int intoId = tr.intoAccount;
+
+          if (id==(fromId)) {
+//            double avail = accountSeries[id]![y];
+//            double actual = (avail < amount) ? avail : amount;
+
+            accountSeries[id]![y] -= amount;
+          }
+          if (id==(intoId)) {
+              accountSeries[id]![y] += amount;
+          }
+        }
+      }
+
       // Interest (Use rate adjustment)
       double rate = a.rate + rateAdjustment;
       accountSeries[id]![y] *= (1 + rate);
     }
 
-    // Incomes
-    for (var inc in income) {
-      if (isInRange(user, earliestDate, y, inc.startAt, inc.endAt)) {
-        double amount = inc.amount * 12;
-        int? intoId = inc.intoAccount;
-        if (accountSeries.containsKey(intoId)) {
-          accountSeries[intoId]![y] += amount;
-        }
-        yearIncomeTotal += amount;
-      }
-    }
-
-    // Outgoings
-    for (var out in outgoing) {
-      if (isInRange(user, earliestDate, y, out.startAt, out.endAt)) {
-        double amount = out.amount * 12;
-        int? fromId = out.fromAccount;
-        if (accountSeries.containsKey(fromId)) {
-          accountSeries[fromId]![y] -= amount;
-          if (accountSeries[fromId]![y] < 0) accountSeries[fromId]![y] = 0;
-        }
-      }
-    }
-
-    // Transfers
-    for (var tr in transfer) {
-      if (isInRange(user, earliestDate, y, tr.startAt, tr.endAt)) {
-        double amount = tr.amount * 12;
-        int fromId = tr.fromAccount;
-        int intoId = tr.intoAccount;
-
-        if (accountSeries.containsKey(fromId)) {
-          double avail = accountSeries[fromId]![y];
-          double actual = (avail < amount) ? avail : amount;
-
-          accountSeries[fromId]![y] -= actual;
-
-          if (accountSeries.containsKey(intoId)) {
-            accountSeries[intoId]![y] += actual;
-          }
-        }
-      }
-    }
-
     incomeList[y] = yearIncomeTotal;
     double total = 0;
-    for (var a in account) {
+    for (Account a in account) {
       if (a.id != null) total += accountSeries[a.id!]![y];
     }
     sumList[y] = total;
@@ -215,25 +214,23 @@ Future<Response> simulate(Request req) async {
   List<double> mcMinList = List.filled(count, 0.0);
   List<double> mcMaxList = List.filled(count, 0.0);
 
-  final pensionAccount =
-      account.where((a) => a.type == AccountType.pension).toList();
+  final pensionAccount = account.where((a) => a.type == AccountType.pension).toList();
 
   if (pensionAccount.isNotEmpty) {
     mcMinList = List.filled(count, double.infinity);
     mcMaxList = List.filled(count, double.negativeInfinity);
 
-    List<List<double>> mcResults =
-        List.generate(mcRuns, (_) => List.filled(count, 0));
+    List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(count, 0));
     Random rand = Random();
 
     for (int run = 0; run < mcRuns; run++) {
       Map<int, double> tempBalances = {
-        for (var p in pensionAccount) p.id!: p.amount
+        for (Account p in pensionAccount) p.id!: p.amount
       };
 
       for (int y = 0; y < count; y++) {
         double yearTotal = 0;
-        for (var p in pensionAccount) {
+        for (Account p in pensionAccount) {
           int id = p.id!;
           double bal = tempBalances[id]!;
 
@@ -244,7 +241,7 @@ Future<Response> simulate(Request req) async {
           bal *= exp(mu + sigma * shock);
 
           // Deduct Transfers Out
-          for (var tr in transfer) {
+          for (Transfer tr in transfer) {
             if (tr.fromAccount == id &&
                 isInRange(user, earliestDate, y, tr.startAt, tr.endAt)) {
               double amt = tr.amount * 12;
