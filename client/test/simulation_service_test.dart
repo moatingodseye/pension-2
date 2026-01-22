@@ -2,9 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:client/services/simulation_service.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
-import 'package:shared/models/income.dart';
-import 'package:shared/models/outgoing.dart';
-import 'package:shared/models/transfer.dart';
 
 void main() {
   group('SimulationService', () {

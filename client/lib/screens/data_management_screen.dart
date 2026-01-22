@@ -80,7 +80,9 @@ class DataManagementScreen extends StatelessWidget {
               final list = csvService.parseAccounts(content);
               if (list.isNotEmpty) {
                   final prov = Provider.of<AccountProvider>(context, listen: false);
-                  for(var item in list) await prov.add(item);
+                  for(var item in list) {
+                    await prov.add(item);
+                  }
                   imported = true;
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Accounts')));
               }
@@ -90,7 +92,9 @@ class DataManagementScreen extends StatelessWidget {
               final list = csvService.parseIncomes(content);
               if (list.isNotEmpty) {
                   final prov = Provider.of<IncomeProvider>(context, listen: false);
-                  for(var item in list) await prov.add(item);
+                  for(var item in list) {
+                    await prov.add(item);
+                  }
                   imported = true;
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Incomes')));
               }
@@ -106,7 +110,9 @@ class DataManagementScreen extends StatelessWidget {
                     final list = csvService.parseTransfers(content);
                     if (list.isNotEmpty) {
                         final prov = Provider.of<TransferProvider>(context, listen: false);
-                        for(var item in list) await prov.add(item);
+                        for(var item in list) {
+                          await prov.add(item);
+                        }
                         imported = true;
                         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Transfers')));
                     }
@@ -115,7 +121,9 @@ class DataManagementScreen extends StatelessWidget {
                     final list = csvService.parseOutgoings(content);
                     if (list.isNotEmpty) {
                         final prov = Provider.of<OutgoingProvider>(context, listen: false);
-                        for(var item in list) await prov.add(item);
+                        for(var item in list) {
+                          await prov.add(item);
+                        }
                         imported = true;
                         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Outgoings')));
                     }

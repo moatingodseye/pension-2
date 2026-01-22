@@ -48,6 +48,7 @@ class PensionDb {
         istype INTEGER, 
         name TEXT,
         amount REAL,
+        age TEXT,
         amountat TEXT,
         rate REAL
       )

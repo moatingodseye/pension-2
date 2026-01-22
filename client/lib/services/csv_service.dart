@@ -9,7 +9,6 @@ import 'package:shared/models/account_type.dart';
 import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
-import 'package:intl/intl.dart';
 
 class CsvService {
   

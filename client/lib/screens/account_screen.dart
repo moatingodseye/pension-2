@@ -123,7 +123,11 @@ class _AccountScreenState extends State<AccountScreen> {
                 const SizedBox(height: 12),
                 CurrencyInput(
                   value: amount,
-                  onChanged: (val) => setState(() => amount = val),
+                  onChanged: (val) {
+                    setState(() {
+                      amount = val;
+                    });
+                  },
                   label: 'Amount (£)',
                   hint: '0.00',
                 ),

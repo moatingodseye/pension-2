@@ -26,6 +26,33 @@ class CurrencyInput extends StatefulWidget {
   State<CurrencyInput> createState() => _CurrencyInputState();
 }
 
+class _DecimalFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+
+    if (text.isEmpty) {
+      return newValue;
+    }
+
+    // Only digits and optional decimal point
+    if (!RegExp(r'^\d*\.?\d*$').hasMatch(text)) {
+      return oldValue;
+    }
+
+    // Max 2 decimal places
+    final parts = text.split('.');
+    if (parts.length == 2 && parts[1].length > 2) {
+      return oldValue;
+    }
+
+    return newValue;
+  }
+}
+
 class _CurrencyInputState extends State<CurrencyInput> {
   late TextEditingController _controller;
   final _formatter = NumberFormat.currency(
@@ -33,6 +60,7 @@ class _CurrencyInputState extends State<CurrencyInput> {
     symbol: '£',
     decimalDigits: 2,
   );
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -45,6 +73,7 @@ class _CurrencyInputState extends State<CurrencyInput> {
   @override
   void didUpdateWidget(CurrencyInput oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_isEditing) return;
     if (widget.value != oldWidget.value) {
       _controller.text = widget.value != null ? widget.value!.toStringAsFixed(2) : '';
     }
@@ -57,6 +86,8 @@ class _CurrencyInputState extends State<CurrencyInput> {
   }
 
   void _handleChanged(String value) {
+    _isEditing = true;
+
     if (value.isEmpty) {
       widget.onChanged(null);
       return;
@@ -69,6 +100,7 @@ class _CurrencyInputState extends State<CurrencyInput> {
   }
 
   void _formatOnBlur() {
+    _isEditing = false;
     if (_controller.text.isEmpty) return;
     
     final cleaned = _controller.text.replaceAll(RegExp(r'[^\d.]'), '');
@@ -86,7 +118,7 @@ class _CurrencyInputState extends State<CurrencyInput> {
       enabled: widget.enabled,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+        _DecimalFormatter(),
       ],
       decoration: InputDecoration(
         labelText: widget.label,

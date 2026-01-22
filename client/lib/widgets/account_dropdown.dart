@@ -35,7 +35,7 @@ class AccountDropdown extends StatelessWidget {
     final accounts = accountProvider.accounts;
 
     return DropdownButtonFormField<int?>(
-      value: selectedId,
+      initialValue: selectedId,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

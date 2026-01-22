@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:shared/models/account.dart';
 import '../providers/account_provider.dart';
 import '../providers/income_provider.dart';
 import '../providers/outgoing_provider.dart';
-import 'account_screen.dart';
-import 'income_screen.dart';
-import 'outgoing_screen.dart';
 import '../models/account_type.dart';
 
 class DashboardScreen extends StatefulWidget {
