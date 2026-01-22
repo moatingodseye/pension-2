@@ -44,7 +44,7 @@ class AccountApi extends Access {
             type: AccountType.fromId(row['istype']),
             amountAt: DateTime.parse(row['amountat']),
             rate: (row['rate'] as num).toDouble(),
-            age: row['age'] as int? ?? 0,
+            age: (row['age'] as num?)?.toInt() ?? 0,
         );
     }).toList();
 

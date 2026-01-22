@@ -33,6 +33,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
   late TextEditingController _controller;
   final _dateFormat = RegExp(r'^\d{4}-\d{2}-\d{2}$');
   final _ageFormat = RegExp(r'^\d{1,3}$');
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -43,6 +44,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
   @override
   void didUpdateWidget(AgeOrDateInput oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_isEditing) return;
     if (widget.value != oldWidget.value) {
       _controller.text = widget.value ?? '';
     }
@@ -63,6 +65,8 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
   }
 
   void _handleTextChanged(String value) {
+    _isEditing = true;
+
     if (value.isEmpty) {
       if (widget.nullable) {
         widget.onChanged(null);
@@ -104,6 +108,11 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
       });
       widget.onChanged(null);
     }
+  }
+
+  void _formatOnBlur() {
+    _isEditing = false;
+    if (_controller.text.isEmpty) return;
   }
 
   String? _getHelperText() {
@@ -153,6 +162,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
         ),
       ),
       onChanged: _handleTextChanged,
+      onEditingComplete: _formatOnBlur,
     );
   }
 }
