@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../core/ageOrDate.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 /// A flexible input widget that accepts either an age (number) or a date (YYYY-MM-DD).
 /// Used for Income/Outgoing/Transfer start/end fields where user can specify:

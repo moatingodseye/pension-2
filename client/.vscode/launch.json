@@ -5,26 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "client",
+            "name": "client x",
             "request": "launch",
             "type": "dart",
-            "program": "lib/client.dart",
+            "program": "${workspaceFolder:client}/lib/client.dart",
             "args": [
                 "-d",
                 "chrome"
-            ]
+            ],
+            "flutterMode": "debug",
+            "deviceId": "chrome",
+            "dart.flutterHotReloadOnSave": "all"
         },
         {
-            "name": "client (profile mode)",
+            "name": "server x",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
-        },
-        {
-            "name": "client (release mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
+            "program": "${workspaceFolder:server}/lib/server.dart",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "dartAdditionaArgs": ["--enable-assets"],
+            "dart.hotReloadOnSave": "all"
         }
+    ],
+    "compounds": [
+      {
+        "name": "Server and Client",
+        "configurations": ["server x","client x"]
+      }
     ]
 }

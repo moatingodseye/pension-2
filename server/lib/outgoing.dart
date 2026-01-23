@@ -30,15 +30,7 @@ class OutgoingApi extends Access {
     final countRows = db.select('SELECT COUNT(*) as c FROM outgoing WHERE userid = ?', [userId]);
     final totalCount = countRows.first['c'] as int;
 
-    final list = rows.map((row) => Outgoing(
-        id: row['id'],
-        name: row['name'],
-        amount: (row['amount'] as num).toDouble(),
-        fromAccount: row['fromid'],
-        startAt: row['startat'],
-        endAt: row['endat'],
-        rate: (row['rate'] as num).toDouble(),
-    )).toList();
+    final list = rows.map((row) => Outgoing.fromDb(row)).toList();
 
     return Response.ok(
        jsonEncode({
@@ -75,7 +67,7 @@ class OutgoingApi extends Access {
       db.execute(
         '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newOutgoing.name, newOutgoing.fromAccount, newOutgoing.amount, newOutgoing.startAt, newOutgoing.endAt, newOutgoing.rate],
+        [userId, newOutgoing.name, newOutgoing.fromId, newOutgoing.amount, newOutgoing.startAt, newOutgoing.endAt, newOutgoing.rate],
       );
       return ok();
     } catch (e) {
@@ -113,7 +105,7 @@ class OutgoingApi extends Access {
       db.execute(
         '''UPDATE outgoing SET name=?, fromid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedOutgoing.name, updatedOutgoing.fromAccount, updatedOutgoing.amount, updatedOutgoing.startAt, updatedOutgoing.endAt, updatedOutgoing.rate, id],
+        [updatedOutgoing.name, updatedOutgoing.fromId, updatedOutgoing.amount, updatedOutgoing.startAt, updatedOutgoing.endAt, updatedOutgoing.rate, id],
       );
       return ok();
     } catch (e) {

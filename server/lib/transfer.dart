@@ -30,17 +30,7 @@ class TransferApi extends Access {
     final countRows = db.select('SELECT COUNT(*) as c FROM transfer WHERE userid = ?', [userId]);
     final totalCount = countRows.first['c'] as int;
 
-    final list = rows.map((row) => Transfer(
-        id: row['id'],
-        name: row['name'],
-        amount: (row['amount'] as num).toDouble(),
-        fromAccount: row['fromid'],
-        intoAccount: row['intoid'],
-        startAt: row['startat'],
-        endAt: row['endat'],
-        rate: (row['rate'] as num).toDouble(),
-    )).toList();
-
+    final list = rows.map((row) => Transfer.fromDb(row)).toList();
     return Response.ok(
        jsonEncode({
           'data': list.map((t) => t.toJson()).toList(),
@@ -76,7 +66,7 @@ class TransferApi extends Access {
       db.execute(
         '''INSERT INTO transfer (userid, name, fromid, intoid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newTransfer.name, newTransfer.fromAccount, newTransfer.intoAccount, newTransfer.amount, newTransfer.startAt, newTransfer.endAt, newTransfer.rate],
+        [userId, newTransfer.name, newTransfer.fromId, newTransfer.intoId, newTransfer.amount, newTransfer.startAt, newTransfer.endAt, newTransfer.rate],
       );
       return ok();
     } catch (e) {
@@ -114,7 +104,7 @@ class TransferApi extends Access {
       db.execute(
         '''UPDATE transfer SET name=?, fromid=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedTransfer.name, updatedTransfer.fromAccount, updatedTransfer.intoAccount, updatedTransfer.amount, updatedTransfer.startAt, updatedTransfer.endAt, updatedTransfer.rate, id],
+        [updatedTransfer.name, updatedTransfer.fromId, updatedTransfer.intoId, updatedTransfer.amount, updatedTransfer.startAt, updatedTransfer.endAt, updatedTransfer.rate, id],
       );
       return ok();
     } catch (e) {

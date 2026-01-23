@@ -15,23 +15,6 @@ class User {
     this.isLocked = false,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'] as int?,
-      username: json['username'] as String,
-      password: json['password'] != null ? json['password'] as String : null, // not from db but is provided by client
-      dob: json['dob'] == null
-          ? null
-          : json['dob'] is String
-              ? DateTime.tryParse(json['dob'] as String)
-              : json['dob'] is int
-                  ? DateTime.fromMillisecondsSinceEpoch(json['dob'] as int)
-                  : null,
-      isAdmin: (json['isadmin'] is int ? json['isadmin'] == 1 : json['isadmin'] as bool? ?? false),
-      isLocked: (json['islocked'] is int ? json['islocked'] == 1 : json['islocked'] as bool? ?? true),
-    );
-  }
-
   User copyWith({
     int? id,
     String? username,
@@ -47,6 +30,23 @@ class User {
       dob: dob ?? this.dob,
       isAdmin: isAdmin ?? this.isAdmin,
       isLocked: isLocked ?? this.isLocked,
+    );
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] as int?,
+      username: json['username'] as String,
+      password: json['password'] != null ? json['password'] as String : null, // not from db but is provided by client
+      dob: json['dob'] == null
+          ? null
+          : json['dob'] is String
+              ? DateTime.tryParse(json['dob'] as String)
+              : json['dob'] is int
+                  ? DateTime.fromMillisecondsSinceEpoch(json['dob'] as int)
+                  : null,
+      isAdmin: (json['isadmin'] is int ? json['isadmin'] == 1 : json['isadmin'] as bool? ?? false),
+      isLocked: (json['islocked'] is int ? json['islocked'] == 1 : json['islocked'] as bool? ?? true),
     );
   }
 

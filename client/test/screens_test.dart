@@ -13,13 +13,14 @@ import 'package:shared/models/account_type.dart';
 import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 // Mocks
 class MockAccountProvider extends ChangeNotifier implements AccountProvider {
   @override
   List<Account> accounts = [
-    Account(id: 1, name: 'Pension Pot', amount: 50000.0, type: AccountType.pension, rate: 0.05, amountAt: DateTime.now()),
-    Account(id: 2, name: 'Bank', amount: 1000.0, type: AccountType.current, rate: 0.0, amountAt: DateTime.now()),
+    Account(id: 1, name: 'Pension Pot', amount: 50000.0, type: AccountType.pension, rate: 0.05, amountAt: AgeOrDate(date:DateTime.now())),
+    Account(id: 2, name: 'Bank', amount: 1000.0, type: AccountType.current, rate: 0.0, amountAt: AgeOrDate(date:DateTime.now())),
   ];
   @override bool isLoading = false;
   @override String? error;

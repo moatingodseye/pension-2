@@ -8,7 +8,7 @@ import '../widgets/age_or_date_input.dart';
 import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
 import '../widgets/pagination_controls.dart';
-import '../core/ageOrDate.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -25,7 +25,7 @@ class _TransferScreenState extends State<TransferScreen> {
   
   double? amount;
   AgeOrDate? startAt;
-  DateTime? endAt;
+  AgeOrDate? endAt;
   int? selectedFromId;
   int? selectedIntoId;
 
@@ -66,12 +66,12 @@ class _TransferScreenState extends State<TransferScreen> {
                         
                         // Resolve names
                         final fromName = accountProv.accounts
-                            .where((a) => a.id == t.fromAccount)
+                            .where((a) => a.id == t.fromId)
                             .map((a) => a.name)
                             .firstOrNull ?? 'Unknown';
                             
                         final intoName = accountProv.accounts
-                            .where((a) => a.id == t.intoAccount)
+                            .where((a) => a.id == t.intoId)
                             .map((a) => a.name)
                             .firstOrNull ?? 'External';
                         
@@ -151,7 +151,7 @@ class _TransferScreenState extends State<TransferScreen> {
                  ),
                  const SizedBox(height: 12),
                  AgeOrDateInput(
-                   value: endAt,
+                   initialValue: endAt,
                    onChanged: (v) => setState(() => endAt = v),
                    label: 'End Date (Optional)',
                    nullable: true,
@@ -182,8 +182,8 @@ class _TransferScreenState extends State<TransferScreen> {
     
     final transfer = Transfer(
        name: nameController.text.isEmpty ? 'Transfer' : nameController.text,
-       fromAccount: selectedFromId!,
-       intoAccount: selectedIntoId!,
+       fromId: selectedFromId!,
+       intoId: selectedIntoId!,
        amount: amount!,
        startAt: startAt!,
        endAt: endAt,
@@ -198,10 +198,10 @@ class _TransferScreenState extends State<TransferScreen> {
   void _editTransfer(Transfer item) {
     final nameCtl = TextEditingController(text: item.name);
     double? amt = item.amount;
-    String? start = item.startAt;
-    String? end = item.endAt;
-    int? from = item.fromAccount;
-    int? into = item.intoAccount;
+    AgeOrDate? startAt = item.startAt;
+    AgeOrDate? endAt = item.endAt;
+    int? fromId = item.fromId;
+    int? intoId = item.intoId;
     
     showDialog(
       context: context,
@@ -216,13 +216,13 @@ class _TransferScreenState extends State<TransferScreen> {
                     decoration: const InputDecoration(labelText: 'Name'),
                 ),
                 AccountDropdown(
-                   selectedId: from,
-                   onChanged: (v) => from = v,
+                   selectedId: fromId,
+                   onChanged: (v) => fromId = v,
                    label: 'From Account',
                 ),
                 AccountDropdown(
-                   selectedId: into,
-                   onChanged: (v) => into = v,
+                   selectedId: intoId,
+                   onChanged: (v) => intoId = v,
                    label: 'To Account',
                 ),
                 CurrencyInput(
@@ -231,14 +231,14 @@ class _TransferScreenState extends State<TransferScreen> {
                    label: 'Amount',
                 ),
                 AgeOrDateInput(
-                   value: start,
-                   onChanged: (v) => start = v,
+                   initialValue: startAt,
+                   onChanged: (v) => startAt = v,
                    label: 'Start Date',
                    nullable: false,
                 ),
                 AgeOrDateInput(
-                   value: end,
-                   onChanged: (v) => end = v,
+                   initialValue: endAt,
+                   onChanged: (v) => endAt = v,
                    label: 'End Date',
                    nullable: true,
                 ),
@@ -249,16 +249,16 @@ class _TransferScreenState extends State<TransferScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-               if (amt==null || start==null || from==null || into==null) return;
+               if (amt==null || startAt==null || fromId==null || intoId==null) return;
                 
                final updated = Transfer(
                   id: item.id,
                   name: nameCtl.text,
-                  fromAccount: from!,
-                  intoAccount: into!,
+                  fromId: fromId!,
+                  intoId: intoId!,
                   amount: amt!,
-                  startAt: start!,
-                  endAt: end,
+                  startAt: startAt!,
+                  endAt: endAt,
                   rate: 0.0
                );
                

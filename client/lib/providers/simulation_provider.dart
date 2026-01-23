@@ -28,7 +28,7 @@ class SimulationProvider extends ChangeNotifier {
     required DateTime dob, // Needed for ageList
   }) async {
     glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment)');
-    SimulationService sim = new SimulationService();
+    SimulationService sim = SimulationService();
     isLoading = true;
     error = null;
     notifyListeners();

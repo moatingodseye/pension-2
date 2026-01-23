@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/account.dart';
-import 'package:shared/models/account_type.dart';
 import 'access.dart';
 
 class AccountApi extends Access {
@@ -36,18 +35,8 @@ class AccountApi extends Access {
     final countRows = db.select('SELECT COUNT(*) as c FROM account WHERE userid = ?', [userId]);
     final totalCount = countRows.first['c'] as int;
 
-    final accounts = rows.map((row) {
-        return Account(
-            id: row['id'],
-            name: row['name'],
-            amount: (row['amount'] as num).toDouble(),
-            type: AccountType.fromId(row['istype']),
-            amountAt: DateTime.parse(row['amountat']),
-            rate: (row['rate'] as num).toDouble(),
-            age: (row['age'] as num?)?.toInt() ?? 0,
-        );
-    }).toList();
-
+    final accounts = rows.map((row) => Account.fromDb(row)).toList();
+    
     return Response.ok(
       jsonEncode({
           'data': accounts.map((a) => a.toJson()).toList(),
@@ -89,8 +78,8 @@ class AccountApi extends Access {
           newAccount.type.id,
           newAccount.name,
           newAccount.amount,
-          newAccount.age,
-          newAccount.amountAt.toIso8601String().split('T')[0],
+//          newAccount.amountAt.toIso8601String().split('T')[0],
+          newAccount.amountAt.toString(),
           newAccount.rate
         ],
       );
@@ -136,8 +125,7 @@ class AccountApi extends Access {
           updatedAccount.type.id,
           updatedAccount.name,
           updatedAccount.amount,
-          updatedAccount.age,
-          updatedAccount.amountAt.toIso8601String().split('T')[0],
+          updatedAccount.amountAt.toString(),
           updatedAccount.rate,
           id
         ],

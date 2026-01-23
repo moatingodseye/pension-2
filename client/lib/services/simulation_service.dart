@@ -9,7 +9,7 @@ import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
 import 'package:shared/models/simulation_result.dart';
-import 'package:shared/models/user.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class SimulationService {
   // Box-Muller transform
@@ -34,31 +34,36 @@ class SimulationService {
     DateTime dob,
     DateTime earliest,
     int yearIndex,
-    int? age,
-    DateTime? startAt,
-    DateTime? endAt,
+    AgeOrDate? startAt,
+    AgeOrDate? endAt,
   ) {
     DateTime currentYearDate = addYear(earliest, yearIndex);
-    DateTime s;
+    DateTime? s;
     DateTime? e;
 
     // Parse Start
 //    if (startAt.contains('-')) {
 //      s = DateTime.tryParse(startAt);
 //    } else {
+    if (startAt==null || (startAt.date==null && startAt.age==null)) return true;
 
-    if (startAt != null) {
-      s = startAt;
+    if (startAt.date != null) {
+      s = startAt.date;
     }
 
-    if (age != null) {
+    if (startAt.age != null) {
       //      int? age = int.tryParse(startAt);
-      s = addYear(dob, age);
+      s = addYear(dob, startAt.age!);
     }
 
     // Parse End
-    if (endAt != null) {
-      e = endAt;
+    if (endAt==null || (endAt.date==null && endAt.age==null)) e = null;
+
+    if (endAt?.date != null) {
+      e = endAt?.date!;
+    }
+    if (endAt !=null && endAt.age != null) {
+      e = addYear(dob,endAt.age!);
     }
 
     if (s != null && currentYearDate.isBefore(s)) return false;
@@ -108,11 +113,11 @@ class SimulationService {
     // Earliest start date
     DateTime earliestDate = DateTime.now();
     if (accountList.isNotEmpty) {
-      DateTime minDate = accountList.first.amountAt;
+      AgeOrDate minDate = accountList.first.amountAt;
       for (Account a in accountList) {
-        if (a.amountAt.isBefore(minDate)) minDate = a.amountAt;
+        if (a.amountAt.date!.isBefore(minDate.date!)) minDate = a.amountAt;
       }
-      earliestDate = minDate;
+      earliestDate = minDate.date!;
     }
 
     DateTime endDate = addYear(dob, maxAge);
@@ -153,7 +158,7 @@ class SimulationService {
 
         // Incomes
         for (Income inc in incomeList) {
-          if (isInRange(dob, earliestDate, y, inc.age, inc.startAt, inc.endAt)) {
+          if (isInRange(dob, earliestDate, y, inc.startAt, inc.endAt)) {
             double amount = inc.amount * 12;
             int? intoId = inc.intoId;
             if (id==intoId) {
@@ -165,9 +170,9 @@ class SimulationService {
 
         // Outgoings
         for (Outgoing out in outgoingList) {
-          if (isInRange(dob, earliestDate, y, null, out.startAt, out.endAt)) {
+          if (isInRange(dob, earliestDate, y, out.startAt, out.endAt)) {
             double amount = out.amount * 12;
-            int? fromId = out.fromAccount;
+            int? fromId = out.fromId;
             if (id==fromId) {
               accountSeries[id]![y] -= amount;
               if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
@@ -179,8 +184,8 @@ class SimulationService {
         for (Transfer tr in transferList) {
           if (isInRange(dob, earliestDate, y, tr.startAt, tr.endAt)) {
             double amount = tr.amount * 12;
-            int fromId = tr.fromAccount;
-            int intoId = tr.intoAccount;
+            int fromId = tr.fromId;
+            int intoId = tr.intoId;
 
             if (id==fromId) {
 //              double avail = accountSeries[fromId]![y];
@@ -201,8 +206,9 @@ class SimulationService {
       incomeLine[y] = yearIncomeTotal;
       double total = 0;
       for (Account a in accountList) {
-        if (a.id != null && accountSeries.containsKey(a.id!))
+        if (a.id != null && accountSeries.containsKey(a.id!)) {
           total += accountSeries[a.id!]![y];
+        }
       }
       sumLine[y] = total;
     }
@@ -254,7 +260,7 @@ class SimulationService {
 
             // Deduct Transfers Out (Simple Logic: Only check transfers explicitly FROM pension accounts)
             for (Transfer tr in transferList) {
-              if (tr.fromAccount == id &&
+              if (tr.fromId == id &&
                   isInRange(dob, earliestDate, y, tr.startAt, tr.endAt)) {
                 double amt = tr.amount * 12;
                 if (bal < amt) amt = bal;

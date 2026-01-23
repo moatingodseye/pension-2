@@ -5,6 +5,7 @@ import 'package:client/screens/account_screen.dart';
 import 'package:client/providers/account_provider.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class MockAccountProvider extends ChangeNotifier implements AccountProvider {
   @override
@@ -15,8 +16,8 @@ class MockAccountProvider extends ChangeNotifier implements AccountProvider {
 
   @override
   List<Account> accounts = [
-    Account(id: 1, name: 'Test Pension', amount: 50000.0, type: AccountType.pension, rate: 0.05, amountAt: DateTime.parse('2025-01-01'), age: 60),
-    Account(id: 2, name: 'Test Current', amount: 1000.0, type: AccountType.current, rate: 0.0, amountAt: DateTime.parse('2025-01-01'), age: 30),
+    Account(id: 1, name: 'Test Pension', amount: 50000.0, type: AccountType.pension, rate: 0.05, amountAt: AgeOrDate.fromString('2025-01-01')),
+    Account(id: 2, name: 'Test Current', amount: 1000.0, type: AccountType.current, rate: 0.0, amountAt: AgeOrDate.fromString('2025-01-01')),
   ];
 
   @override

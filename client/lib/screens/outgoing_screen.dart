@@ -8,6 +8,7 @@ import '../widgets/age_or_date_input.dart';
 import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
 import '../widgets/pagination_controls.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class OutgoingScreen extends StatefulWidget {
   const OutgoingScreen({super.key});
@@ -24,10 +25,8 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
   final rateController = TextEditingController(); 
   
   double? amount; 
-  int? age;
-  String? startAt; 
-  String? endAt; 
-  
+  AgeOrDate? startAt; 
+  AgeOrDate? endAt; 
   int? selectedFromId;
 
   @override
@@ -126,15 +125,14 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
                   ),
                   const SizedBox(height: 12),
                   AgeOrDateInput(
-                    date: startAt,
-                    age: age;
+                    initialValue: startAt,
                     onChanged: (v) => setState(() => startAt = v),
                     label: 'Start (Age/Date)',
                     nullable: false,
                   ),
                   const SizedBox(height: 12),
                   AgeOrDateInput(
-                    value: endAt,
+                    initialValue: endAt,
                     onChanged: (v) => setState(() => endAt = v),
                     label: 'End (Optional)',
                     nullable: true,
@@ -173,7 +171,7 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
     final outgoing = Outgoing(
       name: nameController.text,
       amount: amount!,
-      fromAccount: selectedFromId,
+      fromId: selectedFromId!,
       startAt: startAt!,
       endAt: endAt,
       rate: (double.tryParse(rateController.text) ?? 0.0) / 100.0,
@@ -189,9 +187,9 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
     final nameCtl = TextEditingController(text: item.name);
     final rateCtl = TextEditingController(text: (item.rate * 100).toString());
     double? amt = item.amount;
-    String? start = item.startAt;
-    String? end = item.endAt;
-    int? from = item.fromAccount;
+    AgeOrDate? startAt = item.startAt;
+    AgeOrDate? endAt = item.endAt;
+    int? fromId = item.fromId;
     
     showDialog(
       context: context,
@@ -211,19 +209,19 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
                   label: 'Monthly Amount',
                 ),
                 AccountDropdown(
-                  selectedId: from,
-                  onChanged: (v) => from = v,
+                  selectedId: fromId,
+                  onChanged: (v) => fromId = v,
                   label: 'From Account',
                 ),
                 AgeOrDateInput(
-                  value: start,
-                  onChanged: (v) => start = v,
+                  initialValue: startAt,
+                  onChanged: (v) => startAt = v,
                   label: 'Start',
                   nullable: false,
                 ),
                 AgeOrDateInput(
-                  value: end,
-                  onChanged: (v) => end = v,
+                  initialValue: endAt,
+                  onChanged: (v) => endAt = v,
                   label: 'End',
                   nullable: true,
                 ),
@@ -239,15 +237,15 @@ class _OutgoingScreenState extends State<OutgoingScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              if (amt == null || start == null) return;
+              if (amt == null || startAt == null) return;
               
               final updated = Outgoing(
                 id: item.id,
                 name: nameCtl.text,
                 amount: amt!,
-                fromAccount: from,
-                startAt: start!,
-                endAt: end,
+                fromId: fromId!,
+                startAt: startAt!,
+                endAt: endAt,
                 rate: (double.tryParse(rateCtl.text) ?? 0.0) / 100.0,
               );
               

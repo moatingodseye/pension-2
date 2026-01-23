@@ -8,7 +8,7 @@ import '../widgets/age_or_date_input.dart';
 import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
 import '../widgets/pagination_controls.dart';
-import '../core/ageOrDate.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class IncomeScreen extends StatefulWidget {
   const IncomeScreen({super.key});
@@ -27,7 +27,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
   double? amount; 
   AgeOrDate? startAt; 
   AgeOrDate? endAt; 
-  
   int? selectedIntoId;
 
   @override
@@ -172,7 +171,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
     final income = Income(
       name: nameController.text,
       amount: amount!,
-      intoId: selectedIntoId,
+      intoId: selectedIntoId!,
       startAt: startAt!,
       endAt: endAt,
       rate: (double.tryParse(rateController.text) ?? 0.0) / 100.0,
@@ -188,9 +187,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
     final nameCtl = TextEditingController(text: item.name);
     final rateCtl = TextEditingController(text: (item.rate * 100).toString());
     double? amt = item.amount;
-    int? age = item.age;
-    DateTime? starAt = item.startAt;
-    DateTime? endAt = item.endAt;
+//    AgeOrDate? starAt = item.startAt;
+    AgeOrDate? endAt = item.endAt;
     int? intoId = item.intoId;
     
     showDialog(
@@ -216,13 +214,13 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   label: 'Into Account',
                 ),
                 AgeOrDateInput(
-                  initialValue: AgeOrDatae(date: startAt, age: age),
+                  initialValue: startAt, 
                   onChanged: (v) => startAt = v,
                   label: 'Start',
                   nullable: false,
                 ),
                 AgeOrDateInput(
-                  initialValue: AgeOrDate(date: endAt, age:null),
+                  initialValue: endAt,
                   onChanged: (v) => endAt = v,
                   label: 'End',
                   nullable: true,
@@ -245,8 +243,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                 id: item.id,
                 name: nameCtl.text,
                 amount: amt!,
-                intoId: intoId,
-                age: age!,
+                intoId: intoId!,
                 startAt: startAt!,
                 endAt: endAt,
                 rate: (double.tryParse(rateCtl.text) ?? 0.0) / 100.0,

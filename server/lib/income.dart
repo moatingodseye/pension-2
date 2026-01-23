@@ -30,16 +30,7 @@ class IncomeApi extends Access {
     final countRows = db.select('SELECT COUNT(*) as c FROM income WHERE userid = ?', [userId]);
     final totalCount = countRows.first['c'] as int;
 
-    final list = rows.map((row) => Income(
-        id: row['id'],
-        name: row['name'],
-        amount: (row['amount'] as num).toDouble(),
-        intoAccount: row['intoid'],
-        startAt: row['startat'],
-        endAt: row['endat'],
-        rate: (row['rate'] as num).toDouble(),
-    )).toList();
-
+    final list = rows.map((row) => Income.fromDb(row)).toList();
     return Response.ok(
       jsonEncode({
           'data': list.map((i) => i.toJson()).toList(),
@@ -75,7 +66,7 @@ class IncomeApi extends Access {
       db.execute(
         '''INSERT INTO income (userid, name, intoid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newIncome.name, newIncome.intoAccount, newIncome.amount, newIncome.startAt, newIncome.endAt, newIncome.rate],
+        [userId, newIncome.name, newIncome.intoId, newIncome.amount, newIncome.startAt, newIncome.endAt, newIncome.rate],
       );
       return ok();
     } catch (e) {
@@ -113,7 +104,7 @@ class IncomeApi extends Access {
       db.execute(
         '''UPDATE income SET name=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedIncome.name, updatedIncome.intoAccount, updatedIncome.amount, updatedIncome.startAt, updatedIncome.endAt, updatedIncome.rate, id],
+        [updatedIncome.name, updatedIncome.intoId, updatedIncome.amount, updatedIncome.startAt, updatedIncome.endAt, updatedIncome.rate, id],
       );
       return ok();
     } catch (e) {

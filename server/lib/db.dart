@@ -35,8 +35,8 @@ class PensionDb {
         username TEXT UNIQUE,
         password TEXT,
         dob TEXT,
-        isadmin INTEGER DEFAULT 0,
-        islocked INTEGER DEFAULT 0
+        isAdmin INTEGER DEFAULT 0,
+        isLocked INTEGER DEFAULT 0
       )
     ''');
 
@@ -44,12 +44,12 @@ class PensionDb {
     db.execute('''
       CREATE TABLE IF NOT EXISTS account (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userid INTEGER,
-        istype INTEGER, 
+        userId INTEGER,
+        isType INTEGER, 
         name TEXT,
         amount REAL,
         age INTEGER,
-        amountat TEXT,
+        amountAt TEXT,
         rate REAL
       )
     '''); // istype=0 pension, 2=current
@@ -58,12 +58,12 @@ class PensionDb {
     db.execute('''
       CREATE TABLE IF NOT EXISTS income (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userid INTEGER,
+        userId INTEGER,
         name TEXT,
-        intoid INTEGER,
+        intoId INTEGER,
         amount REAL,
-        startat TEXT,
-        endat TEXT,
+        startAt TEXT,
+        endAt TEXT,
         rate REAL
       )
     ''');
@@ -72,12 +72,12 @@ class PensionDb {
     db.execute('''
       CREATE TABLE IF NOT EXISTS outgoing (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userid INTEGER,
+        userId INTEGER,
         name TEXT,
-        fromid INTEGER,
+        fromId INTEGER,
         amount REAL,
-        startat TEXT,
-        endat TEXT,
+        startAt TEXT,
+        endAt TEXT,
         rate REAL
       )
     '''); 
@@ -86,13 +86,13 @@ class PensionDb {
     db.execute('''
       CREATE TABLE IF NOT EXISTS transfer (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userid INTEGER,
+        userId INTEGER,
         name TEXT,
-        fromid INTEGER,
-        intoid INTEGER,
+        fromId INTEGER,
+        intoId INTEGER,
         amount REAL,
-        startat TEXT,
-        endat TEXT,
+        startAt TEXT,
+        endAt TEXT,
         rate REAL
       )
     '''); 

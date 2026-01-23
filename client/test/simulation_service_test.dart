@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:client/services/simulation_service.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 void main() {
   group('SimulationService', () {
@@ -11,11 +12,11 @@ void main() {
         name: 'Pension',
         amount: 10000.0,
         type: AccountType.pension,
-        amountAt: DateTime(2025, 1, 1),
+        amountAt: AgeOrDate(date:DateTime(2025, 1, 1)),
         rate: 0.10, // 10%
       );
 
-      SimulationService sim = new SimulationService();
+      SimulationService sim = SimulationService();
       final result = sim.run(
         accountList: [acc],
         incomeList: [],
@@ -46,11 +47,11 @@ void main() {
         name: 'Pension',
         amount: 10000.0,
         type: AccountType.pension,
-        amountAt: DateTime(2025, 1, 1),
+        amountAt: AgeOrDate(date:DateTime(2025, 1, 1)),
         rate: 0.05,
       );
 
-      SimulationService sim = new SimulationService();
+      SimulationService sim = SimulationService();
       final result = sim.run(
         accountList: [acc],
         incomeList: [],

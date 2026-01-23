@@ -1,66 +1,85 @@
-class Income {
-  final int? id;
-  final String name;
-  final double amount;
-  final int? intoId;
-  final DateTime? startAt;
-  final DateTime? endAt;
-  final double rate;
+import 'ageOrDate.dart';
+import 'base.dart';
+
+class Income extends Base{
+  final int intoId;
+  final AgeOrDate startAt;
+  final AgeOrDate? endAt;
 
   Income({
-    this.id,
-    required this.name,
-    required this.amount,
-    this.intoId,
-    this.startAt,
+    int? id,
+    required String name,
+    required double amount,
+    double rate = 0.0,
+    required this.intoId,
+    required this.startAt,
     this.endAt,
-    this.rate = 0.0,
-  });
+  }) : super(id:id, name:name, amount:amount, rate:rate);
 
-  factory Income.fromJson(Map<String, dynamic> json) {
-    Income temp = Income(
-      id: json['id'] as int?,
-      name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      intoId: json['intoid'] as int?,
-      startAt: json['startat'] as String,
-      endAt: json['endat'] as String?,
-      endAt: DateTime.parse(json['amountat'] as String),
-      rate: ((json['rate'] ?? 0.0) as num).toDouble(),
-    );
-    return temp;
-  }
+  Income.fromBase(Base base, {required this.intoId, required this.startAt, this.endAt
+  }) : super(id:base.id, name:base.name, amount:base.amount, rate:base.rate);
 
   Income copyWith({
     int? id,
     String? name,
     double? amount,
-    int? intoAccount,
-    int? age;
-    DateTime? startAt,
-    DateTime? endAt,
     double? rate,
+    int? intoId,
+    AgeOrDate? startAt,
+    AgeOrDate? endAt,
   }) {
     return Income(
       id: id ?? this.id,
       name: name ?? this.name,
       amount: amount ?? this.amount,
-      intoAccount: intoAccount ?? this.intoAccount,
+      intoId: intoId ?? this.intoId,
       startAt: startAt ?? this.startAt,
       endAt: endAt ?? this.endAt,
       rate: rate ?? this.rate,
     );
   }
 
+  factory Income.fromDb(Map<String, Object?> row) {
+    final base = Base.fromDb(row);
+    final json = base.toJson();
+
+    row.forEach((columnName, value) {
+      switch (columnName) {
+        case 'intoid':
+          json['intoId'] = value; // just a string at the point
+          break;
+        case 'startat':
+          json['startAt'] = AgeOrDate.fromString(value as String).toJson();
+          break;
+        case 'endat':
+          json['endAt'] == null ? null : AgeOrDate.fromString(value as String).toJson();
+          break;
+        default:
+          ; //json[columnName] = value; base deals with other columns
+      }
+    });
+
+    // Single source of truth
+    return Income.fromJson(json);    
+  }
+
+  factory Income.fromJson(Map<String, dynamic> json) {
+    final base = Base.fromJson(json);
+    Income temp = Income.fromBase(base,
+      intoId: json['intoId'] as int,
+      startAt: AgeOrDate.fromJson(json['startAt']),
+      endAt: json['endAt'] == null ? null : AgeOrDate.fromJson(json['endat']),
+    );
+    return temp;
+  }
+
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'amount': amount,
-      'intoid': intoAccount,
-      'startat': startAt,
-      'endat': endAt,
-      'rate': rate,
-    };
+    final json = super.toJson();
+    json.addAll({
+      'intoId': intoId,
+      'startAt': startAt.toJson(),
+      'endAt': endAt?.toJson(),
+    });
+    return json;
   }
 }

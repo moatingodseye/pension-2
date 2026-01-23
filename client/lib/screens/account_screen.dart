@@ -7,6 +7,7 @@ import '../widgets/screen_layout.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
 import '../widgets/pagination_controls.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -63,7 +64,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     leading: CircleAvatar(child: Text(acc.type.label[0])),
                     title: Text('${acc.name} (${acc.type.label})'),
                     subtitle: Text(
-                        '£${acc.amount.toStringAsFixed(2)} | Date: ${acc.amountAt.toIso8601String().split('T')[0]} | Rate: ${(acc.rate*100).toStringAsFixed(1)}%'),
+                        '£${acc.amount.toStringAsFixed(2)} | Date: ${acc.amountAt.toString().split('T')[0]} | Rate: ${(acc.rate*100).toStringAsFixed(1)}%'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -169,9 +170,8 @@ class _AccountScreenState extends State<AccountScreen> {
                       name: nameController.text,
                       amount: amount!,
                       type: selectedType,
-                      amountAt: selectedDate!,
+                      amountAt: AgeOrDate(date:selectedDate!),
                       rate: interestRate!,
-                      age: 0
                     );
                     
                     provider.add(newAccount);
@@ -190,10 +190,10 @@ class _AccountScreenState extends State<AccountScreen> {
     // Local controllers for dialog
     final nameCtl = TextEditingController(text: acc.name);
     final amountCtl = TextEditingController(text: acc.amount.toString());
-    final dateCtl = TextEditingController(text: acc.amountAt.toIso8601String().split('T')[0]);
+    final dateCtl = TextEditingController(text: acc.amountAt.toString().split('T')[0]);
     final rateCtl = TextEditingController(text: (acc.rate * 100).toString());
     AccountType type = acc.type;
-    DateTime? date = acc.amountAt;
+    DateTime? date = acc.amountAt.date!;
     
     showDialog(
       context: context,
@@ -246,16 +246,15 @@ class _AccountScreenState extends State<AccountScreen> {
             onPressed: () {
                final amount = double.tryParse(amountCtl.text) ?? acc.amount;
                final rate = (double.tryParse(rateCtl.text) ?? (acc.rate * 100)) / 100.0;
-               final d = date ?? acc.amountAt;
+               final d = date ?? acc.amountAt.date;
             
                final updated = Account(
                  id: acc.id,
                  name: nameCtl.text,
                  amount: amount,
                  type: type,
-                 amountAt: d,
+                 amountAt: AgeOrDate(date:d),
                  rate: rate,
-                 age: acc.age
                );
 
               Provider.of<AccountProvider>(context, listen: false).update(updated); 

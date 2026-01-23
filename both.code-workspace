@@ -1,0 +1,40 @@
+{
+	"folders": [
+    {
+      "path": "client"
+    },
+    {
+      "path": "server"
+    },
+    {
+      "path": "shared"
+    }
+  ],
+    "lanuch": {
+        "configurations": [
+        {
+            "name": "client",
+            "request": "launch",
+            "type": "dart",
+            "program": "client/lib/client.dart",
+            "args": [
+                "-d",
+                "chrome"
+            ],
+            "flutterMode": "debug"
+        },
+        {
+            "name": "server",
+            "request": "launch",
+            "type": "dart",
+            "program": "server/lib/server.dart",
+            "args": [],
+            "dartAdditionaArgs": ["--enable-assets"]
+        }
+      ],
+      "compounds": {
+          "name": "Server + Client",
+          "Configurations": ["server","client"]
+      }
+    }
+}

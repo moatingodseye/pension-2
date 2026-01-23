@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:shared/models/ageOrDate.dart';
 import 'package:shared/models/user.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
@@ -59,23 +60,23 @@ void main() {
   
   // Basic checks for other models to ensure keys match
   test('Income Model serialization', () {
-     final i = Income(name: 'Work', amount: 50.0, startAt: '2025-01-01', rate: 0.1);
+     final i = Income(name: 'Work', amount: 50.0, intoId: 1, startAt: AgeOrDate.fromString('2025-01-01'), rate: 0.1);
      expect(i.toJson()['amount'], 50.0);
      final i2 = Income.fromJson(i.toJson());
      expect(i2.name, 'Work');
   });
 
   test('Outgoing Model serialization', () {
-     final o = Outgoing(name: 'Rent', amount: 500.0, startAt: '2025-01-01');
+     final o = Outgoing(name: 'Rent', amount: 500.0, fromId: 1, startAt: AgeOrDate.fromString('2025-01-01'), rate:0.1);
      expect(o.toJson()['name'], 'Rent');
      final o2 = Outgoing.fromJson(o.toJson());
      expect(o2.amount, 500.0);
   });
   
   test('Transfer Model serialization', () {
-     final t = Transfer(name: 'Save', amount: 100.0, fromAccount: 1, intoAccount: 2, startAt: '2020-01-01');
+     final t = Transfer(name: 'Save', amount: 100.0, fromId: 1, intoId: 2, startAt: AgeOrDate.fromString('2020-01-01'), rate:0.1);
      expect(t.toJson()['fromid'], 1);
      final t2 = Transfer.fromJson(t.toJson());
-     expect(t2.intoAccount, 2);
+     expect(t2.intoId, 2);
   });
 }

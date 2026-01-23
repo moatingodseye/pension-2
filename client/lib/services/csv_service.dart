@@ -9,6 +9,7 @@ import 'package:shared/models/account_type.dart';
 import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 class CsvService {
   
@@ -16,7 +17,7 @@ class CsvService {
     final buffer = StringBuffer();
     buffer.writeln('id,name,amount,type,date,rate');
     for (var a in accounts) {
-      buffer.writeln('${a.id},"${a.name}",${a.amount},${a.type.index},${a.amountAt.toIso8601String().split('T')[0]},${a.rate}');
+      buffer.writeln('${a.id},"${a.name}",${a.amount},${a.type.index},${a.amountAt.toString().split('T')[0]},${a.rate}');
     }
     return buffer.toString();
   }
@@ -34,7 +35,7 @@ class CsvService {
     final buffer = StringBuffer();
     buffer.writeln('id,name,amount,startAt,endAt,fromAccount,rate');
     for (var o in outgoings) {
-      buffer.writeln('${o.id},"${o.name}",${o.amount},${o.startAt},${o.endAt ?? ''},${o.fromId ?? ''},${o.rate}');
+      buffer.writeln('${o.id},"${o.name}",${o.amount},${o.startAt},${o.endAt ?? ''},${o.fromId},${o.rate}');
     }
     return buffer.toString();
   }
@@ -43,7 +44,7 @@ class CsvService {
     final buffer = StringBuffer();
     buffer.writeln('id,name,amount,startAt,endAt,fromAccount,intoAccount');
     for (var t in transfers) {
-      buffer.writeln('${t.id},"${t.name}",${t.amount},${t.startAt},${t.endAt ?? ''},${t.fromAccount},${t.intoAccount}');
+      buffer.writeln('${t.id},"${t.name}",${t.amount},${t.startAt},${t.endAt ?? ''},${t.fromId},${t.intoId}');
     }
     return buffer.toString();
   }
@@ -169,9 +170,8 @@ class CsvService {
           name: parts[1],
           amount: double.tryParse(parts[2]) ?? 0.0,
           type: AccountType.values[int.tryParse(parts[3]) ?? 0], 
-          amountAt: DateTime.tryParse(parts[4]) ?? DateTime.now(),
+          amountAt: AgeOrDate.fromString(parts[4]),
           rate: double.tryParse(parts[5]) ?? 0.0,
-          age: 0
         ));
       } catch (e) {
         debugPrint('Error parsing account line: $line -> $e');
@@ -197,9 +197,9 @@ class CsvService {
             list.add(Income(
                 name: parts[1],
                 amount: double.tryParse(parts[2]) ?? 0.0,
-                startAt: parts[3],
-                endAt: parts[4].isEmpty ? null : parts[4],
-                intoAccount: int.tryParse(parts[5]), // Will be ID, potentially invalid if IDs changed
+                startAt: AgeOrDate.fromString(parts[3]),
+                endAt: AgeOrDate.fromString(parts[4].isEmpty ? null : parts[4]),
+                intoId: int.tryParse(parts[5])!, // Will be ID, potentially invalid if IDs changed
                 rate: double.tryParse(parts[6]) ?? 0.0,
             ));
         } catch (e) {
@@ -226,9 +226,9 @@ class CsvService {
               list.add(Outgoing(
                   name: parts[1],
                   amount: double.tryParse(parts[2]) ?? 0.0,
-                  startAt: parts[3],
-                  endAt: parts[4].isEmpty ? null : parts[4],
-                  fromAccount: int.tryParse(parts[5]),
+                  startAt: AgeOrDate.fromString(parts[3]),
+                  endAt: AgeOrDate.fromString(parts[4].isEmpty ? null : parts[4]),
+                  fromId: int.tryParse(parts[5]) ?? 0,
                   rate: double.tryParse(parts[6]) ?? 0.0,
               ));
           } catch(e) {
@@ -255,10 +255,10 @@ class CsvService {
               list.add(Transfer(
                   name: parts[1],
                   amount: double.tryParse(parts[2]) ?? 0.0,
-                  startAt: parts[3],
-                  endAt: parts[4].isEmpty ? null : parts[4],
-                  fromAccount: int.tryParse(parts[5]) ?? 0,
-                  intoAccount: int.tryParse(parts[6]) ?? 0,
+                  startAt: AgeOrDate.fromString(parts[3]),
+                  endAt: AgeOrDate.fromString(parts[4].isEmpty ? null : parts[4]),
+                  fromId: int.tryParse(parts[5]) ?? 0,
+                  intoId: int.tryParse(parts[6]) ?? 0,
                   rate: 0.0
               ));
           } catch(e) {

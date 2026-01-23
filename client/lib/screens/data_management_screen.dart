@@ -6,12 +6,7 @@ import '../providers/account_provider.dart';
 import '../providers/income_provider.dart';
 import '../providers/outgoing_provider.dart';
 import '../providers/transfer_provider.dart';
-import 'package:flutter/services.dart';
 import '../widgets/screen_layout.dart';
-import 'package:shared/models/account.dart';
-import 'package:shared/models/income.dart';
-import 'package:shared/models/outgoing.dart';
-import 'package:shared/models/transfer.dart';
 
 class DataManagementScreen extends StatelessWidget {
   const DataManagementScreen({super.key});

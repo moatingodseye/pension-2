@@ -1,0 +1,31 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "client",
+            "request": "launch",
+            "type": "dart",
+            "program": "client/lib/client.dart",
+            "args": [
+                "-d",
+                "chrome"
+            ],
+            "flutterMode": "debug"
+        },
+        {
+            "name": "server",
+            "request": "launch",
+            "type": "dart",
+            "program": "server/lib/server.dart",
+            "args": [],
+            "dartAdditionaArgs": ["--enable-assets"]
+        }
+    ],
+    "compounds": {
+        "name": "Server + Client",
+        "Configurations": ["server","client"]
+    }
+}

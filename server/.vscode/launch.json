@@ -4,12 +4,35 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
         {
-            "name": "server",
+            "name": "client x",
             "request": "launch",
             "type": "dart",
-            "program": "${workspaceFolder}/lib/server.dart"
+            "program": "${workspaceFolder:client}/lib/client.dart",
+            "cwd": "${workspaceFolder:client}",
+            "args": [
+                "-d",
+                "chrome"
+            ],
+            "flutterMode": "debug",
+            "deviceId": "chrome",
+            "dart.flutterHotReloadOnSave": "all"
+        },
+        {
+            "name": "server x",
+            "request": "launch",
+            "type": "dart",
+            "program": "${workspaceFolder:server}/lib/server.dart",
+            "cwd": "${workspaceFolder:server}",
+            "args": [],
+            "dartAdditionaArgs": ["--enable-assets"],
+            "dart.hotReloadOnSave": "all"
         }
+    ],
+    "compounds": [
+      {
+        "name": "Server and Client",
+        "configurations": ["server x","client x"]
+      }
     ]
 }

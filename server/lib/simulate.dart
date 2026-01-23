@@ -11,6 +11,7 @@ import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
 import 'package:shared/models/simulation_result.dart';
+import 'package:shared/models/ageOrDate.dart';
 
 // Box-Muller transform
 double normal(Random rand) {
@@ -20,34 +21,37 @@ double normal(Random rand) {
 }
 
 // Helper: Check Range
-bool isInRange(User user, DateTime earliest, int yearIndex, String startAt,
-    String? endAt) {
+bool isInRange(User user, DateTime earliest, int yearIndex, AgeOrDate startAt,
+    AgeOrDate? endAt) {
   DateTime currentYearDate = addYear(earliest, yearIndex);
   DateTime? s;
   DateTime? e;
 
-// Parse Start
-  if (startAt.contains('-')) {
-    s = DateTime.tryParse(startAt);
-  } else {
-    int? age = int.tryParse(startAt);
-    if (age != null) s = addYear(user.dob!, age);
-  }
+    if (startAt.date==null && startAt.age==null) return true;
 
-// Parse End
-  if (endAt != null && endAt.isNotEmpty) {
-    if (endAt.contains('-')) {
-      e = DateTime.tryParse(endAt);
-    } else {
-      int? age = int.tryParse(endAt);
-      if (age != null) e = addYear(user.dob!, age);
+    if (startAt.date != null) {
+      s = startAt.date;
     }
-  }
 
-  if (s != null && currentYearDate.isBefore(s)) return false;
-  if (e != null && currentYearDate.isAfter(e)) return false;
+    if (startAt.age != null) {
+      //      int? age = int.tryParse(startAt);
+      s = addYear(user.dob!, startAt.age!);
+    }
 
-  return true;
+    // Parse End
+    if (endAt==null || (endAt.date==null && endAt.age==null)) e = null;
+
+    if (endAt?.date != null) {
+      e = endAt?.date!;
+    }
+    if (endAt !=null && endAt.age != null) {
+      e = addYear(user.dob!,endAt.age!);
+    }
+
+    if (s != null && currentYearDate.isBefore(s)) return false;
+    if (e != null && currentYearDate.isAfter(e)) return false;
+
+    return true;
 }
 
 Future<Response> simulate(Request req) async {
@@ -115,11 +119,11 @@ Future<Response> simulate(Request req) async {
   // Earliest start date
   DateTime earliestDate = DateTime.now();
   if (account.isNotEmpty) {
-    DateTime minDate = account.first.amountAt;
+    AgeOrDate minDate = account.first.amountAt;
     for (Account a in account) {
-      if (a.amountAt.isBefore(minDate)) minDate = a.amountAt;
+      if (a.amountAt.date!.isBefore(minDate.date!)) minDate = a.amountAt;
     }
-    earliestDate = minDate;
+    earliestDate = minDate.date!;
   }
 
   DateTime endDate = addYear(user.dob!, maxAge);
@@ -157,7 +161,7 @@ Future<Response> simulate(Request req) async {
       for (Income inc in income) {
         if (isInRange(user, earliestDate, y, inc.startAt, inc.endAt)) {
           double amount = inc.amount * 12;
-          int? intoId = inc.intoAccount;
+          int? intoId = inc.intoId;
           if (id==intoId) {
             accountSeries[id]![y] += amount;
           }
@@ -169,7 +173,7 @@ Future<Response> simulate(Request req) async {
       for (Outgoing out in outgoing) {
         if (isInRange(user, earliestDate, y, out.startAt, out.endAt)) {
           double amount = out.amount * 12;
-          int? fromId = out.fromAccount;
+          int? fromId = out.fromId;
           if (id==fromId) {
             accountSeries[id]![y] -= amount;
             if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
@@ -181,8 +185,8 @@ Future<Response> simulate(Request req) async {
       for (Transfer tr in transfer) {
         if (isInRange(user, earliestDate, y, tr.startAt, tr.endAt)) {
           double amount = tr.amount * 12;
-          int fromId = tr.fromAccount;
-          int intoId = tr.intoAccount;
+          int fromId = tr.fromId;
+          int intoId = tr.intoId;
 
           if (id==(fromId)) {
 //            double avail = accountSeries[id]![y];
@@ -242,7 +246,7 @@ Future<Response> simulate(Request req) async {
 
           // Deduct Transfers Out
           for (Transfer tr in transfer) {
-            if (tr.fromAccount == id &&
+            if (tr.fromId == id &&
                 isInRange(user, earliestDate, y, tr.startAt, tr.endAt)) {
               double amt = tr.amount * 12;
               if (bal < amt) amt = bal;
