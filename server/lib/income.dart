@@ -66,7 +66,7 @@ class IncomeApi extends Access {
       db.execute(
         '''INSERT INTO income (userid, name, intoid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newIncome.name, newIncome.intoId, newIncome.amount, newIncome.startAt, newIncome.endAt, newIncome.rate],
+        [userId, newIncome.name, newIncome.intoId, newIncome.amount, newIncome.startAt.toString(), newIncome.endAt.toString(), newIncome.rate],
       );
       return ok();
     } catch (e) {
@@ -104,7 +104,7 @@ class IncomeApi extends Access {
       db.execute(
         '''UPDATE income SET name=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedIncome.name, updatedIncome.intoId, updatedIncome.amount, updatedIncome.startAt, updatedIncome.endAt, updatedIncome.rate, id],
+        [updatedIncome.name, updatedIncome.intoId, updatedIncome.amount, updatedIncome.startAt.toString(), updatedIncome.endAt.toString(), updatedIncome.rate, id],
       );
       return ok();
     } catch (e) {

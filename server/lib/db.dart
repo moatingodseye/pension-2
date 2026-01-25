@@ -48,8 +48,7 @@ class PensionDb {
         isType INTEGER, 
         name TEXT,
         amount REAL,
-        age INTEGER,
-        amountAt TEXT,
+        amountAt TEXT, 
         rate REAL
       )
     '''); // istype=0 pension, 2=current
@@ -62,9 +61,9 @@ class PensionDb {
         name TEXT,
         intoId INTEGER,
         amount REAL,
+        rate REAL,
         startAt TEXT,
-        endAt TEXT,
-        rate REAL
+        endAt TEXT
       )
     ''');
 
@@ -76,9 +75,9 @@ class PensionDb {
         name TEXT,
         fromId INTEGER,
         amount REAL,
+        rate REAL,
         startAt TEXT,
-        endAt TEXT,
-        rate REAL
+        endAt TEXT
       )
     '''); 
 
@@ -91,21 +90,11 @@ class PensionDb {
         fromId INTEGER,
         intoId INTEGER,
         amount REAL,
+        rate REAL,
         startAt TEXT,
-        endAt TEXT,
-        rate REAL
+        endAt TEXT
       )
     '''); 
-
-/*     db.execute('''
-      CREATE TABLE IF NOT EXISTS state_pensions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userId INTEGER,
-        start_age INTEGER,
-        amount REAL,
-        interest_rate REAL
-      )
-    '''); */
 
     migrate();
 

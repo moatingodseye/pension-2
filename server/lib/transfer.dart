@@ -66,7 +66,7 @@ class TransferApi extends Access {
       db.execute(
         '''INSERT INTO transfer (userid, name, fromid, intoid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newTransfer.name, newTransfer.fromId, newTransfer.intoId, newTransfer.amount, newTransfer.startAt, newTransfer.endAt, newTransfer.rate],
+        [userId, newTransfer.name, newTransfer.fromId, newTransfer.intoId, newTransfer.amount, newTransfer.startAt.toString(), newTransfer.endAt.toString(), newTransfer.rate],
       );
       return ok();
     } catch (e) {
@@ -104,7 +104,7 @@ class TransferApi extends Access {
       db.execute(
         '''UPDATE transfer SET name=?, fromid=?, intoid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedTransfer.name, updatedTransfer.fromId, updatedTransfer.intoId, updatedTransfer.amount, updatedTransfer.startAt, updatedTransfer.endAt, updatedTransfer.rate, id],
+        [updatedTransfer.name, updatedTransfer.fromId, updatedTransfer.intoId, updatedTransfer.amount, updatedTransfer.startAt.toString(), updatedTransfer.endAt.toString(), updatedTransfer.rate, id],
       );
       return ok();
     } catch (e) {

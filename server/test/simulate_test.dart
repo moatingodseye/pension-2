@@ -34,7 +34,8 @@ void main() {
       db.execute("INSERT INTO outgoing (id, userid, fromid, amount, startat, rate) VALUES (1, 1, 2, 1500, '2025-01-01', 0)");
 
       final req = Request('POST', Uri.parse('http://localhost/simulate'), context: {'uid': 1});
-      final res = await simulate(req);
+      final Simulate sim = Simulate();
+      final res = await sim.simulate(req);
 
       expect(res.statusCode, 200);
       final body = jsonDecode(await res.readAsString());

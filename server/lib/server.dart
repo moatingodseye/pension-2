@@ -65,6 +65,7 @@ void main() async {
   final transfer = TransferApi(pension.getDb());
   final user = UserApi(pension.getDb());
   final admin = Admin(pension.getDb());
+  final Simulate sim = Simulate();
 
   // --- Protected routes ---
   prot
@@ -82,7 +83,7 @@ void main() async {
     ..post('/admin/unlock/<id>', admin.unlock)
     ..post('/admin/reset/<id>', admin.reset)
         
-    ..post('/simulate', simulate);
+    ..post('/simulate', sim.simulate);
 
   final int port = int.parse(Platform.environment['PORT'] ?? '8080');
   final server = await serve(public, InternetAddress.anyIPv4, port);

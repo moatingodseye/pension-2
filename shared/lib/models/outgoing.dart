@@ -19,6 +19,12 @@ class Outgoing extends Base {
   Outgoing.fromBase(Base base, {required this.fromId, required this.startAt, this.endAt})
     : super(id:base.id, name:base.name, amount:base.amount, rate:base.rate);
 
+  Outgoing.startAt(Outgoing from, {required this.startAt}) : fromId=from.fromId, endAt=from.endAt, 
+    super(id:from.id, name:from.name, amount:from.amount, rate:from.rate);
+    
+  Outgoing.endAt(Outgoing from, {required this.endAt}) : fromId=from.fromId, startAt=from.startAt, 
+    super(id:from.id, name:from.name, amount:from.amount, rate:from.rate);
+    
   Outgoing copyWith({
     int? id,
     String? name,

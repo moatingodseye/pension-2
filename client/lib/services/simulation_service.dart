@@ -1,6 +1,4 @@
 import 'dart:math';
-// Direct import of Logger, or use helper?
-// The helper debugLogger exports 'log'. Let's use that.
 import 'debugLogger.dart';
 
 import 'package:shared/models/account.dart';
@@ -12,6 +10,23 @@ import 'package:shared/models/simulation_result.dart';
 import 'package:shared/models/ageOrDate.dart';
 
 class SimulationService {
+  final List<Account> accountList;
+  final List<Income> incomeList;
+  final List<Outgoing> outgoingList;
+  final List<Transfer> transferList;
+  final DateTime dob;
+  final double volatility;
+  final double rateAdjustment;
+
+  SimulationService({
+    required this.accountList,
+    required this.incomeList,
+    required this.outgoingList,
+    required this.transferList,
+    required this.dob,
+    this.volatility = 0.12,
+    this.rateAdjustment = 0.0});
+
   // Box-Muller transform
   static double normal(Random rand) {
     final u1 = rand.nextDouble();
@@ -41,10 +56,6 @@ class SimulationService {
     DateTime? s;
     DateTime? e;
 
-    // Parse Start
-//    if (startAt.contains('-')) {
-//      s = DateTime.tryParse(startAt);
-//    } else {
     if (startAt==null || (startAt.date==null && startAt.age==null)) return true;
 
     if (startAt.date != null) {
@@ -72,15 +83,60 @@ class SimulationService {
     return true;
   }
 
-  SimulationResult run({
-    required List<Account> accountList,
-    required List<Income> incomeList,
-    required List<Outgoing> outgoingList,
-    required List<Transfer> transferList,
-    required DateTime dob,
-    double volatility = 0.12,
-    double rateAdjustment = 0.0,
-  }) {
+  void prepare(DateTime dob) {
+    // convert AgeOrDate's into dates to make comparison easier
+    for (Account a in accountList) {
+      if (a.id == null) continue;
+      if (a.amountAt.age!=null)  {
+        Account replace = Account.amountAt(a,amountAt:AgeOrDate(date:addYear(dob,a.amountAt.age!)));
+        accountList[accountList.indexOf(a)] = replace;
+      }
+    }
+  
+    for (Income a in incomeList) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Income replace = Income.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        incomeList[incomeList.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Income replace = Income.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        incomeList[incomeList.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+
+    for (Outgoing a in outgoingList) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Outgoing replace = Outgoing.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        outgoingList[outgoingList.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Outgoing replace = Outgoing.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        outgoingList[outgoingList.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+
+    for (Transfer a in transferList) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Transfer replace = Transfer.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        transferList[transferList.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Transfer replace = Transfer.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        transferList[transferList.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+  }
+
+  SimulationResult simulate() {
     // We can't access instance members in static method efficiently without passing logger?
     // 'log' from debugLogger is global.
     final stopwatch = Stopwatch()..start();
@@ -90,6 +146,7 @@ class SimulationService {
     // ---------------------------------------------------------
 
     if (accountList.isEmpty) {
+      stopwatch.stop();
       return SimulationResult(
         sumPotMin: 0,
         sumPotMax: 100,
@@ -108,7 +165,7 @@ class SimulationService {
       );
     }
 
-    const int maxAge = 120;
+    const int maxAge = 77;//120;
 
     // Earliest start date
     DateTime earliestDate = DateTime.now();
@@ -119,6 +176,9 @@ class SimulationService {
       }
       earliestDate = minDate.date!;
     }
+
+    // convert ages into dates for ease of comparison
+    prepare(dob);
 
     DateTime endDate = addYear(dob, maxAge);
     int count = yearsBetween(earliestDate, endDate).toInt();
@@ -137,6 +197,12 @@ class SimulationService {
       accountSeries[a.id!]![0] = a.amount;
     }
 
+    final current = accountList!.where((a) => a.type == AccountType.current).toList();
+    final pensionList = accountList
+        .where((a) => a.type == AccountType.pension)
+        .toList();
+
+
     List<double> sumLine = List.filled(count, 0);
     List<double> incomeLine = List.filled(count, 0);
     List<double> ageList = List.generate(
@@ -145,7 +211,7 @@ class SimulationService {
     );
 
     for (int y = 0; y < count; y++) {
-      double yearIncomeTotal = 0;
+      double currentTotal = current[0].amount;
 
       // Init year value (copy prev) & Interest
       for (Account a in accountList) {
@@ -156,26 +222,30 @@ class SimulationService {
           accountSeries[id]![y] = accountSeries[id]![y - 1];
         }
 
+        glog.info('');
+        glog.info('Account:${a.id}/${a.name} year:$y initial value:${accountSeries[id]![y]}');
+
         // Incomes
         for (Income inc in incomeList) {
           if (isInRange(dob, earliestDate, y, inc.startAt, inc.endAt)) {
-            double amount = inc.amount * 12;
+            double amount = inc.amount * 12; // needs rate applying and remembering from previous year.
             int? intoId = inc.intoId;
             if (id==intoId) {
               accountSeries[id]![y] += amount;
+              glog.info('Account:${a.id}/${a.name} income $amount from ${inc.id}/${inc.name} now ${accountSeries[id]![y]}');
             }
-            yearIncomeTotal += amount;
           }
         }
 
         // Outgoings
         for (Outgoing out in outgoingList) {
           if (isInRange(dob, earliestDate, y, out.startAt, out.endAt)) {
-            double amount = out.amount * 12;
+            double amount = out.amount * 12; // rate again
             int? fromId = out.fromId;
             if (id==fromId) {
               accountSeries[id]![y] -= amount;
               if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+              glog.info('Account:${a.id}/${a.name} outgoing $amount into ${out.id}/${out.name} now ${accountSeries[id]![y]}');
             }
           }
         }
@@ -192,20 +262,26 @@ class SimulationService {
 //              double actual = (avail < amount) ? avail : amount;
 
               accountSeries[id]![y] -= amount;
+              glog.info('Account:${a.id}/${a.name} transfer (out) $amount into $intoId now ${accountSeries[id]![y]}');
             }
-            if (id==id) {
+            if (id==intoId) {
               accountSeries[id]![y] += amount;
+              glog.info('Account:${a.id}/${a.name} transfer (in) $amount from $fromId now ${accountSeries[id]![y]}');
             }
           }
         }
 
+        glog.info('Account:${a.id}/${a.name} value after transactions now ${accountSeries[id]![y]}');
+        
         // Interest (Use rate adjustment)
         double rate = a.rate + rateAdjustment;
         accountSeries[id]![y] *= (1 + rate);
+
+        glog.info('Account:${a.id}/${a.name} final after interest now ${accountSeries[id]![y]}');
       }
-      incomeLine[y] = yearIncomeTotal;
+      incomeLine[y] = current[0].amount-currentTotal; // difference from start to end of year is how much income we had
       double total = 0;
-      for (Account a in accountList) {
+      for (Account a in pensionList) {
         if (a.id != null && accountSeries.containsKey(a.id!)) {
           total += accountSeries[a.id!]![y];
         }
@@ -222,10 +298,6 @@ class SimulationService {
     List<double> mcMinList = List.filled(count, 0.0);
     List<double> mcMaxList = List.filled(count, 0.0);
     List<List<double>> montePath = []; // Store all total-sum paths
-
-    final pensionList = accountList
-        .where((a) => a.type == AccountType.pension)
-        .toList();
 
     if (pensionList.isNotEmpty) {
       mcMinList = List.filled(count, double.infinity);
@@ -328,9 +400,7 @@ class SimulationService {
     }
 
     stopwatch.stop();
-    glog.info(
-      'SimulationService: $count years simulated in ${stopwatch.elapsedMilliseconds}ms',
-    );
+    glog.info('SimulationService: $count years simulated in ${stopwatch.elapsedMilliseconds}ms',);
 
     return SimulationResult(
       sumPotMin: sumMin,

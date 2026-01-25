@@ -19,6 +19,15 @@ class Income extends Base{
   Income.fromBase(Base base, {required this.intoId, required this.startAt, this.endAt
   }) : super(id:base.id, name:base.name, amount:base.amount, rate:base.rate);
 
+  Income.startAt(Income from, {required this.startAt})
+      : intoId = from.intoId, endAt = from.endAt,
+        super(id: from.id, name: from.name, amount: from.amount, rate: from.rate);
+
+  Income.endAt(Income from, {required this.endAt})
+      : intoId = from.intoId, startAt = from.startAt,
+        super(id: from.id, name: from.name, amount: from.amount, rate: from.rate);
+
+
   Income copyWith({
     int? id,
     String? name,
@@ -68,7 +77,7 @@ class Income extends Base{
     Income temp = Income.fromBase(base,
       intoId: json['intoId'] as int,
       startAt: AgeOrDate.fromJson(json['startAt']),
-      endAt: json['endAt'] == null ? null : AgeOrDate.fromJson(json['endat']),
+      endAt: json['endAt'] == null ? null : AgeOrDate.fromJson(json['endAt']),
     );
     return temp;
   }

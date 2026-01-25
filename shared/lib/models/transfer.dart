@@ -21,6 +21,12 @@ class Transfer extends Base{
   Transfer.fromBase(Base base, {required this.fromId, required this.intoId, required this.startAt,
     this.endAt}) : super(id:base.id, name:base.name, amount:base.amount, rate:base.rate);
 
+  Transfer.startAt(Transfer from, {required this.startAt}) : fromId=from.fromId, intoId=from.intoId, endAt=from.endAt, 
+    super(id:from.id, name:from.name, amount:from.amount, rate:from.rate);
+    
+  Transfer.endAt(Transfer from, {required this.endAt}) : fromId=from.fromId, intoId=from.intoId, startAt=from.startAt,
+    super(id:from.id, name:from.name, amount:from.amount, rate:from.rate);
+    
   Transfer copyWith({
     int? id,
     String? name,
@@ -59,7 +65,7 @@ class Transfer extends Base{
           json['startAt'] = AgeOrDate.fromString(value as String).toJson();
           break;
         case 'endat':
-          json['endAt'] == null ? null : AgeOrDate.fromString(value as String).toJson();
+          json['endAt'] = value == null ? null : AgeOrDate.fromString(value as String).toJson();
           break;
         default:
           ; //json[columnName] = value; base deals with other columns

@@ -67,7 +67,7 @@ class OutgoingApi extends Access {
       db.execute(
         '''INSERT INTO outgoing (userid, name, fromid, amount, startat, endat, rate) 
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        [userId, newOutgoing.name, newOutgoing.fromId, newOutgoing.amount, newOutgoing.startAt, newOutgoing.endAt, newOutgoing.rate],
+        [userId, newOutgoing.name, newOutgoing.fromId, newOutgoing.amount, newOutgoing.startAt.toString(), newOutgoing.endAt.toString(), newOutgoing.rate],
       );
       return ok();
     } catch (e) {
@@ -105,7 +105,7 @@ class OutgoingApi extends Access {
       db.execute(
         '''UPDATE outgoing SET name=?, fromid=?, amount=?, startat=?, endat=?, rate=? 
           WHERE id=?''',
-        [updatedOutgoing.name, updatedOutgoing.fromId, updatedOutgoing.amount, updatedOutgoing.startAt, updatedOutgoing.endAt, updatedOutgoing.rate, id],
+        [updatedOutgoing.name, updatedOutgoing.fromId, updatedOutgoing.amount, updatedOutgoing.startAt.toString(), updatedOutgoing.endAt.toString(), updatedOutgoing.rate, id],
       );
       return ok();
     } catch (e) {

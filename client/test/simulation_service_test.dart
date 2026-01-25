@@ -16,14 +16,14 @@ void main() {
         rate: 0.10, // 10%
       );
 
-      SimulationService sim = SimulationService();
-      final result = sim.run(
+      SimulationService sim = SimulationService(
         accountList: [acc],
         incomeList: [],
         outgoingList: [],
         transferList: [],
         dob: DateTime(1980, 1, 1),
       );
+      final result = sim.simulate();
 
       expect(result.accountMap, hasLength(1));
       final pot = result.accountMap[0];
@@ -51,8 +51,7 @@ void main() {
         rate: 0.05,
       );
 
-      SimulationService sim = SimulationService();
-      final result = sim.run(
+      SimulationService sim = SimulationService(
         accountList: [acc],
         incomeList: [],
         outgoingList: [],
@@ -60,6 +59,7 @@ void main() {
         dob: DateTime(1980, 1, 1),
         volatility: 0.20, // High volatility
       );
+      final result = sim.simulate();
       
       expect(result.montePath, isNotNull);
       expect(result.montePath!.length, 300); // We set 300 runs

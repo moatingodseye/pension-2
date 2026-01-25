@@ -191,6 +191,7 @@ class SimulationChart extends StatelessWidget {
           borderData: FlBorderData(show: true, border: Border.all(color: Colors.black12)),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) => Colors.grey.shade200, // Light grey background
               fitInsideHorizontally: true,
               fitInsideVertically: true,
               getTooltipItems: (touchedSpots) {

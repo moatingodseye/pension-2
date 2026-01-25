@@ -33,6 +33,22 @@ class User {
     );
   }
 
+  factory User.fromDb(Map<String, Object?> row) {
+    final json = <String,dynamic>{};
+    row.forEach((columnName, value) {
+      switch (columnName) {
+        case 'intoid':
+          json['intoId'] = value; // just a string at the point
+          break;
+        default:
+          json[columnName] = value;
+      }
+    });
+
+    // Single source of truth
+    return User.fromJson(json); 
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] as int?,

@@ -28,7 +28,6 @@ class SimulationProvider extends ChangeNotifier {
     required DateTime dob, // Needed for ageList
   }) async {
     glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment)');
-    SimulationService sim = SimulationService();
     isLoading = true;
     error = null;
     notifyListeners();
@@ -44,7 +43,7 @@ class SimulationProvider extends ChangeNotifier {
 
       // 2. Client Run (Visual Cloud)
       glog.info('Running client-side Monte Carlo (${accountList.length} accounts)...');
-      final clientResult = sim.run(
+      SimulationService sim = SimulationService(
         accountList: accountList,
         incomeList: incomeList,
         outgoingList: outgoingList,
@@ -53,6 +52,7 @@ class SimulationProvider extends ChangeNotifier {
         volatility: volatility,
         rateAdjustment: rateAdjustment,
       );
+      final clientResult = sim.simulate();
       glog.info('Client-side simulation completed.');
 
       // 3. Merge

@@ -4,7 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/account_provider.dart';
 import '../providers/income_provider.dart';
 import '../providers/outgoing_provider.dart';
-import '../models/account_type.dart';
+import 'package:shared/models/account_type.dart';
+import 'package:shared/models/account.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,7 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Calculate Totals
         double totalPension = 0;
         double totalSavings = 0;
-        for (var a in accProv.accounts) {
+        for (Account a in accProv.accounts) {
           if (a.type == AccountType.pension) {
             totalPension += a.amount;
           } else {

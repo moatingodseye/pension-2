@@ -18,6 +18,11 @@ class Account extends Base{
   Account.fromBase(Base base, {required this.type, required AgeOrDate this.amountAt,
   }) : super(id:base.id, name:base.name, amount:base.amount, rate:base.rate);
 
+  // Change Constructor - create a copy of the Account with a different amountAt
+  Account.amountAt(Account from, {required this.amountAt})
+      : type = from.type,
+        super(id: from.id, name: from.name, amount: from.amount, rate: from.rate);
+
   Account copyWith({
     int? id,
     String? name,
