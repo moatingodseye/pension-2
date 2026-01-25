@@ -46,10 +46,10 @@ class _SimulationScreenState extends State<SimulationScreen> {
     final outFn = Provider.of<OutgoingProvider>(context, listen: false);
     final trFn = Provider.of<TransferProvider>(context, listen: false);
 
-    if (accFn.accounts.isEmpty) await accFn.load();
-    if (incFn.incomes.isEmpty) await incFn.load();
-    if (outFn.outgoings.isEmpty) await outFn.load();
-    if (trFn.transfers.isEmpty) await trFn.load();
+    await accFn.load();
+    await incFn.load();
+    await outFn.load();
+    await trFn.load();
 
     // Ensure we have a valid DOB
     if (authFn.dob == null) {

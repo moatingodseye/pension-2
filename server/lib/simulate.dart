@@ -13,12 +13,24 @@ import 'package:shared/models/transfer.dart';
 import 'package:shared/models/simulation_result.dart';
 import 'package:shared/models/ageOrDate.dart';
 
+class Transaction {
+  int id;
+  double amount;
+  Object source;
+  bool use;
+
+  Transaction(this.id, this.amount, this.source) : use=false;
+}
+
 class Simulate {
   List<Account>? accountList;
   List<Income>? incomeList;
   List<Outgoing>? outgoingList;
   List<Transfer>? transferList;
   User? user;
+  List<Transaction> income = [];
+  List<Transaction> outgoing = [];
+  List<Transaction> transfer = [];
     
   // Box-Muller transform
   double normal(Random rand) {
@@ -61,58 +73,90 @@ class Simulate {
     return true;
   }
 
-    void prepare(DateTime dob) {
-      // convert AgeOrDate's into dates to make comparison easier
-      for (Account a in accountList!) {
-        if (a.id == null) continue;
-        if (a.amountAt.age!=null)  {
-          Account replace = Account.amountAt(a,amountAt:AgeOrDate(date:addYear(dob,a.amountAt.age!)));
-          accountList![accountList!.indexOf(a)] = replace;
-        }
-      }
-    
-      for (Income a in incomeList!) {
-        if (a.id == null) continue;
-        if (a.startAt.age!=null)  {
-          Income replace = Income.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-          incomeList![incomeList!.indexOf(a)] = replace;
-          a = replace;
-        }
-        if (a.endAt != null && a.endAt!.age!=null)  {
-          Income replace = Income.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-          incomeList![incomeList!.indexOf(a)] = replace;
-          a = replace;
-        }
-      }
-
-      for (Outgoing a in outgoingList!) {
-        if (a.id == null) continue;
-        if (a.startAt.age!=null)  {
-          Outgoing replace = Outgoing.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-          outgoingList![outgoingList!.indexOf(a)] = replace;
-          a = replace;
-        }
-        if (a.endAt != null && a.endAt!.age!=null)  {
-          Outgoing replace = Outgoing.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-          outgoingList![outgoingList!.indexOf(a)] = replace;
-          a = replace;
-        }
-      }
-
-      for (Transfer a in transferList!) {
-        if (a.id == null) continue;
-        if (a.startAt.age!=null)  {
-          Transfer replace = Transfer.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-          transferList![transferList!.indexOf(a)] = replace;
-          a = replace;
-        }
-        if (a.endAt != null && a.endAt!.age!=null)  {
-          Transfer replace = Transfer.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-          transferList![transferList!.indexOf(a)] = replace;
-          a = replace;
-        }
+  void prepare(DateTime dob) {
+    // convert AgeOrDate's into dates to make comparison easier
+    for (Account a in accountList!) {
+      if (a.id == null) continue;
+      if (a.amountAt.age!=null)  {
+        Account replace = Account.amountAt(a,amountAt:AgeOrDate(date:addYear(dob,a.amountAt.age!)));
+        accountList![accountList!.indexOf(a)] = replace;
       }
     }
+  
+    for (Income a in incomeList!) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Income replace = Income.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        incomeList![incomeList!.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Income replace = Income.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        incomeList![incomeList!.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+
+    for (Outgoing a in outgoingList!) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Outgoing replace = Outgoing.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        outgoingList![outgoingList!.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Outgoing replace = Outgoing.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        outgoingList![outgoingList!.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+
+    for (Transfer a in transferList!) {
+      if (a.id == null) continue;
+      if (a.startAt.age!=null)  {
+        Transfer replace = Transfer.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
+        transferList![transferList!.indexOf(a)] = replace;
+        a = replace;
+      }
+      if (a.endAt != null && a.endAt!.age!=null)  {
+        Transfer replace = Transfer.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
+        transferList![transferList!.indexOf(a)] = replace;
+        a = replace;
+      }
+    }
+  }
+
+  void rate() {
+    for (Transaction t in income) {
+      Income i = t.source as Income;
+      t.amount *= (1.0 + i.rate);
+    }
+    for (Transaction t in outgoing) {
+      Outgoing o = t.source as Outgoing;
+      t.amount *= (1.0 + o.rate);
+    }
+    for (Transaction t in transfer) {
+      Transfer r = t.source as Transfer;
+      t.amount *= (1.0 + r.rate);
+    }
+  }
+
+  void mark(DateTime when, int year) {
+    for (Transaction t in income) {
+      Income i = t.source as Income;
+      t.use = isInRange(user!, when, year, i.startAt, i.endAt);
+    }
+
+    for (Transaction t in outgoing) {
+      Outgoing o = t.source as Outgoing;
+      t.use = isInRange(user!, when, year, o.startAt, o.endAt);
+    }
+
+    for (Transaction t in transfer) {
+      Transfer r = t.source as Transfer;
+      t.use = isInRange(user!, when, year, r.startAt, r.endAt);
+    }
+  }
 
   bool load(int uid) {
     final db = pension.getDb();
@@ -222,79 +266,91 @@ class Simulate {
         if (a.id == null) continue;
         accountValue[a.id!] = a.amount;
       }
+      for (Income i in incomeList!) {
+        income.add(Transaction(i.id!,i.amount * 12,i));
+      }
+      for (Outgoing o in outgoingList!) {
+        outgoing.add(Transaction(o.id!,o.amount * 12,o));
+      }
+      for (Transfer t in transferList!) {
+        transfer.add(Transaction(t.id!,t.amount * 12,t));
+      }
 
       int x = 0;
 
       // Simulation Loop
       for (int y = 0; y < count; y++) {
-        double currentTotal = accountValue[current[0].id]!;
 
-        // Init year value (copy prev) & Interest
-        for (Account a in accountList!) {
-          if (a.id == null) continue;
-          int id = a.id!;
+        if (y>0) { // stgart at year 1, so 0=unaffected 1=after 1 year
+          rate(); // apply rate to all transactions
+          mark(earliestDate,y); // mark which transactions apply to this year
+          double currentTotal = accountValue[current[0].id]!;
 
-          if (id==2)
-            x = 1;
+          // Init year value (copy prev) & Interest
+          for (Account a in accountList!) {
+            if (a.id == null) continue;
+            int id = a.id!;
 
-          if (y > 0) {
-            accountSeries[id]![y] = accountSeries[id]![y - 1];
-          }
+            if (id==2)
+              x = 1;
 
-          // Incomes
-          for (Income inc in incomeList!) {
-            if (isInRange(user!, earliestDate, y, inc.startAt, inc.endAt)) {
-              double amount = inc.amount * 12;
-              if (id==inc.intoId) {
-                accountSeries[id]![y] += amount;
-                accountValue[id] = (accountValue[id] ?? 0) + amount;
+            if (y > 0) {
+              accountSeries[id]![y] = accountSeries[id]![y - 1];
+            }
+
+            // Incomes
+            for (Transaction t in income) {
+              if (t.use) {
+                Income i = t.source as Income;
+                if (id==i.intoId) {
+                  accountSeries[id]![y] += t.amount;
+                  accountValue[id] = (accountValue[id] ?? 0) + t.amount;
+                }
               }
             }
-          }
 
-          // Outgoings
-          for (Outgoing out in outgoingList!) {
-            if (isInRange(user!, earliestDate, y, out.startAt, out.endAt)) {
-              double amount = out.amount * 12;
-              int? fromId = out.fromId;
-              if (id==fromId) {
-                accountSeries[id]![y] -= amount;
-                accountValue[id] = (accountValue[id] ?? 0) - amount;
-                if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+            // Outgoings
+            for (Transaction t in outgoing) {
+              if (t.use) {
+                Outgoing o = t.source as Outgoing;
+                if (id==o.fromId) {
+                  accountSeries[id]![y] -= t.amount;
+                  accountValue[id] = (accountValue[id] ?? 0) - t.amount;
+                  if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+                }
               }
             }
-          }
 
-          // Transfers
-          for (Transfer tr in transferList!) {
-            if (isInRange(user!, earliestDate, y, tr.startAt, tr.endAt)) {
-              double amount = tr.amount * 12;
-              int fromId = tr.fromId;
-              int intoId = tr.intoId;
-
-              if (id==(fromId)) {
-                accountSeries[id]![y] -= amount;
-                accountValue[id] = (accountValue[id] ?? 0.0) - amount;
-              }
-              if (id==(intoId)) {
-                accountSeries[id]![y] += amount;
-                accountValue[id] = (accountValue[id] ?? 0.0) + amount;
+            // Transfers
+            for (Transaction t in transfer) {
+              if (t.use) {
+                Transfer r = t.source as Transfer;
+                if (id==r.fromId || id==r.intoId) {
+                  if (id==r.fromId) {
+                    accountSeries[id]![y] -= t.amount;
+                    accountValue[id] = (accountValue[id] ?? 0.0) - t.amount;
+                  }
+                  if (id==r.intoId) {
+                    accountSeries[id]![y] += t.amount;
+                    accountValue[id] = (accountValue[id] ?? 0.0) + t.amount;
+                  }
+                }
               }
             }
-          }
 
-          // Interest (Use rate adjustment)
-          double rate = a.rate + rateAdjustment;
-          accountSeries[id]![y] *= (1 + rate);
-          accountValue[id] = (accountValue[id] ?? 0.0) * (1.0 + rate);
+            // Interest (Use rate adjustment)
+            double rate = a.rate + rateAdjustment;
+            accountSeries[id]![y] *= (1 + rate);
+            accountValue[id] = (accountValue[id] ?? 0.0) * (1.0 + rate);
+          }
+          
+          incomeValue[y] = accountValue[current[0].id]!-currentTotal;
+          double total = 0;
+          for (Account a in pensionList!) {
+            if (a.id != null) total += accountSeries[a.id!]![y];
+          }
+          sumValue[y] = total;
         }
-        
-        incomeValue[y] = accountValue[current[0].id]!-currentTotal;
-        double total = 0;
-        for (Account a in pensionList!) {
-          if (a.id != null) total += accountSeries[a.id!]![y];
-        }
-        sumValue[y] = total;
       }
 
       // MC
