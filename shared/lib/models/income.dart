@@ -61,7 +61,7 @@ class Income extends Base{
           json['startAt'] = AgeOrDate.fromString(value as String).toJson();
           break;
         case 'endat':
-          json['endAt'] == null ? null : AgeOrDate.fromString(value as String).toJson();
+          json['endAt'] = value == null ? null : AgeOrDate.fromString(value as String).toJson();
           break;
         default:
           ; //json[columnName] = value; base deals with other columns

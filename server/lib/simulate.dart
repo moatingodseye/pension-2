@@ -224,7 +224,7 @@ class Simulate {
             headers: {'Content-Type': 'application/json'});
       }
 
-      const int maxAge = 77;// 120;
+      const int maxAge = 120;
 
       // Earliest start date
       DateTime earliestDate = DateTime.now();
@@ -239,21 +239,18 @@ class Simulate {
       prepare(user!.dob!);
 
       final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
+      final current = accountList!.where((a) => a.type == AccountType.current).toList();
 
       DateTime endDate = addYear(user!.dob!, maxAge);
       int count = yearsBetween(earliestDate, endDate).toInt();
       if (count < 0) count = 1;
 
-      // Init series
-      // Map<AccountId, List<double>>
       Map<int, List<double>> accountSeries = {};
       for (Account a in accountList!) {
         if (a.id == null) continue;
         accountSeries[a.id!] = List.filled(count, 0.0);
         accountSeries[a.id!]![0] = a.amount;
       }
-
-      final current = accountList!.where((a) => a.type == AccountType.current).toList();
 
       Map<int,double> accountValue = {};
       List<double> sumValue = List.filled(count, 0);
@@ -291,12 +288,11 @@ class Simulate {
             if (a.id == null) continue;
             int id = a.id!;
 
-            if (id==2)
+            if (id==2) {
               x = 1;
-
-            if (y > 0) {
-              accountSeries[id]![y] = accountSeries[id]![y - 1];
             }
+
+            accountSeries[id]![y] = accountSeries[id]![y - 1];
 
             // Incomes
             for (Transaction t in income) {
@@ -346,7 +342,7 @@ class Simulate {
           
           incomeValue[y] = accountValue[current[0].id]!-currentTotal;
           double total = 0;
-          for (Account a in pensionList!) {
+          for (Account a in pensionList) {
             if (a.id != null) total += accountSeries[a.id!]![y];
           }
           sumValue[y] = total;
@@ -354,7 +350,7 @@ class Simulate {
       }
 
       // MC
-      int mcRuns = 2000;
+      int mcRuns = 10000;
       List<double> mcMinList = List.filled(count, 0.0);
       List<double> mcMaxList = List.filled(count, 0.0);
 

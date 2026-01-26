@@ -9,6 +9,15 @@ import 'package:shared/models/transfer.dart';
 import 'package:shared/models/simulation_result.dart';
 import 'package:shared/models/ageOrDate.dart';
 
+class Transaction {
+  int id;
+  double amount;
+  Object source;
+  bool use;
+
+  Transaction(this.id, this.amount, this.source) : use=false;
+}
+
 class SimulationService {
   final List<Account> accountList;
   final List<Income> incomeList;
@@ -17,6 +26,9 @@ class SimulationService {
   final DateTime dob;
   final double volatility;
   final double rateAdjustment;
+  List<Transaction> income = [];
+  List<Transaction> outgoing = [];
+  List<Transaction> transfer = [];
 
   SimulationService({
     required this.accountList,
@@ -62,19 +74,10 @@ class SimulationService {
       s = startAt.date;
     }
 
-    if (startAt.age != null) {
-      //      int? age = int.tryParse(startAt);
-      s = addYear(dob, startAt.age!);
-    }
-
-    // Parse End
     if (endAt==null || (endAt.date==null && endAt.age==null)) e = null;
 
     if (endAt?.date != null) {
       e = endAt?.date!;
-    }
-    if (endAt !=null && endAt.age != null) {
-      e = addYear(dob,endAt.age!);
     }
 
     if (s != null && currentYearDate.isBefore(s)) return false;
@@ -85,54 +88,86 @@ class SimulationService {
 
   void prepare(DateTime dob) {
     // convert AgeOrDate's into dates to make comparison easier
-    for (Account a in accountList) {
+    for (Account a in accountList!) {
       if (a.id == null) continue;
       if (a.amountAt.age!=null)  {
         Account replace = Account.amountAt(a,amountAt:AgeOrDate(date:addYear(dob,a.amountAt.age!)));
-        accountList[accountList.indexOf(a)] = replace;
+        accountList![accountList!.indexOf(a)] = replace;
       }
     }
   
-    for (Income a in incomeList) {
+    for (Income a in incomeList!) {
       if (a.id == null) continue;
       if (a.startAt.age!=null)  {
         Income replace = Income.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-        incomeList[incomeList.indexOf(a)] = replace;
+        incomeList![incomeList!.indexOf(a)] = replace;
         a = replace;
       }
       if (a.endAt != null && a.endAt!.age!=null)  {
         Income replace = Income.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-        incomeList[incomeList.indexOf(a)] = replace;
+        incomeList![incomeList!.indexOf(a)] = replace;
         a = replace;
       }
     }
 
-    for (Outgoing a in outgoingList) {
+    for (Outgoing a in outgoingList!) {
       if (a.id == null) continue;
       if (a.startAt.age!=null)  {
         Outgoing replace = Outgoing.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-        outgoingList[outgoingList.indexOf(a)] = replace;
+        outgoingList![outgoingList!.indexOf(a)] = replace;
         a = replace;
       }
       if (a.endAt != null && a.endAt!.age!=null)  {
         Outgoing replace = Outgoing.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-        outgoingList[outgoingList.indexOf(a)] = replace;
+        outgoingList![outgoingList!.indexOf(a)] = replace;
         a = replace;
       }
     }
 
-    for (Transfer a in transferList) {
+    for (Transfer a in transferList!) {
       if (a.id == null) continue;
       if (a.startAt.age!=null)  {
         Transfer replace = Transfer.startAt(a,startAt:AgeOrDate(date:addYear(dob,a.startAt.age!)));
-        transferList[transferList.indexOf(a)] = replace;
+        transferList![transferList!.indexOf(a)] = replace;
         a = replace;
       }
       if (a.endAt != null && a.endAt!.age!=null)  {
         Transfer replace = Transfer.endAt(a,endAt:AgeOrDate(date:addYear(dob,a.endAt!.age!)));
-        transferList[transferList.indexOf(a)] = replace;
+        transferList![transferList!.indexOf(a)] = replace;
         a = replace;
       }
+    }
+  }
+
+  void rate() {
+    for (Transaction t in income) {
+      Income i = t.source as Income;
+      t.amount *= (1.0 + i.rate);
+    }
+    for (Transaction t in outgoing) {
+      Outgoing o = t.source as Outgoing;
+      t.amount *= (1.0 + o.rate);
+    }
+    for (Transaction t in transfer) {
+      Transfer r = t.source as Transfer;
+      t.amount *= (1.0 + r.rate);
+    }
+  }
+
+  void mark(DateTime when, int year) {
+    for (Transaction t in income) {
+      Income i = t.source as Income;
+      t.use = isInRange(dob, when, year, i.startAt, i.endAt);
+    }
+
+    for (Transaction t in outgoing) {
+      Outgoing o = t.source as Outgoing;
+      t.use = isInRange(dob, when, year, o.startAt, o.endAt);
+    }
+
+    for (Transaction t in transfer) {
+      Transfer r = t.source as Transfer;
+      t.use = isInRange(dob, when, year, r.startAt, r.endAt);
     }
   }
 
@@ -165,7 +200,13 @@ class SimulationService {
       );
     }
 
-    const int maxAge = 77;//120;
+    const int maxAge = 120;
+
+    prepare(dob);
+
+    final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
+    final current = accountList!.where((a) => a.type == AccountType.current).toList();
+
 
     // Earliest start date
     DateTime earliestDate = DateTime.now();
@@ -177,9 +218,6 @@ class SimulationService {
       earliestDate = minDate.date!;
     }
 
-    // convert ages into dates for ease of comparison
-    prepare(dob);
-
     DateTime endDate = addYear(dob, maxAge);
     int count = yearsBetween(earliestDate, endDate).toInt();
     if (count < 0) count = 0;
@@ -188,21 +226,15 @@ class SimulationService {
     // 2. DETERMINISTIC RUN (Base Case)
     // ---------------------------------------------------------
 
-    // Map<AccountId, List<double>>
     Map<int, List<double>> accountSeries = {};
-
     for (Account a in accountList) {
       if (a.id == null) continue;
       accountSeries[a.id!] = List.filled(count, 0.0);
       accountSeries[a.id!]![0] = a.amount;
     }
 
-    final current = accountList!.where((a) => a.type == AccountType.current).toList();
-    final pensionList = accountList
-        .where((a) => a.type == AccountType.pension)
-        .toList();
-
-
+    Map<int,double> accountValue = {};
+    Map<int,String> an = {};
     List<double> sumLine = List.filled(count, 0);
     List<double> incomeLine = List.filled(count, 0);
     List<double> ageList = List.generate(
@@ -210,90 +242,124 @@ class SimulationService {
       (i) => yearsBetween(dob, addYear(earliestDate, i)).toDouble(),
     );
 
+    // Initialise
+    for (Account a in accountList!) {
+      if (a.id == null) continue;
+      accountValue[a.id!] = a.amount;
+      an[a.id!] = '${a.id}/${a.name}';
+    }
+    for (Income i in incomeList!) {
+      income.add(Transaction(i.id!,i.amount * 12,i));
+    }
+    for (Outgoing o in outgoingList!) {
+      outgoing.add(Transaction(o.id!,o.amount * 12,o));
+    }
+    for (Transfer t in transferList!) {
+      transfer.add(Transaction(t.id!,t.amount * 12,t));
+    }
+
     for (int y = 0; y < count; y++) {
-      double currentTotal = current[0].amount;
+      glog.info('');
+      glog.info('Year:$y ${addYear(earliestDate,y)}');
+      if (y==0) {
+        for (Account a in accountList) {
+          glog.info('Account:${an[a.id!]} year:$y initial value:${accountSeries[a.id!]![y]}  ${accountValue[a.id!]}');
+        }
+      }
 
-      // Init year value (copy prev) & Interest
-      for (Account a in accountList) {
-        if (a.id == null) continue;
-        int id = a.id!;
+      if (y==6) {
+        int x = 1;
+      }
 
-        if (y > 0) {
+      if (y>0) { // stgart at year 1, so 0=unaffected 1=after 1 year
+        rate(); // apply rate to all transactions
+        mark(earliestDate,y); // mark which transactions apply to this year
+        double currentTotal = accountValue[current[0].id]!;
+
+        // Init year value (copy prev) & Interest
+        for (Account a in accountList) {
+          if (a.id == null) continue;
+          int id = a.id!;
+
           accountSeries[id]![y] = accountSeries[id]![y - 1];
-        }
 
-        glog.info('');
-        glog.info('Account:${a.id}/${a.name} year:$y initial value:${accountSeries[id]![y]}');
+          glog.info('');
+          glog.info('Account:${an[a.id!]} year:$y initial value:${accountSeries[id]![y]}  ${accountValue[a.id!]}');
 
-        // Incomes
-        for (Income inc in incomeList) {
-          if (isInRange(dob, earliestDate, y, inc.startAt, inc.endAt)) {
-            double amount = inc.amount * 12; // needs rate applying and remembering from previous year.
-            int? intoId = inc.intoId;
-            if (id==intoId) {
-              accountSeries[id]![y] += amount;
-              glog.info('Account:${a.id}/${a.name} income $amount from ${inc.id}/${inc.name} now ${accountSeries[id]![y]}');
+          // Incomes
+          for (Transaction t in income) {
+            if (t.use) {
+              Income i = t.source as Income;
+              if (a.id==i.intoId) {
+                accountSeries[id]![y] += t.amount;
+                accountValue[id] = (accountValue[id] ?? 0) + t.amount;
+
+                glog.info('Account:${an[a.id!]} income ${t.amount} from ${i.id}/${i.name} now ${accountSeries[id]![y]}');
+              }
             }
           }
-        }
 
-        // Outgoings
-        for (Outgoing out in outgoingList) {
-          if (isInRange(dob, earliestDate, y, out.startAt, out.endAt)) {
-            double amount = out.amount * 12; // rate again
-            int? fromId = out.fromId;
-            if (id==fromId) {
-              accountSeries[id]![y] -= amount;
-              if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
-              glog.info('Account:${a.id}/${a.name} outgoing $amount into ${out.id}/${out.name} now ${accountSeries[id]![y]}');
+          // Outgoings
+          for (Transaction t in outgoing) {
+            if (t.use) {
+              Outgoing o = t.source as Outgoing;
+              if (a.id==o.fromId) {
+                accountSeries[id]![y] -= t.amount;
+                accountValue[id] = (accountValue[id] ?? 0) - t.amount;
+
+//                if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
+                glog.info('Account:${an[a.id!]} outgoing ${t.amount} into ${o.id}/${o.name} now ${accountSeries[id]![y]}');
+              }
             }
           }
-        }
 
-        // Transfers
-        for (Transfer tr in transferList) {
-          if (isInRange(dob, earliestDate, y, tr.startAt, tr.endAt)) {
-            double amount = tr.amount * 12;
-            int fromId = tr.fromId;
-            int intoId = tr.intoId;
-
-            if (id==fromId) {
-//              double avail = accountSeries[fromId]![y];
-//              double actual = (avail < amount) ? avail : amount;
-
-              accountSeries[id]![y] -= amount;
-              glog.info('Account:${a.id}/${a.name} transfer (out) $amount into $intoId now ${accountSeries[id]![y]}');
-            }
-            if (id==intoId) {
-              accountSeries[id]![y] += amount;
-              glog.info('Account:${a.id}/${a.name} transfer (in) $amount from $fromId now ${accountSeries[id]![y]}');
+          // Transfers
+          for (Transaction t in transfer) {
+            if (t.use) {
+              Transfer r = t.source as Transfer;
+              if (a.id==r.fromId) {
+                accountSeries[id]![y] -= t.amount;
+                accountValue[id] = (accountValue[id] ?? 0) - t.amount;
+                glog.info('Account:${an[a.id!]} transfer (out/${r.name}) ${t.amount} into ${r.intoId}/${an[r.intoId]} now ${accountSeries[id]![y]}');
+              }
+              if (a.id==r.intoId) {
+                accountSeries[id]![y] += t.amount;
+                accountValue[id] = (accountValue[id] ?? 0) + t.amount;
+                glog.info('Account:${an[a.id!]} transfer (in/${r.name}) ${t.amount} from ${r.fromId}/${an[r.fromId]} now ${accountSeries[id]![y]}');
+              }
             }
           }
+
+          glog.info('Account:${a.id}/${a.name} value after transactions now ${accountSeries[id]![y]}');
+          
+          // Interest (Use rate adjustment)
+          double rate = a.rate + rateAdjustment;
+          accountSeries[id]![y] *= (1 + rate);
+
+          glog.info('Account:${a.id}/${a.name} final after interest now ${accountSeries[id]![y]}');
         }
 
-        glog.info('Account:${a.id}/${a.name} value after transactions now ${accountSeries[id]![y]}');
-        
-        // Interest (Use rate adjustment)
-        double rate = a.rate + rateAdjustment;
-        accountSeries[id]![y] *= (1 + rate);
-
-        glog.info('Account:${a.id}/${a.name} final after interest now ${accountSeries[id]![y]}');
+        incomeLine[y] = accountValue[current[0].id]!-currentTotal; // difference from start to end of year is how much income we had
+        double total = 0;
+        for (Account a in pensionList) {
+          if (a.id != null && accountSeries.containsKey(a.id!)) {
+            total += accountSeries[a.id!]![y];
+          }
+        }
+        sumLine[y] = total;
       }
-      incomeLine[y] = current[0].amount-currentTotal; // difference from start to end of year is how much income we had
-      double total = 0;
-      for (Account a in pensionList) {
-        if (a.id != null && accountSeries.containsKey(a.id!)) {
-          total += accountSeries[a.id!]![y];
-        }
+      glog.info('EOY');
+      for (Account a in accountList) {
+        glog.info('Account:${a.id}/${a.name} year:$y final value:${accountSeries[a.id!]![y]}  ${accountValue[a.id!]}');
       }
-      sumLine[y] = total;
+
     }
 
     // ---------------------------------------------------------
     // 3. MONTE CARLO SIMULATION
     // ---------------------------------------------------------
 
-    int mcRuns = 3000;
+    int mcRuns = 10000;
 
     List<double> mcMinList = List.filled(count, 0.0);
     List<double> mcMaxList = List.filled(count, 0.0);
