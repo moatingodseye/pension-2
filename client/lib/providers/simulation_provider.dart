@@ -7,6 +7,8 @@ import 'package:shared/models/account.dart';
 import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
+import 'package:shared/models/user.dart';
+
 import '../services/simulation_service.dart';
 
 import '../services/debugLogger.dart';
@@ -25,7 +27,7 @@ class SimulationProvider extends ChangeNotifier {
     required List<Income> incomeList,
     required List<Outgoing> outgoingList,
     required List<Transfer> transferList,
-    required DateTime dob, // Needed for ageList
+    required User user,
   }) async {
     glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment)');
     isLoading = true;
@@ -48,7 +50,7 @@ class SimulationProvider extends ChangeNotifier {
         incomeList: incomeList,
         outgoingList: outgoingList,
         transferList: transferList,
-        dob: dob,
+        user: user,
         volatility: volatility,
         rateAdjustment: rateAdjustment,
       );
@@ -71,7 +73,7 @@ class SimulationProvider extends ChangeNotifier {
         monteMinList: serverResult.monteMinList, 
         monteMaxList: serverResult.monteMaxList, 
         ageList: serverResult.ageList,
-        montePath: clientResult.montePath, // The cloud!
+        montePath: clientResult!.montePath, // The cloud!
       );
       
       // Reset showList based on pots

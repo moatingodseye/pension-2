@@ -52,8 +52,8 @@ class _SimulationScreenState extends State<SimulationScreen> {
     await trFn.load();
 
     // Ensure we have a valid DOB
-    if (authFn.dob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: User DOB missing for simulation')));
+    if (authFn.user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: User missing for simulation')));
       return;
     }
 
@@ -64,7 +64,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
       incomeList: incFn.incomes,
       outgoingList: outFn.outgoings,
       transferList: trFn.transfers,
-      dob: authFn.dob!,
+      user: authFn.user!,
     ).then((_) {
       if (mounted && provider.result != null) {
         setState(() {

@@ -59,6 +59,7 @@ class Authentication extends Access {
       return Response.ok(jsonEncode({
         'token': jwt.sign(SecretKey(jwtSecret)), 
         'isAdmin': user['isadmin'] == 1,
+        'id': user['id'],
         'dob': user['dob'] // Return DOB string
       }));
     } catch (e) {

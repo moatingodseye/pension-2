@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared/models/user.dart';
 import '../services/apiService.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool loggedIn = false;
   bool isAdmin = false;
-  DateTime? dob;
+  User? user;
 
   Future<void> login(String username, String password) async {
     final res = await ApiService.post('login', {
@@ -16,12 +17,12 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', res['token']); // ✅ changed: await added
       await ApiService.initToken(); // ✅ changed: await added
+      int? id = int.tryParse(res['id'].toString());
+      DateTime? dob = DateTime.tryParse(res['dob'].toString());
+      user = User(id:id, username:username, dob:dob);
 
       loggedIn = true; 
       isAdmin = res['isAdmin'];// suddenly changed to boolean was int! == 1; 
-      if (res['dob'] != null) {
-        dob = DateTime.tryParse(res['dob'].toString());
-      }
 
       notifyListeners();
     }

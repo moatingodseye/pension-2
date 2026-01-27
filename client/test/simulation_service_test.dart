@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/services/simulation_service.dart';
+import 'package:shared/models/user.dart';
 import 'package:shared/models/account.dart';
 import 'package:shared/models/account_type.dart';
 import 'package:shared/models/ageOrDate.dart';
@@ -21,12 +22,13 @@ void main() {
         incomeList: [],
         outgoingList: [],
         transferList: [],
-        dob: DateTime(1980, 1, 1),
+        user:User(username:'',dob:DateTime(1980, 1, 1)),
       );
       final result = sim.simulate();
+      expect(result,isNotNull);
 
-      expect(result.accountMap, hasLength(1));
-      final pot = result.accountMap[0];
+      expect(result!.accountMap, hasLength(1));
+      final pot = result!.accountMap[0];
       
       // Year 0: Initial amount 10000
       // Year 1: 10000 * 1.10 = 11000
@@ -56,19 +58,19 @@ void main() {
         incomeList: [],
         outgoingList: [],
         transferList: [],
-        dob: DateTime(1980, 1, 1),
+        user:User(username:'',dob:DateTime(1980, 1, 1)),
         volatility: 0.20, // High volatility
       );
       final result = sim.simulate();
+      expect(result!,isNotNull);
+      expect(result!.montePath, isNotNull);
+      expect(result!.montePath!.length, 300); // We set 300 runs
       
-      expect(result.montePath, isNotNull);
-      expect(result.montePath!.length, 300); // We set 300 runs
-      
-      expect(result.monteMinList, isNotEmpty);
-      expect(result.monteMaxList, isNotEmpty);
+      expect(result!.monteMinList, isNotEmpty);
+      expect(result!.monteMaxList, isNotEmpty);
       
       // P75 should be >= P25
-      expect(result.monteMaxList[0], greaterThanOrEqualTo(result.monteMinList[0]));
+      expect(result!.monteMaxList[0], greaterThanOrEqualTo(result.monteMinList[0]));
     });
   });
 }
