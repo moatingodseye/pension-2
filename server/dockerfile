@@ -2,12 +2,12 @@
 FROM dart:stable AS build
 
 # Resolve app dependencies.
-WORKDIR /app
-COPY pubspec.* ./
+RUN mkdir /app/
+COPY . /app/
+WORKDIR /app/server
 RUN dart pub get
 
 # Copy app source code (except anything in .dockerignore) and AOT compile app.
-COPY . .
 RUN mkdir -p /app/bin
 RUN dart pub get --offline
 RUN dart compile exe lib/server.dart -o bin/server -DLOG_LEVEL=INFO

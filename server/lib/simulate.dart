@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'db.dart';
-import 'debuglogger.dart'; // Import server logger
+import 'debugLogger.dart'; // Import server logger
 import 'package:shared/models/account.dart';
 import 'package:shared/models/user.dart';
 import 'package:shared/models/income.dart';
