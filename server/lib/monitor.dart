@@ -1,5 +1,5 @@
 import 'package:shelf/shelf.dart';
-import 'debuglogger.dart';
+import 'debugLogger.dart';
 
 final monitor1 = createMiddleware(
   requestHandler: (Request request) {
