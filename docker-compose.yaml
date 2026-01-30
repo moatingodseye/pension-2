@@ -1,6 +1,8 @@
 services:
   server:
-    build: ./server
+    build: 
+      context: .
+      dockerfile: server/dockerfile
     expose:
       - "8080"
     networks:
@@ -8,7 +10,9 @@ services:
         ipv4_address: 172.20.0.10
 
   client:
-    build: ./client
+    build:
+      context: .
+      dockerfile: client/dockerfile
     ports:
       - "81:80"
     environment:

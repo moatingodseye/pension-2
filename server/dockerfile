@@ -22,7 +22,7 @@ RUN rm -rf /var/lib/lists/*
 # and the pre-built AOT-runtime in the `/runtime/` directory of the base image.
 FROM scratch
 COPY --from=build /runtime/ /
-COPY --from=build /app/bin/server /app/bin/
+COPY --from=build /app/server/bin/server /app/bin/
 COPY --from=sqlite /usr/lib/x86_64-linux-gnu/libsqlite3.so /usr/lib/libsqlite3.so
 
 # Start server.
