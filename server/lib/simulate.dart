@@ -59,6 +59,9 @@ class Simulate {
           body != null ? (body['volatility'] as num?)?.toDouble() ?? 1.0 : 1.0;
       final double rateAdjustment =
           body != null ? (body['rate_adjustment'] as num?)?.toDouble() ?? 1.0 : 1.0;
+      final int step = body!=null ? (body['step'] as num?)?.toInt() ?? 12 : 12;
+      final int endAge = body!=null ? (body['endAge'] as num?)?.toInt() ?? 120 : 120;
+      final int duration = body!=null ? (body['duration'] as num?)?.toInt() ?? 100 : 100;
 
       if (accountList!.isEmpty) {
         return Response.ok(
@@ -85,7 +88,7 @@ class Simulate {
 
       shared.Simulate sim = shared.Simulate(accountList, incomeList, outgoingList, transferList, user!);
 
-      final result = sim.simulate(volatility,rateAdjustment);
+      final result = sim.simulate(volatility,rateAdjustment,step,endAge,duration);
 
       return Response.ok(jsonEncode(result!.toJson()),
           headers: {'Content-Type': 'application/json'});

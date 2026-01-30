@@ -149,7 +149,7 @@ class Simulate {
     }
   }
 
-  SimulationResult? simulate(double volatility, double rateAdjustment, {int stepMonths = 12, int? endAge, int? durationYears}) {
+  SimulationResult? simulate(double volatility, double rateAdjustment, int stepMonth, int? endAge, int? durationYear) {
     if (accountList!.isEmpty) {
       return null;
     }
@@ -171,8 +171,8 @@ class Simulate {
 
     // Determine End Date
     DateTime endDate;
-    if (durationYears != null) {
-        endDate = addYear(earliestDate, durationYears);
+    if (durationYear != null) {
+        endDate = addYear(earliestDate, durationYear);
     } else if (endAge != null) {
         endDate = addYear(user.dob!, endAge);
     } else {
@@ -180,10 +180,10 @@ class Simulate {
     }
 
     // Calculate total months and steps
-    int totalMonths = (endDate.year - earliestDate.year) * 12 + (endDate.month - earliestDate.month);
-    if (totalMonths < 1) totalMonths = 1;
+    int totalMonth = (endDate.year - earliestDate.year) * 12 + (endDate.month - earliestDate.month);
+    if (totalMonth < 1) totalMonth = 1;
     
-    int count = (totalMonths / stepMonths).ceil();
+    int count = (totalMonth / stepMonth).ceil();
     if (count < 1) count = 1;
     
     // Series Data
@@ -202,7 +202,7 @@ class Simulate {
     List<double> annualNetFlow = List.filled(count, 0); // Net Flow into Pension (Allocated to steps)
     
     List<double> ageValue = List.generate(count, (i) {
-        DateTime stepDate = DateTime(earliestDate.year, earliestDate.month + (i * stepMonths));
+        DateTime stepDate = DateTime(earliestDate.year, earliestDate.month + (i * stepMonth));
         return yearsBetween(user.dob!, stepDate).toDouble();
     });
 
@@ -233,7 +233,7 @@ class Simulate {
         // If step is monthly, we shouldn't increase inflation every month!
         // FIXED: Only apply inflation once per year.
         
-        DateTime currentStepDate = DateTime(earliestDate.year, earliestDate.month + (step * stepMonths));
+        DateTime currentStepDate = DateTime(earliestDate.year, earliestDate.month + (step * stepMonth));
         // Check if we passed a year boundary or simplified: just update rates annually
         // Simpler: Apply (1+rate)^(stepMonths/12) to transaction values? 
         // Existing logic was: `t.amount *= (1.0 + i.rate)`. This implies annual jump.
@@ -242,12 +242,12 @@ class Simulate {
         // Better: Continuous inflation?
         // Let's stick to: Update transaction values annually.
         
-        bool isYearBoundary = (step * stepMonths) % 12 < stepMonths; 
-        if (isYearBoundary && step * stepMonths >= 12) {
+        bool isYearBoundary = (step * stepMonth) % 12 < stepMonth; 
+        if (isYearBoundary && step * stepMonth >= 12) {
              rate(); 
         }
 
-        mark(earliestDate, (step * stepMonths / 12).floor()); // Mark active transactions based on year index
+        mark(earliestDate, (step * stepMonth / 12).floor()); // Mark active transactions based on year index
         
         // Trackers for this step
         double stepTotalIncome = 0;
@@ -255,7 +255,7 @@ class Simulate {
         double stepPensionNetFlow = 0;
 
         // Process each month in the step
-        for (int m = 0; m < stepMonths; m++) {
+        for (int m = 0; m < stepMonth; m++) {
            // Apply transactions
            
            // Incomes
@@ -326,7 +326,7 @@ class Simulate {
            // monthly rate = (1+annual)^(1/12) - 1
            double monthlyRate = pow(1 + annualRate, 1.0/12.0) - 1.0;
            // step rate = (1+monthly)^(stepMonths) - 1
-           double stepRate = pow(1 + monthlyRate, stepMonths) - 1.0;
+           double stepRate = pow(1 + monthlyRate, stepMonth) - 1.0;
            
            accountValue[id] = (accountValue[id] ?? 0.0) * (1.0 + stepRate);
            accountSeries[id]![step] = accountValue[id]!;
@@ -384,7 +384,7 @@ class Simulate {
             double sigma = volatility;
             
             // Adjust sigma/mu for step duration
-            double stepTimeYears = stepMonths / 12.0;
+            double stepTimeYears = stepMonth / 12.0;
             double stepSigma = sigma * sqrt(stepTimeYears);
             double stepMu = (log(1 + annualRate) - 0.5 * sigma * sigma) * stepTimeYears;
             

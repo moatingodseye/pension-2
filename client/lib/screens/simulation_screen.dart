@@ -19,7 +19,7 @@ class SimulationScreen extends StatefulWidget {
 
 class _SimulationScreenState extends State<SimulationScreen> {
   // Duration Parameters
-  int _stepMonths = 12; // 12=Yearly, 1=Monthly
+  int _stepMonth = 12; // 12=Yearly, 1=Monthly
   int _durationMode = 0; // 0=MaxAge(120), 1=EndAge, 2=FixedDuration
   double _targetEndAge = 70.0;
   double _targetDuration = 20.0;
@@ -71,9 +71,9 @@ class _SimulationScreenState extends State<SimulationScreen> {
     provider.run(
       volatility: _volatility,
       rateAdjustment: _rateAdjustment,
-      stepMonths: _stepMonths,
+      stepMonth: _stepMonth,
       endAge: endAgeParam,
-      durationYears: durationParam,
+      durationYear: durationParam,
       accountList: accFn.accounts,
       incomeList: incFn.incomes,
       outgoingList: outFn.outgoings,
@@ -83,7 +83,17 @@ class _SimulationScreenState extends State<SimulationScreen> {
       if (mounted && provider.result != null) {
         setState(() {
           // Keep user defaults unless force reset logic needed
-        });
+          // Auto-set defaults from result if needed, or keep user overrides
+          // For now, let's keep user overrides or init if zero?
+          // Actually, let's just respect the result defaults if valid
+          if (_sumPotMax == 2000000.0 && provider.result!.sumPotMax != 100) {
+             _sumPotMin = provider.result!.sumPotMin;
+             _sumPotMax = provider.result!.sumPotMax;
+             _incomeMin = provider.result!.incomeMin;
+             _incomeMax = provider.result!.incomeMax;
+             _xAxisMin = provider.result!.xAxisMin;
+             _xAxisMax = provider.result!.xAxisMax;
+          }        });
       }
     });
   }
@@ -168,14 +178,14 @@ class _SimulationScreenState extends State<SimulationScreen> {
                    
                    const Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
                    DropdownButton<int>(
-                     value: _stepMonths,
+                     value: _stepMonth,
                      isExpanded: true,
                      items: const [
                        DropdownMenuItem(value: 12, child: Text('Yearly')),
                        DropdownMenuItem(value: 1, child: Text('Monthly')),
                      ],
                      onChanged: (v) {
-                       if (v != null) setState(() => _stepMonths = v);
+                       if (v != null) setState(() => _stepMonth = v);
                      },
                    ),
                    const SizedBox(height: 10),

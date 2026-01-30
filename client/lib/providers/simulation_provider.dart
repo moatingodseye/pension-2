@@ -22,9 +22,9 @@ class SimulationProvider extends ChangeNotifier {
   Future<void> run({
     double volatility = 0.12, 
     double rateAdjustment = 0.0,
-    int stepMonths = 12, // New
+    int stepMonth = 12, // New
     int? endAge, // New
-    int? durationYears, // New
+    int? durationYear, // New
     // Pass data needed for client-side viz
     required List<Account> accountList,
     required List<Income> incomeList,
@@ -32,7 +32,7 @@ class SimulationProvider extends ChangeNotifier {
     required List<Transfer> transferList,
     required User user,
   }) async {
-    glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment, step: $stepMonths, duration: $durationYears, endAge: $endAge)');
+    glog.info('Starting hybrid simulation (volatility: $volatility, adjustment: $rateAdjustment, step: $stepMonth, duration: $durationYear, endAge: $endAge)');
     isLoading = true;
     error = null;
     notifyListeners();
@@ -42,10 +42,12 @@ class SimulationProvider extends ChangeNotifier {
       final payload = {
         'volatility': volatility,
         'rate_adjustment': rateAdjustment,
-        'step_months': stepMonths,
+        'step': stepMonth,
+        'endAge': endAge,
+        'duration': durationYear,
       };
-      if (endAge!=null) payload['end_age'] = endAge!;
-      if (durationYears!=null) payload['duration_years'] = durationYears!;
+//      if (endAge!=null) payload['end_age'] = endAge!;
+//      if (durationYear!=null) payload['duration'] = durationYear!;
       
       final res = await ApiService.post('simulate', payload);
       final serverResult = SimulationResult.fromJson(res);
