@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/account_provider.dart';
-import '../widgets/currency_input.dart';
-import '../widgets/date_input.dart';
 import '../widgets/screen_layout.dart';
-import 'package:shared/models/account.dart';
-import 'package:shared/models/account_type.dart';
+import '../widgets/data_table_view.dart';
+import '../widgets/forms/account_form_dialog.dart';
 import '../widgets/pagination_controls.dart';
-import 'package:shared/models/ageOrDate.dart';
+import 'package:shared/models/account.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -17,16 +15,6 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController nameController = TextEditingController();
-  
-  // Edit logic controllers (simpler to keep local or re-init)
-  // For the properties:
-  AccountType selectedType = AccountType.pension;
-  DateTime? selectedDate;
-  double? amount;
-  double? interestRate;
-
   @override
   void initState() {
     super.initState();
@@ -35,232 +23,113 @@ class _AccountScreenState extends State<AccountScreen> {
     });
   }
 
-  void _clearForm() {
-    nameController.clear();
-    setState(() {
-         selectedDate = null;
-         selectedType = AccountType.pension;
-         amount = null;
-         interestRate = null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AccountProvider>(
       builder: (ctx, provider, _) {
-       
-      final content = provider.isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : provider.error != null
-             ? Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)))
-             : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: provider.accounts.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (ctx, i) {
-                  final acc = provider.accounts[i];
-                  return ListTile(
-                    leading: CircleAvatar(child: Text(acc.type.label[0])),
-                    title: Text('${acc.name} (${acc.type.label})'),
-                    subtitle: Text(
-                        '£${acc.amount.toStringAsFixed(2)} | Date: ${acc.amountAt.toString().split('T')[0]} | Rate: ${(acc.rate*100).toStringAsFixed(1)}%'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => _editAccount(acc),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => provider.delete(acc.id!),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
+        if (provider.isLoading && provider.accounts.isEmpty) {
+           return const Center(child: CircularProgressIndicator());
+        }
 
-      return ScreenLayout(
-        body: Column(
-          children: [
-             Padding(
-               padding: const EdgeInsets.all(16.0),
-               child: Align(alignment: Alignment.centerLeft, child: Text('Accounts (${provider.accounts.length})', style: Theme.of(context).textTheme.headlineSmall)),
-             ),
-             Expanded(child: content),
-             PaginationControls(
-               page: provider.page,
-               totalCount: provider.totalCount,
-               limit: provider.limit,
-               onPageChanged: provider.setPage,
-               isLoading: provider.isLoading,
-             ),
-             const SizedBox(height: 8),
-          ],
-        ),
-        sidebar: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Add Account', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 20),
-                DropdownButtonFormField<AccountType>(
-                  initialValue: selectedType,
-                  items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
-                  onChanged: (v) => setState(() => selectedType = v!),
-                  decoration: const InputDecoration(labelText: 'Type', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter a name' : null,
-                ),
-                const SizedBox(height: 12),
-                CurrencyInput(
-                  value: amount,
-                  onChanged: (val) {
-                    setState(() {
-                      amount = val;
-                    });
-                  },
-                  label: 'Amount (£)',
-                  hint: '0.00',
-                ),
-                const SizedBox(height: 12),
-                DateInput(
-                  value: selectedDate,
-                  onChanged: (val) => setState(() => selectedDate = val),
-                  label: 'Date (Balance At)',
-                  nullable: false,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: interestRate != null ? (interestRate! * 100).toStringAsFixed(1) : '',
-                  decoration: const InputDecoration(labelText: 'Interest Rate (%)', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number,
-                  onChanged: (val) {
-                    final parsed = double.tryParse(val);
-                    setState(() => interestRate = parsed != null ? parsed / 100 : null);
-                  },
-                  validator: (val) => val == null || val.isEmpty ? 'Enter rate' : null,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Account'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) return;
-                    if (amount == null || interestRate == null || selectedDate == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please fill all fields')),
-                      );
-                      return;
-                    }
-                    
-                    final newAccount = Account(
-                      name: nameController.text,
-                      amount: amount!,
-                      type: selectedType,
-                      amountAt: AgeOrDate(date:selectedDate!),
-                      rate: interestRate!,
-                    );
-                    
-                    provider.add(newAccount);
-                    _clearForm();
-                  },
-                ),
-              ],
-            ),
+        if (provider.error != null) {
+          return Center(child: Text('Error: ${provider.error}', style: const TextStyle(color: Colors.red)));
+        }
+
+        return ScreenLayout(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+               Padding(
+                 padding: const EdgeInsets.all(16.0),
+                 child: Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                     Text('Accounts', style: Theme.of(context).textTheme.headlineSmall),
+                     ElevatedButton.icon(
+                       icon: const Icon(Icons.add),
+                       label: const Text('Add Account'),
+                       onPressed: () => showDialog(context: context, builder: (_) => const AccountFormDialog()),
+                     ),
+                   ],
+                 ),
+               ),
+               Expanded(
+                 child: DataTableView(
+                   headers: const ['Type', 'Name', 'Balance', 'Date', 'Interest', 'Actions'],
+                   columnAlignments: const [
+                      MainAxisAlignment.start, 
+                      MainAxisAlignment.start, 
+                      MainAxisAlignment.end, 
+                      MainAxisAlignment.end,
+                      MainAxisAlignment.end,
+                      MainAxisAlignment.end
+                   ],
+                   rows: provider.accounts.map((acc) {
+                     return [
+                       Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: acc.type.label == 'Pension' ? Colors.purple.shade50 : Colors.green.shade50,
+                           borderRadius: BorderRadius.circular(4),
+                           border: Border.all(color: acc.type.label == 'Pension' ? Colors.purple.shade200 : Colors.green.shade200),
+                         ),
+                         child: Text(acc.type.label, style: TextStyle(fontSize: 12, color: acc.type.label == 'Pension' ? Colors.purple : Colors.green)),
+                       ),
+                       Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                       Text('£${acc.amount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                       Text(acc.amountAt.toString().split('T')[0], style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                       Text('${(acc.rate * 100).toStringAsFixed(1)}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                       Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           IconButton(
+                             icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
+                             onPressed: () => showDialog(context: context, builder: (_) => AccountFormDialog(account: acc)),
+                             tooltip: 'Edit',
+                           ),
+                           IconButton(
+                             icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                             onPressed: () => _confirmDelete(provider, acc),
+                             tooltip: 'Delete',
+                           ),
+                         ],
+                       )
+                     ];
+                   }).toList(),
+                   onAdd: () => showDialog(context: context, builder: (_) => const AccountFormDialog()),
+                   addLabel: 'Add First Account',
+                 ),
+               ),
+               PaginationControls(
+                 page: provider.page,
+                 totalCount: provider.totalCount,
+                 limit: provider.limit,
+                 onPageChanged: provider.setPage,
+                 isLoading: provider.isLoading,
+               ),
+            ],
           ),
-        ),
-      );
-    });
+          // No sidebar needed for forms anymore as they are dialogs
+        );
+      },
+    );
   }
 
-  void _editAccount(Account acc) {
-    // Local controllers for dialog
-    final nameCtl = TextEditingController(text: acc.name);
-    final amountCtl = TextEditingController(text: acc.amount.toString());
-    final dateCtl = TextEditingController(text: acc.amountAt.toString().split('T')[0]);
-    final rateCtl = TextEditingController(text: (acc.rate * 100).toString());
-    AccountType type = acc.type;
-    DateTime? date = acc.amountAt.date!;
-    
+  void _confirmDelete(AccountProvider provider, Account acc) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Account'),
-        content: Form(
-          child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-               DropdownButtonFormField<AccountType>(
-                  initialValue: type,
-                  items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
-                  onChanged: (v) => type = v!,
-                  decoration: const InputDecoration(labelText: 'Type'),
-              ),
-              TextFormField(
-                controller: nameCtl,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextFormField(
-                controller: amountCtl,
-                decoration: const InputDecoration(labelText: 'Amount (£)'),
-              ),
-              TextFormField(
-                controller: dateCtl,
-                decoration: const InputDecoration(labelText: 'Date'),
-                onTap: () async {
-                   final picked = await showDatePicker(context: context, initialDate: date ?? DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime(2100));
-                   if(picked!=null) {
-                     date = picked;
-                     dateCtl.text = picked.toIso8601String().split('T')[0];
-                   }
-                }
-              ),
-              TextFormField(
-                controller: rateCtl,
-                decoration: const InputDecoration(labelText: 'Interest Rate'),
-              ),
-            ],
-          ),
-          ),
-        ),
+        title: const Text('Delete Account?'),
+        content: Text('Are you sure you want to delete "${acc.name}"? This cannot be undone.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-               final amount = double.tryParse(amountCtl.text) ?? acc.amount;
-               final rate = (double.tryParse(rateCtl.text) ?? (acc.rate * 100)) / 100.0;
-               final d = date ?? acc.amountAt.date;
-            
-               final updated = Account(
-                 id: acc.id,
-                 name: nameCtl.text,
-                 amount: amount,
-                 type: type,
-                 amountAt: AgeOrDate(date:d),
-                 rate: rate,
-               );
-
-              Provider.of<AccountProvider>(context, listen: false).update(updated); 
-              Navigator.of(ctx).pop();
+              provider.delete(acc.id!);
+              Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),

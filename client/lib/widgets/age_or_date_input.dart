@@ -132,7 +132,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
     } else if (_isDate(text)) {
       return 'Date: $text';
     }
-    return 'Enter age (e.g., 68) or date (YYYY-MM-DD)';
+    return 'Enter age (e.g., 68) or date (DD/MM/YYYY)';
   }
 
   @override
@@ -147,7 +147,7 @@ class _AgeOrDateInputState extends State<AgeOrDateInput> {
       ],
       decoration: InputDecoration(
         labelText: widget.label,
-        hintText: widget.hint ?? 'Age (68) or Date (YYYY-MM-DD)',
+        hintText: widget.hint ?? 'Age (68) or Date (DD/MM/YYYY)',
         errorText: widget.errorText,
         helperText: _getHelperText(),
         helperMaxLines: 1,

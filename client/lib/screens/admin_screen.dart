@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/admin_provider.dart';
 import 'package:shared/models/user.dart';
 import '../widgets/date_input.dart';
-import '../widgets/screen_layout.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -132,7 +131,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       });
                     }
                   },
-                  child: const Text('Update'),
+                   child: const Text('Update'),
                 ),
               ],
             );
@@ -206,8 +205,7 @@ class _AdminScreenState extends State<AdminScreen> {
             },
           );
 
-    return ScreenLayout(
-      body: Column(
+    return Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -221,22 +219,6 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
           Expanded(child: content),
         ],
-      ),
-      sidebar: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Actions', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reload Users'),
-              onPressed: () => provider.loadUsers(),
-            ),
-          ],
-        ),
-      ),
-    );
+      );
   }
 }

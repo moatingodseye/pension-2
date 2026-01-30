@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:convert';
+
 import 'date.dart';
 import 'account.dart';
 import 'account_type.dart';
@@ -169,7 +169,7 @@ class Simulate {
     final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
     final current = accountList!.where((a) => a.type == AccountType.current).toList();
 
-    DateTime endDate = addYear(user!.dob!, maxAge);
+    DateTime endDate = addYear(user.dob!, maxAge);
     int count = yearsBetween(earliestDate, endDate).toInt();
     if (count < 0) count = 1;
 
@@ -184,7 +184,7 @@ class Simulate {
     List<double> sumValue = List.filled(count, 0);
     List<double> incomeValue = List.filled(count, 0);
     List<double> ageValue = List.generate(count,
-        (i) => yearsBetween(user!.dob!, addYear(earliestDate, i)).toDouble());
+        (i) => yearsBetween(user.dob!, addYear(earliestDate, i)).toDouble());
 
     // Initialise
     for (Account a in accountList!) {
@@ -201,8 +201,6 @@ class Simulate {
       transfer.add(Transaction(t.id!,t.amount * 12,t));
     }
 
-    int x = 0;
-
     // Simulation Loop
     for (int y = 0; y < count; y++) {
 
@@ -215,10 +213,6 @@ class Simulate {
         for (Account a in accountList!) {
           if (a.id == null) continue;
           int id = a.id!;
-
-          if (id==2) {
-            x = 1;
-          }
 
           accountSeries[id]![y] = accountSeries[id]![y - 1];
 

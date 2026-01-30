@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 import 'package:shelf/shelf.dart';
 import 'package:path/path.dart' as path;
 import 'db.dart';
-import 'debugLogger.dart';
+import 'debug_logger.dart';
 
 final String tempPath = Platform.isWindows ? '' : '  mp/';
 

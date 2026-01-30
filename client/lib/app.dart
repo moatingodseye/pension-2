@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'home_container.dart';
-import 'core/theme.dart';
+import 'services/theme_service.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -12,12 +13,23 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
+    return Consumer2<AuthProvider, ThemeService>(
+      builder: (context, auth, themeService, _) {
         return MaterialApp(
           scaffoldMessengerKey: rootScaffoldMessengerKey,
           title: 'Pension Web App',
-          theme: appTheme,
+          theme: ThemeService.lightTheme,
+          darkTheme: ThemeService.darkTheme,
+          themeMode: themeService.themeMode,
+          locale: const Locale('en', 'GB'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en', 'GB'),
+          ],
           home: auth.loggedIn ? const HomeContainer() : const LoginScreen(),
         );
       },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app.dart';
 import 'providers/auth_provider.dart';
+import 'services/theme_service.dart';
 
 import 'providers/account_provider.dart';
 import 'providers/income_provider.dart';
@@ -24,7 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-
+        ChangeNotifierProvider(create: (_) => ThemeService()), // Add ThemeService
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => IncomeProvider()),
         ChangeNotifierProvider(create: (_) => OutgoingProvider()),

@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/transfer_provider.dart';
 import '../providers/account_provider.dart';
-import 'package:shared/models/transfer.dart';
-import '../widgets/currency_input.dart';
-import '../widgets/age_or_date_input.dart';
-import '../widgets/account_dropdown.dart';
 import '../widgets/screen_layout.dart';
+import '../widgets/data_table_view.dart';
+import '../widgets/forms/transfer_form_dialog.dart';
 import '../widgets/pagination_controls.dart';
-import 'package:shared/models/ageOrDate.dart';
+import 'package:shared/models/transfer.dart';
 
 class TransferScreen extends StatefulWidget {
   const TransferScreen({super.key});
@@ -18,254 +16,121 @@ class TransferScreen extends StatefulWidget {
 }
 
 class _TransferScreenState extends State<TransferScreen> {
-  final _formKey = GlobalKey<FormState>();
-  
-  // Add Form State
-  final nameController = TextEditingController();
-  
-  double? amount;
-  AgeOrDate? startAt;
-  AgeOrDate? endAt;
-  int? selectedFromId;
-  int? selectedIntoId;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TransferProvider>(context, listen: false).load();
-      Provider.of<AccountProvider>(context, listen: false).load();
+      Provider.of<AccountProvider>(context, listen: false).load(); 
     });
   }
-  
-  void _clearForm() {
-    nameController.clear();
-    setState(() {
-      amount = null;
-      startAt = null;
-      endAt = null;
-      selectedFromId = null;
-      selectedIntoId = null;
-    });
+
+  String _getAccountName(BuildContext context, int id) {
+    try {
+       final account = Provider.of<AccountProvider>(context, listen: false).accounts.firstWhere((a) => a.id == id);
+       return account.name;
+    } catch (e) {
+      return 'Unknown ($id)';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<TransferProvider, AccountProvider>(
-      builder: (ctx, transferProv, accountProv, _) {
-       final content = transferProv.isLoading 
-         ? const Center(child: CircularProgressIndicator())
-         : transferProv.error != null
-             ? Center(child: Text('Error: ${transferProv.error}', style: const TextStyle(color: Colors.red)))
-             : ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: transferProv.transfers.length,
-                    separatorBuilder: (_, __) => const Divider(),
-                    itemBuilder: (ctx, i) {
-                        final t = transferProv.transfers[i];
-                        
-                        // Resolve names
-                        final fromName = accountProv.accounts
-                            .where((a) => a.id == t.fromId)
-                            .map((a) => a.name)
-                            .firstOrNull ?? 'Unknown';
-                            
-                        final intoName = accountProv.accounts
-                            .where((a) => a.id == t.intoId)
-                            .map((a) => a.name)
-                            .firstOrNull ?? 'External';
-                        
-                        return ListTile(
-                            title: Text(t.name),
-                            subtitle: Text('$fromName -> $intoName | £${t.amount.toStringAsFixed(2)} | ${t.startAt}'),
-                            trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _editTransfer(t)),
-                                    IconButton(icon: const Icon(Icons.delete), onPressed: () => transferProv.delete(t.id!)),
-                                ]
-                            ),
-                        );
-                    },
-                );
-
-       return ScreenLayout(
-         body: Column(
-           children: [
-             Padding(
-               padding: const EdgeInsets.all(16.0),
-               child: Align(alignment: Alignment.centerLeft, child: Text('Transfers (${transferProv.transfers.length})', style: Theme.of(context).textTheme.headlineSmall)),
-             ),
-             Expanded(child: content),
-             PaginationControls(
-               page: transferProv.page,
-               totalCount: transferProv.totalCount,
-               limit: transferProv.limit,
-               onPageChanged: transferProv.setPage,
-               isLoading: transferProv.isLoading,
-             ),
-             const SizedBox(height: 8),
-           ],
-         ),
-         sidebar: SingleChildScrollView(
-           padding: const EdgeInsets.all(16),
-           child: Form(
-             key: _formKey,
-             child: Column(
-               crossAxisAlignment: CrossAxisAlignment.stretch,
-               children: [
-                 Text('Add Transfer', style: Theme.of(context).textTheme.titleLarge),
-                 const SizedBox(height: 20),
-                 TextFormField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Enter name' : null,
+    return Consumer<TransferProvider>(
+      builder: (ctx, provider, _) {
+       
+        return ScreenLayout(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+               Padding(
+                 padding: const EdgeInsets.all(16.0),
+                 child: Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                     Text('Transfers', style: Theme.of(context).textTheme.headlineSmall),
+                     ElevatedButton.icon(
+                       icon: const Icon(Icons.add),
+                       label: const Text('New Transfer'),
+                       onPressed: () => showDialog(context: context, builder: (_) => const TransferFormDialog()),
+                     ),
+                   ],
                  ),
-                 const SizedBox(height: 12),
-                 AccountDropdown(
-                   selectedId: selectedFromId,
-                   onChanged: (v) => setState(() => selectedFromId = v),
-                   label: 'From Account',
-                   nullable: false,
+               ),
+               Expanded(
+                 child: provider.isLoading && provider.transfers.isEmpty
+                 ? const Center(child: CircularProgressIndicator())
+                 : DataTableView(
+                   headers: const ['Description', 'Amount', 'From', 'To', 'Start', 'End', 'Rate', 'Actions'],
+                   columnAlignments: const [
+                      MainAxisAlignment.start, 
+                      MainAxisAlignment.end, 
+                      MainAxisAlignment.start,
+                      MainAxisAlignment.start,
+                      MainAxisAlignment.start,
+                      MainAxisAlignment.start,
+                      MainAxisAlignment.end,
+                      MainAxisAlignment.end
+                   ],
+                   rows: provider.transfers.map((tr) {
+                     return [
+                       Text(tr.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                       Text('£${tr.amount.toStringAsFixed(2)}/mo', style: const TextStyle(fontWeight: FontWeight.bold)),
+                       Text(_getAccountName(context, tr.fromId), style: TextStyle(color: Colors.red.shade700, fontSize: 13)),
+                       Text(_getAccountName(context, tr.intoId), style: TextStyle(color: Colors.green.shade700, fontSize: 13)),
+                       Text(tr.startAt.toString(), style: const TextStyle(fontSize: 13)),
+                       Text(tr.endAt?.toString() ?? '-', style: const TextStyle(fontSize: 13)),
+                       Text('${(tr.rate * 100).toStringAsFixed(1)}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                       Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           IconButton(
+                             icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
+                             onPressed: () => showDialog(context: context, builder: (_) => TransferFormDialog(transfer: tr)),
+                             tooltip: 'Edit',
+                           ),
+                           IconButton(
+                             icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                             onPressed: () => _confirmDelete(provider, tr),
+                             tooltip: 'Delete',
+                           ),
+                         ],
+                       )
+                     ];
+                   }).toList(),
+                   onAdd: () => showDialog(context: context, builder: (_) => const TransferFormDialog()),
+                   addLabel: 'Create First Transfer',
                  ),
-                 const SizedBox(height: 12),
-                 AccountDropdown(
-                   selectedId: selectedIntoId,
-                   onChanged: (v) => setState(() => selectedIntoId = v),
-                   label: 'To Account',
-                   nullable: false,
-                 ),
-                 const SizedBox(height: 12),
-                 CurrencyInput(
-                   value: amount,
-                   onChanged: (v) => setState(() => amount = v),
-                   label: 'Amount (£)',
-                   hint: '0.00',
-                 ),
-                 const SizedBox(height: 12),
-                 AgeOrDateInput(
-                   initialValue: startAt,
-                   onChanged: (v) => setState(() => startAt = v),
-                   label: 'Start Date',
-                   nullable: false,
-                 ),
-                 const SizedBox(height: 12),
-                 AgeOrDateInput(
-                   initialValue: endAt,
-                   onChanged: (v) => setState(() => endAt = v),
-                   label: 'End Date (Optional)',
-                   nullable: true,
-                 ),
-                 const SizedBox(height: 20),
-                 ElevatedButton.icon(
-                   icon: const Icon(Icons.add),
-                   label: const Text('Add Transfer'),
-                   style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                   ),
-                   onPressed: _saveNew,
-                 ),
-               ],
-             ),
-           ),
-         ),
-       );
-      });
-  }
-
-  Future<void> _saveNew() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (amount == null || startAt == null || selectedFromId == null || selectedIntoId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields')));
-        return;
-    }
-    
-    final transfer = Transfer(
-       name: nameController.text.isEmpty ? 'Transfer' : nameController.text,
-       fromId: selectedFromId!,
-       intoId: selectedIntoId!,
-       amount: amount!,
-       startAt: startAt!,
-       endAt: endAt,
-       rate: 0.0,
+               ),
+               PaginationControls(
+                 page: provider.page,
+                 totalCount: provider.totalCount,
+                 limit: provider.limit,
+                 onPageChanged: provider.setPage,
+                 isLoading: provider.isLoading,
+               ),
+            ],
+          ),
+        );
+      },
     );
-    
-    final prov = Provider.of<TransferProvider>(context, listen: false);
-    await prov.add(transfer);
-    _clearForm();
   }
 
-  void _editTransfer(Transfer item) {
-    final nameCtl = TextEditingController(text: item.name);
-    double? amt = item.amount;
-    AgeOrDate? startAt = item.startAt;
-    AgeOrDate? endAt = item.endAt;
-    int? fromId = item.fromId;
-    int? intoId = item.intoId;
-    
+  void _confirmDelete(TransferProvider provider, Transfer item) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Transfer'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-                TextFormField(
-                    controller: nameCtl,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                AccountDropdown(
-                   selectedId: fromId,
-                   onChanged: (v) => fromId = v,
-                   label: 'From Account',
-                ),
-                AccountDropdown(
-                   selectedId: intoId,
-                   onChanged: (v) => intoId = v,
-                   label: 'To Account',
-                ),
-                CurrencyInput(
-                   value: amt,
-                   onChanged: (v) => amt = v,
-                   label: 'Amount',
-                ),
-                AgeOrDateInput(
-                   initialValue: startAt,
-                   onChanged: (v) => startAt = v,
-                   label: 'Start Date',
-                   nullable: false,
-                ),
-                AgeOrDateInput(
-                   initialValue: endAt,
-                   onChanged: (v) => endAt = v,
-                   label: 'End Date',
-                   nullable: true,
-                ),
-            ],
-          ),
-        ),
+        title: const Text('Delete Transfer?'),
+        content: Text('Are you sure you want to delete "${item.name}"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
-            onPressed: () async {
-               if (amt==null || startAt==null || fromId==null || intoId==null) return;
-                
-               final updated = Transfer(
-                  id: item.id,
-                  name: nameCtl.text,
-                  fromId: fromId!,
-                  intoId: intoId!,
-                  amount: amt!,
-                  startAt: startAt!,
-                  endAt: endAt,
-                  rate: 0.0
-               );
-               
-               await Provider.of<TransferProvider>(context, listen: false).update(updated);
-               if (ctx.mounted) Navigator.pop(ctx);
+            onPressed: () {
+              provider.delete(item.id!);
+              Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),

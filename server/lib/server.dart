@@ -8,7 +8,7 @@ import 'db.dart';
 import 'auth.dart';
 import 'user.dart';
 import 'simulate.dart';
-import 'debugLogger.dart';
+import 'debug_logger.dart';
 import 'backup.dart';
 import 'account.dart';
 import 'income.dart';
