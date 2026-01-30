@@ -75,7 +75,7 @@ class _OutgoingFormDialogState extends State<OutgoingFormDialog> {
         id: widget.outgoing?.id,
         name: _nameController.text,
         amount: _amount!,
-        fromId: _selectedFromId,
+        fromId: _selectedFromId!,
         startAt: _startAt!,
         endAt: _endAt,
         rate: rateVal / 100.0,
@@ -122,7 +122,7 @@ class _OutgoingFormDialogState extends State<OutgoingFormDialog> {
               value: _amount,
               onChanged: (v) => setState(() => _amount = v),
               label: 'Monthly Amount',
-              nullable: false,
+//              nullable: false,
             ),
             const SizedBox(height: 12),
             AccountDropdown(

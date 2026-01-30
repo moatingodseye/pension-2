@@ -449,6 +449,9 @@ void main() {
         monteMinList: [40000],
         monteMaxList: [60000],
         ageList: [50],
+        totalIncomeList: [500],
+        totalOutgoingList: [450],
+        annualNetFlow: [340],
       );
       final json = result.toJson();
       expect(json['sumPotMax'], 100000);
@@ -484,7 +487,7 @@ void main() {
         xAxisMin: 0, xAxisMax: 10,
         nameList: [], sumList: [], incomeList: [],
         accountMap: [], monteMinList: [], monteMaxList: [],
-        ageList: [],
+        ageList: [], totalIncomeList: [], totalOutgoingList: [], annualNetFlow: [],
       );
       final json = result.toJson();
       expect(json.containsKey('montePath'), false);

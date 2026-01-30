@@ -103,7 +103,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DropdownButtonFormField<AccountType>(
-              value: _selectedType,
+              initialValue: _selectedType,
               items: AccountType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.label))).toList(),
               onChanged: (v) => setState(() => _selectedType = v!),
               decoration: const InputDecoration(labelText: 'Type'),
@@ -119,7 +119,7 @@ class _AccountFormDialogState extends State<AccountFormDialog> {
               value: _amount,
               onChanged: (v) => setState(() => _amount = v),
               label: 'Amount',
-              nullable: false,
+//              nullable: false,
             ),
             const SizedBox(height: 12),
             DateInput(

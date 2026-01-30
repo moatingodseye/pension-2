@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'db.dart';
-import 'debug_logger.dart'; // Import server logger
+import 'debugLogger.dart'; // Import server logger
 import 'package:shared/models/account.dart';
 import 'package:shared/models/user.dart';
 import 'package:shared/models/income.dart';
@@ -75,7 +75,10 @@ class Simulate {
                     incomeMin: 0,
                     incomeMax: 100,
                     xAxisMin: 0,
-                    xAxisMax: 100)
+                    xAxisMax: 100,
+                    totalIncomeList: [],
+                    totalOutgoingList: [],
+                    annualNetFlow: [],)
                 .toJson()),
             headers: {'Content-Type': 'application/json'});
       }

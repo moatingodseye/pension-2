@@ -18,6 +18,12 @@ class SimulationScreen extends StatefulWidget {
 }
 
 class _SimulationScreenState extends State<SimulationScreen> {
+  // Duration Parameters
+  int _stepMonths = 12; // 12=Yearly, 1=Monthly
+  int _durationMode = 0; // 0=MaxAge(120), 1=EndAge, 2=FixedDuration
+  double _targetEndAge = 70.0;
+  double _targetDuration = 20.0;
+  
   // What-If Parameters
   double _volatility = 0.12;
   double _rateAdjustment = 0.0;
@@ -29,7 +35,6 @@ class _SimulationScreenState extends State<SimulationScreen> {
   double _incomeMax = 50000.0;
   double _xAxisMin = 0.0;
   double _xAxisMax = 120.0;
-
   @override
   void initState() {
     super.initState();
@@ -57,9 +62,18 @@ class _SimulationScreenState extends State<SimulationScreen> {
       return;
     }
 
+    int? endAgeParam;
+    int? durationParam;
+    
+    if (_durationMode == 1) endAgeParam = _targetEndAge.toInt();
+    if (_durationMode == 2) durationParam = _targetDuration.toInt();
+
     provider.run(
       volatility: _volatility,
       rateAdjustment: _rateAdjustment,
+      stepMonths: _stepMonths,
+      endAge: endAgeParam,
+      durationYears: durationParam,
       accountList: accFn.accounts,
       incomeList: incFn.incomes,
       outgoingList: outFn.outgoings,
@@ -68,17 +82,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
     ).then((_) {
       if (mounted && provider.result != null) {
         setState(() {
-          // Auto-set defaults from result if needed, or keep user overrides
-          // For now, let's keep user overrides or init if zero?
-          // Actually, let's just respect the result defaults if valid
-          if (_sumPotMax == 2000000.0 && provider.result!.sumPotMax != 100) {
-             _sumPotMin = provider.result!.sumPotMin;
-             _sumPotMax = provider.result!.sumPotMax;
-             _incomeMin = provider.result!.incomeMin;
-             _incomeMax = provider.result!.incomeMax;
-             _xAxisMin = provider.result!.xAxisMin;
-             _xAxisMax = provider.result!.xAxisMax;
-          }
+          // Keep user defaults unless force reset logic needed
         });
       }
     });
@@ -160,7 +164,62 @@ class _SimulationScreenState extends State<SimulationScreen> {
                    ),
                    Text('Value: ${(_rateAdjustment * 100).toStringAsFixed(1)}%'),
                    
+                   const Divider(),
+                   
+                   const Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
+                   DropdownButton<int>(
+                     value: _stepMonths,
+                     isExpanded: true,
+                     items: const [
+                       DropdownMenuItem(value: 12, child: Text('Yearly')),
+                       DropdownMenuItem(value: 1, child: Text('Monthly')),
+                     ],
+                     onChanged: (v) {
+                       if (v != null) setState(() => _stepMonths = v);
+                     },
+                   ),
                    const SizedBox(height: 10),
+
+                   const Text('Duration', style: TextStyle(fontWeight: FontWeight.bold)),
+                   SegmentedButton<int>(
+                     segments: const [
+                       ButtonSegment(value: 0, label: Text('Max')),
+                       ButtonSegment(value: 1, label: Text('Age')),
+                       ButtonSegment(value: 2, label: Text('Years')),
+                     ],
+                     selected: {_durationMode},
+                     onSelectionChanged: (Set<int> newSelection) {
+                       setState(() {
+                         _durationMode = newSelection.first;
+                       });
+                     },
+                   ),
+                   if (_durationMode == 1) ...[
+                      const SizedBox(height: 5),
+                      Text('End Age: ${_targetEndAge.toInt()}'),
+                      Slider(
+                        value: _targetEndAge,
+                        min: 18,
+                        max: 120,
+                        divisions: 102,
+                        label: '${_targetEndAge.toInt()}',
+                        onChanged: (v) => setState(() => _targetEndAge = v),
+                      ),
+                   ],
+                   if (_durationMode == 2) ...[
+                      const SizedBox(height: 5),
+                      Text('Duration: ${_targetDuration.toInt()} Years'),
+                      Slider(
+                        value: _targetDuration,
+                        min: 5,
+                        max: 100,
+                        divisions: 95,
+                        label: '${_targetDuration.toInt()}',
+                        onChanged: (v) => setState(() => _targetDuration = v),
+                      ),
+                   ],
+
+                   const SizedBox(height: 16),
                    SizedBox(
                      width: double.infinity,
                      child: ElevatedButton.icon(
@@ -222,22 +281,40 @@ class _SimulationScreenState extends State<SimulationScreen> {
               // 3. Export
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text('Export Results (CSV)'),
-                  onPressed: () {
-                     // Implement simple export or use CsvService
-                     if (result != null) {
-                       final csv = CsvService.exportSimulation(result); // Need to add this method to CsvService
-                       CsvService.copyToClipboard(context, csv);
-                     }
-                  },
-                ),
-              ),
-            ],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.copy),
+                          label: const Text('Copy CSV'),
+                          onPressed: () {
+                             if (result != null) {
+                               final csv = CsvService.exportSimulation(result);
+                               CsvService.copyToClipboard(context, csv);
+                             }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.download),
+                          label: const Text('Save CSV'),
+                          onPressed: () async {
+                             if (result != null) {
+                               final csv = CsvService.exportSimulation(result);
+                               await CsvService.saveAndExport(context, csv, 'simulation_pension_export.csv');
+                             }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ]
+            ),
           ),
         ),
-      ),
     );
   }
 

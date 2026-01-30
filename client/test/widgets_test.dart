@@ -26,7 +26,7 @@ void main() {
           home: Scaffold(
             body: CurrencyInput(
               label: 'Amount',
-              initialValue: 1000.0,
+              value: 1000.0,
               onChanged: (value) {},
             ),
           ),
@@ -62,8 +62,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: PaginationControls(
-              currentPage: 1,
-              totalPages: 5,
+              page: 1,
+              totalCount: 5,
+              limit: 20,
               onPageChanged: (page) {},
             ),
           ),
@@ -78,8 +79,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: PaginationControls(
-              currentPage: 1,
-              totalPages: 5,
+              page: 1,
+              totalCount: 5,
+              limit: 20,
               onPageChanged: (page) {},
             ),
           ),
@@ -97,8 +99,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: PaginationControls(
-              currentPage: 1,
-              totalPages: 5,
+              page: 1,
+              totalCount: 5,
+              limit: 20,
               onPageChanged: (page) {
                 newPage = page;
               },

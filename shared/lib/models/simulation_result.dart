@@ -12,6 +12,9 @@ class SimulationResult {
   final List<List<double>> accountMap;
   final List<double> monteMinList;
   final List<double> monteMaxList;
+  final List<double> totalIncomeList; // New: Cash flow INTO Current Account
+  final List<double> totalOutgoingList; // New: Cash flow OUT of Current Account
+  final List<double> annualNetFlow; // New: Net flow INTO Pension Pot
   final List<List<double>>? montePath; // New field for full traces
   final List<double> ageList;
 
@@ -28,8 +31,11 @@ class SimulationResult {
     required this.accountMap,
     required this.monteMinList,
     required this.monteMaxList,
-    this.montePath, // Optional
+    this.montePath,
     required this.ageList,
+    required this.totalIncomeList,
+    required this.totalOutgoingList,
+    required this.annualNetFlow,
   });
 
   factory SimulationResult.fromJson(Map<String, dynamic> json) {
@@ -50,6 +56,9 @@ class SimulationResult {
           ? (json['montePath'] as List).map((e) => (e as List).map((v) => (v as num).toDouble()).toList()).toList()
           : null,
       ageList: (json['age'] as List).map((e) => (e as num).toDouble()).toList(),
+      totalIncomeList: (json['totalIncome'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [],
+      totalOutgoingList: (json['totalOutgoing'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [],
+      annualNetFlow: (json['annualNetFlow'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [],
     );
     return test;
   }
@@ -70,6 +79,9 @@ class SimulationResult {
       'monteMax': monteMaxList,
       if (montePath != null) 'montePath': montePath,
       'age': ageList,
+      'totalIncome': totalIncomeList,
+      'totalOutgoing': totalOutgoingList,
+      'annualNetFlow': annualNetFlow,
     };
   }
 }

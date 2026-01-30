@@ -1,10 +1,13 @@
+import '../services/visual_monte_carlo.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
 class SimulationChart extends StatelessWidget {
   final List<String> nameList;
   final List<double> sumList;
-  final List<double> incomeList;
+  final List<double> incomeList; // Legacy/Net
+  final List<double> totalIncomeList; // New
+  final List<double> totalOutgoingList; // New
+  final List<double> annualNetFlow; // New
   final List<List<double>> accountMap;
   final List<double> mcMinList;
   final List<double> mcMaxList;
@@ -17,8 +20,7 @@ class SimulationChart extends StatelessWidget {
   final double incomeMax;
   final double xAxisMin;
   final double xAxisMax;
-  // removed isIncomeChart
-  final List<List<double>>? montePath; // New parameter
+  final List<List<double>>? montePath; // Can be passed or generated
 
   const SimulationChart({
     super.key,
@@ -28,7 +30,7 @@ class SimulationChart extends StatelessWidget {
     required this.accountMap,
     required this.mcMinList,
     required this.mcMaxList,
-    this.montePath, // Optional
+    this.montePath,
     required this.ageList,
     required this.showList,
     required this.sumPotMin,
@@ -37,6 +39,9 @@ class SimulationChart extends StatelessWidget {
     required this.incomeMax,
     required this.xAxisMin,
     required this.xAxisMax,
+    this.totalIncomeList = const [],
+    this.totalOutgoingList = const [],
+    this.annualNetFlow = const [],
   });
 
   @override
@@ -49,19 +54,37 @@ class SimulationChart extends StatelessWidget {
     List<LineChartBarData> line = [];
 
     // 0. VISUAL CLOUD (Client-Side Monte Carlo) - Render First (Background)
-    if (montePath != null && montePath!.isNotEmpty && showList.length > 2 && showList[2]) {
-      // Sample if too many to prevent UI freeze? User asked for "thousands" but FL Chart might struggle.
-      // Let's render as is, efficiently.
-      for (var path in montePath!) {
+    // If passed explicitly or generate if annualNetFlow is available
+    List<List<double>> cloudPaths = montePath ?? [];
+    
+    if ((cloudPaths.isEmpty) && annualNetFlow.isNotEmpty && sumList.isNotEmpty && showList.length > 2 && showList[2]) {
+        // Generate locally for visualization
+        // We assume 12 steps per year approx for visual adjustment if not passed, but let's default to standard
+        // Does step match? 
+        int steps = sumList.length > 1 ? sumList.length : 12;
+        int years = (xAxisMax - xAxisMin).toInt();
+        int stepMonths = years > 0 ? (12 * years / steps).round() : 12;
+        if (stepMonths < 1) stepMonths = 1;
+        
+        cloudPaths = VisualMonteCarlo.generateMonteCarloPaths(
+            sumList: sumList,
+            annualNetFlow: annualNetFlow, 
+            volatility: 0.12, // Visual default? Or access provider?
+            rateAdjustment: 0.0,
+            stepMonths: stepMonths
+        );
+    }
+    
+    if (cloudPaths.isNotEmpty && showList.length > 2 && showList[2]) {
+      for (var path in cloudPaths) {
         if (path.length <= ageList.length) {
-          name.add('Age');
+          // name.add('Age'); // Don't match tooltip
           line.add(LineChartBarData(
             spots: path.asMap().entries.map((e) => FlSpot(ageList[e.key], e.value)).toList(),
-            isCurved: false, // Straight lines for cloud usually look better/performant
-            color: Colors.blue.withOpacity(0.03), // Very low opacity for density
+            isCurved: false,
+            color: Colors.blue.withOpacity(0.15), // Faded blue as requested
             barWidth: 1,
             dotData: FlDotData(show: false),
-             // No tooltips for individual cloud lines
             belowBarData: BarAreaData(show: false),
           ));
         }
@@ -116,20 +139,39 @@ class SimulationChart extends StatelessWidget {
       ));
     }
 
-    // 4. Income (Normalized Scale -> Visual: Pot Scale)
-    // We plot: Real Income * Factor
-    if (showList[1] && incomeList.isNotEmpty && ageList.length >= incomeList.length) {
-      name.add('Income');
-      line.add(LineChartBarData(
-        spots: incomeList.asMap().entries
-            .map((e) => FlSpot(ageList[e.key], e.value * incomeFactor))
-            .toList(),
-        isCurved: true,
-        color: Colors.orange,
-        barWidth: 3,
-        dotData: FlDotData(show: false),
-        dashArray: [5, 5], // Dashed line for distinction
-      ));
+    // 4. Income / Outgoing (Visual: Normalized to Pot Scale)
+    if (showList[1]) {
+        if (totalIncomeList.isNotEmpty && ageList.length >= totalIncomeList.length) {
+          name.add('Income');
+          line.add(LineChartBarData(
+            spots: totalIncomeList.asMap().entries
+                .map((e) => FlSpot(ageList[e.key], e.value * incomeFactor))
+                .toList(),
+            isCurved: true,
+            color: Colors.green, // Positive
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+            dashArray: [5, 5],
+          ));
+        }
+        
+        if (totalOutgoingList.isNotEmpty && ageList.length >= totalOutgoingList.length) {
+          name.add('Outgoing');
+          line.add(LineChartBarData(
+            spots: totalOutgoingList.asMap().entries
+                .map((e) => FlSpot(ageList[e.key], e.value * incomeFactor)) // Should be positive numbers representing outflow? Or negative?
+                // Assuming provider returns positive numbers for "Amount Out", we plot them positively on Income axis?
+                // Or maybe negative? User might prefer comparison. Usually cash flow charts show In vs Out both positive y-axis.
+                // Let's assume positive magnitude. If they are negative in list, abs() them?
+                // The Simulate logic: stepTotalOutgoing += t.amount. So they are positive magnitudes.
+                .toList(),
+            isCurved: true,
+            color: Colors.red, // Negative
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+            dashArray: [5, 5],
+          ));
+        }
     }
 
     return Container(
@@ -166,7 +208,7 @@ class SimulationChart extends StatelessWidget {
               ),
             ),
             rightTitles: AxisTitles(
-              axisNameWidget: const Text("Income (£)", style: TextStyle(color: Colors.orange)),
+              axisNameWidget: const Text("Cash Flow (£)", style: TextStyle(color: Colors.orange)),
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
@@ -196,21 +238,28 @@ class SimulationChart extends StatelessWidget {
               fitInsideVertically: true,
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
-                  // Identify Income line by its unique dashArray property
                   bool isIncomeLine = spot.bar.dashArray != null;
                   
                   int index = spot.barIndex;
+                  // The logic relying on 'name' index matches line order.
+                  // Since cloud lines don't populate 'name', index offset is tricky!
+                  // Cloud lines are added first.
+                  
+                  int cloudCount = cloudPaths.isNotEmpty && showList.length > 2 && showList[2] ? cloudPaths.length : 0;
+                  
+                  if (index < cloudCount) {
+                     return null; // Don't show tooltip for cloud lines
+                  }
+                  
+                  int realIndex = index - cloudCount;
+                  if (realIndex < 0 || realIndex >= name.length) return null;
+
                   double value = spot.y;
-                  String label;
-                  label = name[index];
+                  String label = name[realIndex];
                   Color color = spot.bar.color ?? Colors.blue;
 
                   if (isIncomeLine) {
                     value = spot.y / incomeFactor; // Denormalize
-//                    label = "Income";
-                    color = Colors.orange;
-//                  } else if (spot.bar.barWidth == 0) {
-                     //label = "MC";
                   }
 
                   return LineTooltipItem(

@@ -29,7 +29,7 @@ class SimulationService {
     this.volatility = 0.12,
     this.rateAdjustment = 0.0});
 
-  SimulationResult? simulate() {
+  SimulationResult? simulate({int stepMonths = 12, int? endAge, int? durationYears}) {
     // We can't access instance members in static method efficiently without passing logger?
     // 'log' from debugLogger is global.
     final stopwatch = Stopwatch()..start();
@@ -40,7 +40,7 @@ class SimulationService {
     }
 
     Simulate sim = Simulate(accountList, incomeList, outgoingList, transferList, user);
-    SimulationResult? result = sim.simulate(volatility, rateAdjustment);
+    SimulationResult? result = sim.simulate(volatility, rateAdjustment, stepMonths: stepMonths, endAge: endAge, durationYears: durationYears);
 
     stopwatch.stop();
 

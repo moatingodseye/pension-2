@@ -149,7 +149,7 @@ class Simulate {
     }
   }
 
-  SimulationResult? simulate(double volatility, double rateAdjustment) {
+  SimulationResult? simulate(double volatility, double rateAdjustment, {int stepMonths = 12, int? endAge, int? durationYears}) {
     if (accountList!.isEmpty) {
       return null;
     }
@@ -169,10 +169,24 @@ class Simulate {
     final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
     final current = accountList!.where((a) => a.type == AccountType.current).toList();
 
-    DateTime endDate = addYear(user.dob!, maxAge);
-    int count = yearsBetween(earliestDate, endDate).toInt();
-    if (count < 0) count = 1;
+    // Determine End Date
+    DateTime endDate;
+    if (durationYears != null) {
+        endDate = addYear(earliestDate, durationYears);
+    } else if (endAge != null) {
+        endDate = addYear(user.dob!, endAge);
+    } else {
+        endDate = addYear(user.dob!, maxAge); // Default 120
+    }
 
+    // Calculate total months and steps
+    int totalMonths = (endDate.year - earliestDate.year) * 12 + (endDate.month - earliestDate.month);
+    if (totalMonths < 1) totalMonths = 1;
+    
+    int count = (totalMonths / stepMonths).ceil();
+    if (count < 1) count = 1;
+    
+    // Series Data
     Map<int, List<double>> accountSeries = {};
     for (Account a in accountList!) {
       if (a.id == null) continue;
@@ -182,97 +196,174 @@ class Simulate {
 
     Map<int,double> accountValue = {};
     List<double> sumValue = List.filled(count, 0);
-    List<double> incomeValue = List.filled(count, 0);
-    List<double> ageValue = List.generate(count,
-        (i) => yearsBetween(user.dob!, addYear(earliestDate, i)).toDouble());
+    List<double> incomeValue = List.filled(count, 0); // Net Income (legacy)
+    List<double> totalIncomeValue = List.filled(count, 0); // Total Money IN to Current
+    List<double> totalOutgoingValue = List.filled(count, 0); // Total Money OUT of Current
+    List<double> annualNetFlow = List.filled(count, 0); // Net Flow into Pension (Allocated to steps)
+    
+    List<double> ageValue = List.generate(count, (i) {
+        DateTime stepDate = DateTime(earliestDate.year, earliestDate.month + (i * stepMonths));
+        return yearsBetween(user.dob!, stepDate).toDouble();
+    });
 
     // Initialise
     for (Account a in accountList!) {
       if (a.id == null) continue;
       accountValue[a.id!] = a.amount;
     }
+    // Convert annual amounts to monthly for calculation
     for (Income i in incomeList!) {
-      income.add(Transaction(i.id!,i.amount * 12,i));
+      income.add(Transaction(i.id!,i.amount, i)); // Store monthly amount
     }
     for (Outgoing o in outgoingList!) {
-      outgoing.add(Transaction(o.id!,o.amount * 12,o));
+      outgoing.add(Transaction(o.id!,o.amount, o)); // Store monthly amount
     }
     for (Transfer t in transferList!) {
-      transfer.add(Transaction(t.id!,t.amount * 12,t));
+      transfer.add(Transaction(t.id!,t.amount, t)); // Store monthly amount
     }
 
     // Simulation Loop
-    for (int y = 0; y < count; y++) {
+    for (int step = 0; step < count; step++) {
+      if (step > 0) {
+        // Apply rate to transactions (Compound annually)
+        // Note: rate() compounds annual amount. We need to be careful with monthly steps.
+        // Simplified: Apply rate growth every 12 months (or equivalent fraction)
+        // For now, let's keep rate() logic but applied proportionally? 
+        // Logic `rate()` multiplies amount by (1+rate).
+        // If step is monthly, we shouldn't increase inflation every month!
+        // FIXED: Only apply inflation once per year.
+        
+        DateTime currentStepDate = DateTime(earliestDate.year, earliestDate.month + (step * stepMonths));
+        // Check if we passed a year boundary or simplified: just update rates annually
+        // Simpler: Apply (1+rate)^(stepMonths/12) to transaction values? 
+        // Existing logic was: `t.amount *= (1.0 + i.rate)`. This implies annual jump.
+        // Let's stick to annual inflation update for now to avoid complexity explosion, 
+        // checks if (step * stepMonths) % 12 == 0 roughly?
+        // Better: Continuous inflation?
+        // Let's stick to: Update transaction values annually.
+        
+        bool isYearBoundary = (step * stepMonths) % 12 < stepMonths; 
+        if (isYearBoundary && step * stepMonths >= 12) {
+             rate(); 
+        }
 
-      if (y>0) { // stgart at year 1, so 0=unaffected 1=after 1 year
-        rate(); // apply rate to all transactions
-        mark(earliestDate,y); // mark which transactions apply to this year
-        double currentTotal = accountValue[current[0].id]!;
+        mark(earliestDate, (step * stepMonths / 12).floor()); // Mark active transactions based on year index
+        
+        // Trackers for this step
+        double stepTotalIncome = 0;
+        double stepTotalOutgoing = 0;
+        double stepPensionNetFlow = 0;
 
-        // Init year value (copy prev) & Interest
+        // Process each month in the step
+        for (int m = 0; m < stepMonths; m++) {
+           // Apply transactions
+           
+           // Incomes
+           for (Transaction t in income) {
+             if (t.use) {
+               Income i = t.source as Income;
+               if (accountValue.containsKey(i.intoId)) {
+                 accountValue[i.intoId!] = (accountValue[i.intoId!] ?? 0) + t.amount;
+                 if (current.isNotEmpty && i.intoId == current[0].id) {
+                     stepTotalIncome += t.amount;
+                 }
+                 // Pension Flow?
+                 // If income goes into pension, track it
+                 if (pensionList.any((p) => p.id == i.intoId)) {
+                     stepPensionNetFlow += t.amount;
+                 }
+               }
+             }
+           }
+           
+           // Outgoings
+           for (Transaction t in outgoing) {
+             if (t.use) {
+               Outgoing o = t.source as Outgoing;
+               if (accountValue.containsKey(o.fromId)) {
+                 accountValue[o.fromId!] = (accountValue[o.fromId!] ?? 0) - t.amount;
+                 if (current.isNotEmpty && o.fromId == current[0].id) {
+                     stepTotalOutgoing += t.amount;
+                 }
+                 // Pension Flow?
+                 if (pensionList.any((p) => p.id == o.fromId)) {
+                     stepPensionNetFlow -= t.amount;
+                 }
+               }
+             }
+           }
+           
+           // Transfers
+           for (Transaction t in transfer) {
+             if (t.use) {
+               Transfer r = t.source as Transfer;
+               if (accountValue.containsKey(r.fromId) && accountValue.containsKey(r.intoId)) {
+                  accountValue[r.fromId!] = (accountValue[r.fromId!] ?? 0) - t.amount;
+                  accountValue[r.intoId!] = (accountValue[r.intoId!] ?? 0) + t.amount;
+                  
+                  // Track logic for Current Account Flow
+                  if (current.isNotEmpty) {
+                      if (r.intoId == current[0].id) stepTotalIncome += t.amount;
+                      if (r.fromId == current[0].id) stepTotalOutgoing += t.amount;
+                  }
+                  
+                  // Pension Flow
+                  bool fromPension = pensionList.any((p) => p.id == r.fromId);
+                  bool intoPension = pensionList.any((p) => p.id == r.intoId);
+                  
+                  if (intoPension && !fromPension) stepPensionNetFlow += t.amount;
+                  if (fromPension && !intoPension) stepPensionNetFlow -= t.amount;
+               }
+             }
+           }
+        } // end month loop
+
+        // Apply Interest (Compound for stepMonths)
         for (Account a in accountList!) {
-          if (a.id == null) continue;
-          int id = a.id!;
-
-          accountSeries[id]![y] = accountSeries[id]![y - 1];
-
-          // Incomes
-          for (Transaction t in income) {
-            if (t.use) {
-              Income i = t.source as Income;
-              if (id==i.intoId) {
-                accountSeries[id]![y] += t.amount;
-                accountValue[id] = (accountValue[id] ?? 0) + t.amount;
-              }
-            }
-          }
-
-          // Outgoings
-          for (Transaction t in outgoing) {
-            if (t.use) {
-              Outgoing o = t.source as Outgoing;
-              if (id==o.fromId) {
-                accountSeries[id]![y] -= t.amount;
-                accountValue[id] = (accountValue[id] ?? 0) - t.amount;
-                if (accountSeries[id]![y] < 0) accountSeries[id]![y] = 0;
-              }
-            }
-          }
-
-          // Transfers
-          for (Transaction t in transfer) {
-            if (t.use) {
-              Transfer r = t.source as Transfer;
-              if (id==r.fromId || id==r.intoId) {
-                if (id==r.fromId) {
-                  accountSeries[id]![y] -= t.amount;
-                  accountValue[id] = (accountValue[id] ?? 0.0) - t.amount;
-                }
-                if (id==r.intoId) {
-                  accountSeries[id]![y] += t.amount;
-                  accountValue[id] = (accountValue[id] ?? 0.0) + t.amount;
-                }
-              }
-            }
-          }
-
-          // Interest (Use rate adjustment)
-          double rate = a.rate + rateAdjustment;
-          accountSeries[id]![y] *= (1 + rate);
-          accountValue[id] = (accountValue[id] ?? 0.0) * (1.0 + rate);
+           if (a.id == null) continue;
+           int id = a.id!;
+           double annualRate = a.rate + rateAdjustment;
+           // monthly rate = (1+annual)^(1/12) - 1
+           double monthlyRate = pow(1 + annualRate, 1.0/12.0) - 1.0;
+           // step rate = (1+monthly)^(stepMonths) - 1
+           double stepRate = pow(1 + monthlyRate, stepMonths) - 1.0;
+           
+           accountValue[id] = (accountValue[id] ?? 0.0) * (1.0 + stepRate);
+           accountSeries[id]![step] = accountValue[id]!;
         }
         
-        incomeValue[y] = accountValue[current[0].id]!-currentTotal;
+        // Store Step Data
+        if (current.isNotEmpty) {
+            // Net Change (Legacy Income line)
+            if (step > 0) {
+               // Approximate "Net Income" as change in balance excluding interest? 
+               // Or just (Income - Outgoing)?
+               incomeValue[step] = stepTotalIncome - stepTotalOutgoing;
+            }
+        }
+        
+        totalIncomeValue[step] = stepTotalIncome;
+        totalOutgoingValue[step] = stepTotalOutgoing;
+        annualNetFlow[step] = stepPensionNetFlow;
+
         double total = 0;
         for (Account a in pensionList) {
-          if (a.id != null) total += accountSeries[a.id!]![y];
+          if (a.id != null) total += accountValue[a.id!]!;
         }
-        sumValue[y] = total;
+        sumValue[step] = total;
+      } else {
+        // Step 0 - Initial State
+        double total = 0;
+        for (Account a in pensionList) {
+          if (a.id != null) total += a.amount;
+        }
+        sumValue[0] = total;
       }
     }
 
-    // MC
-    int mcRuns = 10000;
+    // MC - Adapted for Variable Steps & Flows
+    // Running MC on yearly resolution usually, but here we can match steps.
+    int mcRuns = 2000; // Reduced for performance with more steps
     List<double> mcMinList = List.filled(count, 0.0);
     List<double> mcMaxList = List.filled(count, 0.0);
 
@@ -284,53 +375,38 @@ class Simulate {
       Random rand = Random();
 
       for (int run = 0; run < mcRuns; run++) {
-        Map<int, double> tempBalances = {
-          for (Account p in pensionList) p.id!: p.amount
-        };
+         // Using simplified aggregate model for MC to be fast
+         double bal = pensionList.fold(0.0, (p, c) => p + c.amount);
+         mcResults[run][0] = bal;
 
-        for (int y = 0; y < count; y++) {
-          double yearTotal = 0;
-          for (Account p in pensionList) {
-            int id = p.id!;
-            double bal = tempBalances[id]!;
-
-            double baseRate = p.rate + rateAdjustment; // Use adjusted rate
-            double sigma = volatility; // Use passed volatility
+         for (int step = 1; step < count; step++) {
+            double annualRate = (pensionList.first.rate) + rateAdjustment; // Approximate rate
+            double sigma = volatility;
+            
+            // Adjust sigma/mu for step duration
+            double stepTimeYears = stepMonths / 12.0;
+            double stepSigma = sigma * sqrt(stepTimeYears);
+            double stepMu = (log(1 + annualRate) - 0.5 * sigma * sigma) * stepTimeYears;
+            
             double shock = normal(rand);
-            double mu = log(1 + baseRate) - 0.5 * sigma * sigma;
-            bal *= exp(mu + sigma * shock);
-
-            // Deduct Transfers Out
-            for (Transfer tr in transferList!) {
-              if (tr.fromId == id &&
-                  isInRange(earliestDate, y, tr.startAt, tr.endAt)) {
-                double amt = tr.amount * 12;
-                if (bal < amt) amt = bal;
-                bal -= amt;
-              }
-            }
+            double growth = exp(stepMu + stepSigma * shock);
+            
+            bal = (bal + annualNetFlow[step]) * growth;
             if (bal < 0) bal = 0;
-            tempBalances[id] = bal;
-            yearTotal += bal;
-          }
-          mcResults[run][y] = yearTotal;
-        }
+            mcResults[run][step] = bal;
+         }
       }
-
-      for (int y = 0; y < count; y++) {
-        List<double> yearValues = [];
-        for (int r = 0; r < mcRuns; r++) {
-          yearValues.add(mcResults[r][y]);
-        }
-        yearValues.sort();
-        if (yearValues.isNotEmpty) {
-          // 25th & 75th percentile
-          int p25Index = (mcRuns * 0.25).floor().clamp(0, mcRuns - 1);
-          int p75Index = (mcRuns * 0.75).floor().clamp(0, mcRuns - 1);
-
-          mcMinList[y] = yearValues[p25Index];
-          mcMaxList[y] = yearValues[p75Index];
-        }
+      
+      for (int step = 0; step < count; step++) {
+         List<double> stepValues = [];
+         for(int r=0; r<mcRuns; r++) stepValues.add(mcResults[r][step]);
+         stepValues.sort();
+         if (stepValues.isNotEmpty) {
+             int p25 = (mcRuns * 0.25).floor();
+             int p75 = (mcRuns * 0.75).floor();
+             mcMinList[step] = stepValues[p25];
+             mcMaxList[step] = stepValues[p75];
+         }
       }
     }
 
@@ -345,13 +421,16 @@ class Simulate {
     }
 
     // Calc min max for axes
-    double sumMin = sumValue.reduce(min);
-    double sumMax = sumValue.reduce(max);
-    double incMin = incomeValue.reduce(min);
-    double incMax = incomeValue.reduce(max);
+    double sumMin = sumValue.isNotEmpty ? sumValue.reduce(min) : 0;
+    double sumMax = sumValue.isNotEmpty ? sumValue.reduce(max) : 100;
+    double incMin = totalOutgoingValue.isNotEmpty ? totalOutgoingValue.reduce(min) : 0; // Use Outgoing as min (negative-ish visual?) or just 0
+    double incMax = totalIncomeValue.isNotEmpty ? totalIncomeValue.reduce(max) : 100;
+    double outMax = totalOutgoingValue.isNotEmpty ? totalOutgoingValue.reduce(max) : 100;
+    if (outMax > incMax) incMax = outMax; // Scale for both
+
     if (pensionList.isNotEmpty) {
-      double mcLow = mcMinList.reduce(min);
-      double mcHigh = mcMaxList.reduce(max);
+      double mcLow = mcMinList.isNotEmpty ? mcMinList.reduce(min) : 0;
+      double mcHigh = mcMaxList.isNotEmpty ? mcMaxList.reduce(max) : 0;
       if (mcLow < sumMin) sumMin = mcLow;
       if (mcHigh > sumMax) sumMax = mcHigh;
     }
@@ -369,6 +448,10 @@ class Simulate {
         accountMap: accountResult,
         monteMinList: mcMinList,
         monteMaxList: mcMaxList,
-        ageList: ageValue);
+        ageList: ageValue,
+        totalIncomeList: totalIncomeValue,
+        totalOutgoingList: totalOutgoingValue,
+        annualNetFlow: annualNetFlow
+    );
   }
 }

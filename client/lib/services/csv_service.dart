@@ -90,11 +90,17 @@ class CsvService {
       String? outputFile = await FilePicker.platform.saveFile(
         dialogTitle: 'Please select an output file:',
         fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'txt'],
       );
 
       if (outputFile == null) {
         // User canceled the picker
         return;
+      }
+      
+      if (!outputFile.toLowerCase().endsWith('.csv') && !outputFile.toLowerCase().endsWith('.txt')) {
+         outputFile += '.csv';
       }
       
       final file = File(outputFile);

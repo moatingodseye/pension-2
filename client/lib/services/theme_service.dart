@@ -23,7 +23,7 @@ class ThemeService extends ChangeNotifier {
       tertiary: Color(0xFF198754), // Bootstrap Green (Success)
     ),
     scaffoldBackgroundColor: const Color(0xFFFFFFFF),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -74,7 +74,7 @@ class ThemeService extends ChangeNotifier {
       tertiary: Color(0xFF198754),
     ),
     scaffoldBackgroundColor: const Color(0xFF212529),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: const Color(0xFF2C3034), // Slightly lighter than bg
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
