@@ -19,8 +19,8 @@ class SimulationScreen extends StatefulWidget {
 
 class _SimulationScreenState extends State<SimulationScreen> {
   // Duration Parameters
-  int _stepMonth = 12; // 12=Yearly, 1=Monthly
   int _durationMode = 0; // 0=MaxAge(120), 1=EndAge, 2=FixedDuration
+  bool _byMonth = false;
   double _targetEndAge = 70.0;
   double _targetDuration = 20.0;
   
@@ -29,12 +29,13 @@ class _SimulationScreenState extends State<SimulationScreen> {
   double _rateAdjustment = 0.0;
 
   // Axis Parameters
-  double _sumPotMin = 0.0;
-  double _sumPotMax = 2000000.0;
-  double _incomeMin = 0.0;
-  double _incomeMax = 50000.0;
-  double _xAxisMin = 0.0;
-  double _xAxisMax = 120.0;
+  bool _initialised = false;
+  double _ageMin = 0.0; // x-axis
+  double _ageMax = 120.0;
+  double _pensionMin = 0.0; // left y-axis
+  double _pensionMax = 2000000.0;
+  double _accountMin = 0.0;
+  double _accountMax = 50000.0; // right y-axis
   @override
   void initState() {
     super.initState();
@@ -71,7 +72,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
     provider.run(
       volatility: _volatility,
       rateAdjustment: _rateAdjustment,
-      stepMonth: _stepMonth,
+      byMonth: _byMonth,
       endAge: endAgeParam,
       durationYear: durationParam,
       accountList: accFn.accounts,
@@ -86,13 +87,14 @@ class _SimulationScreenState extends State<SimulationScreen> {
           // Auto-set defaults from result if needed, or keep user overrides
           // For now, let's keep user overrides or init if zero?
           // Actually, let's just respect the result defaults if valid
-          if (_sumPotMax == 2000000.0 && provider.result!.sumPotMax != 100) {
-             _sumPotMin = provider.result!.sumPotMin;
-             _sumPotMax = provider.result!.sumPotMax;
-             _incomeMin = provider.result!.incomeMin;
-             _incomeMax = provider.result!.incomeMax;
-             _xAxisMin = provider.result!.xAxisMin;
-             _xAxisMax = provider.result!.xAxisMax;
+          if (_initialised && provider.result!=null) {
+             _pensionMin = provider.result!.pensionMin;
+             _pensionMax = provider.result!.pensionMax;
+             _accountMin = provider.result!.accountMin;
+             _accountMax = provider.result!.accountMax;
+             _ageMin = provider.result!.ageMin;
+             _ageMax = provider.result!.ageMax;
+             _initialised = true;
           }        });
       }
     });
@@ -114,21 +116,21 @@ class _SimulationScreenState extends State<SimulationScreen> {
       content = Padding(
         padding: const EdgeInsets.all(16.0),
         child: SimulationChart(
+          ageMin: result.ageMin,
+          ageMax: result.ageMax,
           nameList: result.nameList,
           sumList: result.sumList,
           incomeList: result.incomeList,
+          outgoingList: result.outgoingList,
           accountMap: result.accountMap,
           mcMinList: result.monteMinList,
           mcMaxList: result.monteMaxList,
           ageList: result.ageList,
           showList: provider.showList,
-          sumPotMin: _sumPotMin,
-          sumPotMax: _sumPotMax,
-          incomeMin: _incomeMin,
-          incomeMax: _incomeMax,
-          xAxisMin: _xAxisMin,
-          xAxisMax: _xAxisMax,
-          // matched refactored widget signature
+          pensionMin: result.pensionMin,
+          pensionMax: result.pensionMax,
+          accountMin: result.accountMin,
+          accountMax: result.accountMax,
         ),
       );
     }
@@ -178,14 +180,14 @@ class _SimulationScreenState extends State<SimulationScreen> {
                    
                    const Text('Frequency', style: TextStyle(fontWeight: FontWeight.bold)),
                    DropdownButton<int>(
-                     value: _stepMonth,
+                     value: _byMonth==true ? 1 : 12,
                      isExpanded: true,
                      items: const [
                        DropdownMenuItem(value: 12, child: Text('Yearly')),
                        DropdownMenuItem(value: 1, child: Text('Monthly')),
                      ],
                      onChanged: (v) {
-                       if (v != null) setState(() => _stepMonth = v);
+                       if (v != null) setState(() => v==1 ? _byMonth = true : _byMonth = false);
                      },
                    ),
                    const SizedBox(height: 10),
@@ -280,9 +282,9 @@ class _SimulationScreenState extends State<SimulationScreen> {
                   const SizedBox(height: 10),
                   // Axis Config
                   const Text('Axis Limits', style: TextStyle(fontWeight: FontWeight.bold)),
-                  _buildAxisInput('Account Max', _sumPotMax, (v) => setState(() => _sumPotMax = v)),
-                  _buildAxisInput('Income Max', _incomeMax, (v) => setState(() => _incomeMax = v)),
-                  _buildAxisInput('Age Max', _xAxisMax, (v) => setState(() => _xAxisMax = v)),
+                  _buildAxisInput('Pension Max', _pensionMax, (v) => setState(() => _pensionMax = v)),
+                  _buildAxisInput('Account Max', _accountMax, (v) => setState(() => _accountMax = v)),
+                  _buildAxisInput('Age Max', _ageMax, (v) => setState(() => _ageMax = v)),
                 ],
               ),
               

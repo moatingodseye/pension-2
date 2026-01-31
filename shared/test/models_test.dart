@@ -416,8 +416,8 @@ void main() {
       final json = {
         'sumPotMin': 0.0,
         'sumPotMax': 500000.0,
-        'incomeMin': 0.0,
-        'incomeMax': 50000.0,
+        'accountMin': 0.0,
+        'accountMax': 50000.0,
         'xAxisMin': 45.0,
         'xAxisMax': 120.0,
         'name': ['Pot 1', 'Pot 2'],
@@ -429,43 +429,42 @@ void main() {
         'age': [45.0, 46.0],
       };
       final result = SimulationResult.fromJson(json);
-      expect(result.sumPotMax, 500000.0);
+      expect(result.pensionMax, 500000.0);
       expect(result.nameList.length, 2);
       expect(result.accountMap.length, 2);
     });
 
     test('toJson serializes correctly', () {
       final result = SimulationResult(
-        sumPotMin: 0,
-        sumPotMax: 100000,
-        incomeMin: 0,
-        incomeMax: 30000,
-        xAxisMin: 50,
-        xAxisMax: 100,
+        ageList: [50],
+        pensionMin: 0,
+        pensionMax: 100000,
+        accountMin: 0,
+        accountMax: 30000,
+        ageMin: 50,
+        ageMax: 100,
         nameList: ['Test'],
         sumList: [50000],
         incomeList: [15000],
+        outgoingList: [12000],
         accountMap: [[50000]],
         monteMinList: [40000],
         monteMaxList: [60000],
-        ageList: [50],
-        totalIncomeList: [500],
-        totalOutgoingList: [450],
-        annualNetFlow: [340],
+        intoPensionList: [3400],
       );
       final json = result.toJson();
-      expect(json['sumPotMax'], 100000);
+      expect(json['pensionMax'], 100000);
       expect(json['name'], ['Test']);
     });
 
     test('handles optional montePath', () {
       final json = {
-        'sumPotMin': 0.0,
-        'sumPotMax': 100.0,
-        'incomeMin': 0.0,
-        'incomeMax': 10.0,
-        'xAxisMin': 0.0,
-        'xAxisMax': 10.0,
+        'pensionMin': 0.0,
+        'pensionMax': 100.0,
+        'accountMin': 0.0,
+        'accountMax': 10.0,
+        'ageMin': 0.0,
+        'ageMax': 10.0,
         'name': ['A'],
         'sum': [50.0],
         'income': [5.0],
@@ -482,12 +481,12 @@ void main() {
 
     test('toJson excludes montePath when null', () {
       final result = SimulationResult(
-        sumPotMin: 0, sumPotMax: 100,
-        incomeMin: 0, incomeMax: 10,
-        xAxisMin: 0, xAxisMax: 10,
-        nameList: [], sumList: [], incomeList: [],
+        pensionMin: 0, pensionMax: 100,
+        accountMin: 0, accountMax: 10,
+        ageMin: 0, ageMax: 10,
+        nameList: [], sumList: [], incomeList: [], outgoingList: [],
         accountMap: [], monteMinList: [], monteMaxList: [],
-        ageList: [], totalIncomeList: [], totalOutgoingList: [], annualNetFlow: [],
+        ageList: [], intoPensionList: [],
       );
       final json = result.toJson();
       expect(json.containsKey('montePath'), false);

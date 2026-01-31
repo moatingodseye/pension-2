@@ -58,37 +58,23 @@ class Simulate {
       final double volatility =
           body != null ? (body['volatility'] as num?)?.toDouble() ?? 1.0 : 1.0;
       final double rateAdjustment =
-          body != null ? (body['rate_adjustment'] as num?)?.toDouble() ?? 1.0 : 1.0;
-      final int step = body!=null ? (body['step'] as num?)?.toInt() ?? 12 : 12;
-      final int endAge = body!=null ? (body['endAge'] as num?)?.toInt() ?? 120 : 120;
-      final int duration = body!=null ? (body['duration'] as num?)?.toInt() ?? 100 : 100;
+          body != null ? (body['rate'] as num?)?.toDouble() ?? 1.0 : 1.0;
+      final bool byMonth = body != null ? body['bymonth'] : false;
+      final int? endAge = body != null ? (body['endage'] as num?)?.toInt() ?? null : null;
+      final int? duration = body != null ? (body['duration'] as num?)?.toInt() ?? null : null;
 
       if (accountList!.isEmpty) {
-        return Response.ok(
-            jsonEncode(SimulationResult(
-                    nameList: [],
-                    sumList: [],
-                    incomeList: [],
-                    accountMap: [],
-                    monteMinList: [],
-                    monteMaxList: [],
-                    ageList: [],
-                    sumPotMin: 0,
-                    sumPotMax: 100,
-                    incomeMin: 0,
-                    incomeMax: 100,
-                    xAxisMin: 0,
-                    xAxisMax: 100,
-                    totalIncomeList: [],
-                    totalOutgoingList: [],
-                    annualNetFlow: [],)
-                .toJson()),
-            headers: {'Content-Type': 'application/json'});
+        return Response.badRequest(
+          body: jsonEncode({
+            'success': false,
+            'message': 'Nothing to simulate!',
+          }),
+          headers: {'Content-Type': 'application/json'},);
       }
 
       shared.Simulate sim = shared.Simulate(accountList, incomeList, outgoingList, transferList, user!);
 
-      final result = sim.simulate(volatility,rateAdjustment,step,endAge,duration);
+      final result = sim.simulate(volatility,rateAdjustment,byMonth,endAge,duration);
 
       return Response.ok(jsonEncode(result!.toJson()),
           headers: {'Content-Type': 'application/json'});

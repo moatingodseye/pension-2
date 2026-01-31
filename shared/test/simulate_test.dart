@@ -49,13 +49,13 @@ void main() {
 
     test('simulate returns null for empty account list', () {
       final sim = Simulate([], incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.1, 0.0);
+      final result = sim.simulate(0.1, 0.0, false, null, null);
       expect(result, isNull);
     });
 
     test('simulate returns SimulationResult for valid accounts', () {
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.1, 0.0);
+      final result = sim.simulate(0.1, 0.0, false, null, null);
       expect(result, isNotNull);
       expect(result!.nameList.length, 2);
       expect(result.accountMap.length, 2);
@@ -63,7 +63,7 @@ void main() {
 
     test('simulate calculates interest correctly', () {
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0); // No volatility, no rate adjustment
+      final result = sim.simulate(0.0, 0.0, false, null, null); // No volatility, no rate adjustment
       expect(result, isNotNull);
       // First account (pension) starts at 100000, with 5% rate
       // After 1 year: 100000 * 1.05 = 105000
@@ -83,7 +83,7 @@ void main() {
       ];
 
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0);
+      final result = sim.simulate(0.0, 0.0, false, null, null);
       expect(result, isNotNull);
       // Current account should increase by income (1000 * 12 = 12000 per year)
       expect(result!.incomeList[1], greaterThan(0));
@@ -102,7 +102,7 @@ void main() {
       ];
 
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0);
+      final result = sim.simulate(0.0, 0.0, false, null, null);
       expect(result, isNotNull);
     });
 
@@ -120,13 +120,13 @@ void main() {
       ];
 
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0);
+      final result = sim.simulate(0.0, 0.0, false, null, null);
       expect(result, isNotNull);
     });
 
     test('simulate generates Monte Carlo min/max lists', () {
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.15, 0.0); // 15% volatility
+      final result = sim.simulate(0.15, 0.0, false, null, null); // 15% volatility
       expect(result, isNotNull);
       expect(result!.monteMinList.length, greaterThan(0));
       expect(result.monteMaxList.length, greaterThan(0));
@@ -134,7 +134,7 @@ void main() {
 
     test('simulate calculates age list correctly', () {
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0);
+      final result = sim.simulate(0.0, 0.0, false, null, null);
       expect(result, isNotNull);
       // User born 1980, accounts start 2025 = age 45
       expect(result!.ageList.first, closeTo(45, 1));
@@ -142,10 +142,10 @@ void main() {
 
     test('rateAdjustment affects simulation', () {
       final sim1 = Simulate(accounts, [], [], [], testUser);
-      final result1 = sim1.simulate(0.0, 0.0); // No adjustment
+      final result1 = sim1.simulate(0.0, 0.0, false, null, null); // No adjustment
 
       final sim2 = Simulate(accounts, [], [], [], testUser);
-      final result2 = sim2.simulate(0.0, 0.02); // +2% rate adjustment
+      final result2 = sim2.simulate(0.0, 0.02, false, null, null); // +2% rate adjustment
 
       expect(result1, isNotNull);
       expect(result2, isNotNull);
@@ -166,7 +166,7 @@ void main() {
       ];
 
       final sim = Simulate(accounts, incomes, outgoings, transfers, testUser);
-      final result = sim.simulate(0.0, 0.0);
+      final result = sim.simulate(0.0, 0.0, false, null, null);
       expect(result, isNotNull);
     });
   });
@@ -182,7 +182,6 @@ void main() {
       final sim = Simulate([], [], [], [], testUser);
       final result = sim.isInRange(
         DateTime(2025, 1, 1),
-        0,
         AgeOrDate(), // both null
         null,
       );
@@ -193,7 +192,6 @@ void main() {
       final sim = Simulate([], [], [], [], testUser);
       final result = sim.isInRange(
         DateTime(2020, 1, 1), // earliest
-        0, // year 0 = 2020
         AgeOrDate(date: DateTime(2025, 1, 1)), // starts 2025
         null,
       );
@@ -203,8 +201,7 @@ void main() {
     test('returns true when in range', () {
       final sim = Simulate([], [], [], [], testUser);
       final result = sim.isInRange(
-        DateTime(2025, 1, 1),
-        2, // year 2 = 2027
+        DateTime(2027, 1, 1),
         AgeOrDate(date: DateTime(2025, 1, 1)),
         AgeOrDate(date: DateTime(2030, 1, 1)),
       );
@@ -214,8 +211,7 @@ void main() {
     test('returns false when after end date', () {
       final sim = Simulate([], [], [], [], testUser);
       final result = sim.isInRange(
-        DateTime(2025, 1, 1),
-        10, // year 10 = 2035
+        DateTime(2035, 1, 1),
         AgeOrDate(date: DateTime(2025, 1, 1)),
         AgeOrDate(date: DateTime(2030, 1, 1)), // ends 2030
       );
@@ -231,10 +227,11 @@ void main() {
         amount: 100.0,
         intoId: 1,
         startAt: AgeOrDate(date: DateTime(2025)),
+        rate:2.5,
       );
-      final trans = Transaction(1, 100.0, income);
+      final trans = Transaction(income, 1, 100.0, 2.5);
       expect(trans.id, 1);
-      expect(trans.amount, 100.0);
+      expect(trans.target, 100.0);
       expect(trans.source, income);
       expect(trans.use, false);
     });
