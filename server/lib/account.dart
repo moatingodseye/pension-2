@@ -79,6 +79,7 @@ class AccountApi extends Access {
           newAccount.name,
           newAccount.amount,
 //          newAccount.amountAt.toIso8601String().split('T')[0],
+          null,
           newAccount.amountAt.toString(),
           newAccount.rate
         ],
@@ -125,6 +126,7 @@ class AccountApi extends Access {
           updatedAccount.type.id,
           updatedAccount.name,
           updatedAccount.amount,
+          null,
           updatedAccount.amountAt.toString(),
           updatedAccount.rate,
           id

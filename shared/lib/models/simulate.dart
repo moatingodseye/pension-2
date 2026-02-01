@@ -10,9 +10,82 @@ import 'transfer.dart';
 import 'simulation_result.dart';
 import 'ageOrDate.dart';
 
+// the processing information for the simulation
+class Simulation {
+  final Simulate parent;
+  final bool byMonth;
+  final DateTime start;
+  final DateTime end;
+  final int monthCount; // number of months to process (end-start)
+  final int sampleCount; // number of samples to take (if by year the<>monthCount)
+  final int step; // if by year = 1 if by month = 12, number of steps in process to take before doing a sample
+  DateTime current;
+  DateTime previous;
+  int month = 0;
+  int sample = 0;
+
+  Simulation(this.parent, this.byMonth, this.start, this.end, this.monthCount, this.sampleCount, this.step) 
+    : current = start, previous=start;
+
+  void toWork(Map<int,Working> working) {
+//    DateTime next = DateTime(current.year,current.month+1);
+    for (final work in working.values) {
+      Account a = work.source;
+      if ((a.amountAt.date!.isAfter(current) || a.amountAt.date!.isAtSameMomentAs(current))) {
+        // only reset amount if it wasn't being used otherwise lose changes over time.
+        if (!work.use)
+          work.amount = a.amount;
+        work.use = true;
+//      } else {
+//        if (work.use)
+//          work.amount = 0.0;
+//        work.use = false;
+      }
+    }
+  }
+
+  void begin(Map<int,Working> working) {
+    month = 0;
+    sample = 0;
+    current = start;
+    previous = start;
+
+    toWork(working);
+  }
+
+  void next(Map<int,Working> working) {
+    month++;
+    current = DateTime(start.year, start.month + month);
+    if (byMonth) 
+      sample++;
+    else if (current.year!=previous.year) 
+      sample++;
+    previous = current;
+
+    toWork(working);
+  }
+}
+
+// during processing this is the Working representation of an account, has current value and maximum
+class Working {
+  final Account source;
+  double _amount;
+  double maximum;
+  bool use;
+
+  Working(this.source) : _amount = 0, maximum = 0, use = false;
+
+  double get amount => _amount;
+  void set amount(double value) {
+    _amount = value;
+    if (maximum<_amount)
+      maximum = _amount;
+  }
+}
+
 class Transaction {
-  Object source; // income, outgoing or transfer
-  int id;
+  final Object source; // income, outgoing or transfer
+  final int id;
   double target; // what we want to take
   double rate;
   double? taken; // what we managed to take
@@ -116,8 +189,20 @@ class Simulate {
         a = replace;
       }
     }
+
+      // Convert annual amounts to monthly for calculation
+    for (Income i in incomeList!) {
+      income.add(Transaction(i, i.id!,i.amount, i.rate / 12.0)); 
+    }
+    for (Outgoing o in outgoingList!) {
+      outgoing.add(Transaction(o, o.id!,o.amount, o.rate / 12.0)); 
+    }
+    for (Transfer t in transferList!) {
+      transfer.add(Transaction(t, t.id!,t.amount, t.rate / 12.0)); 
+    }
   }
 
+  // recalcuate the target value applying the monthly interest/inflation/growth rate
   void rate() {
     // rate has already been converted to monthly we always process monthly, just might not pass every month result to the chart
     for (Transaction t in income) {
@@ -131,6 +216,7 @@ class Simulate {
     }
   }
 
+  // flag which transactions need to be processed for this date
   void mark(DateTime when) {
     for (Transaction t in income) {
       Income i = t.source as Income;
@@ -151,11 +237,7 @@ class Simulate {
     }
   }
 
-  SimulationResult? simulate(double volatility, double rateAdjustment, bool byMonth, int? endAge, int? durationYear) {
-    if (accountList!.isEmpty) {
-      return null;
-    }
-
+  Simulation window(bool byMonth, int? duration, int? endAge) {
     // Earliest start date
     DateTime startDate = DateTime.now();
     if (accountList!.isNotEmpty) {
@@ -166,15 +248,10 @@ class Simulate {
       startDate = minDate.date!;
     }
 
-    prepare();
-
-    final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
-    final current = accountList!.where((a) => a.type == AccountType.current).toList().first;
-
     // Determine End Date
     DateTime endDate;
-    if (durationYear != null) {
-        endDate = addYear(startDate, durationYear);
+    if (duration != null) {
+        endDate = addYear(startDate, duration);
     } else if (endAge != null) {
         endDate = addYear(user.dob!, endAge);
     } else {
@@ -185,103 +262,80 @@ class Simulate {
     int totalMonth = (endDate.year - startDate.year) * 12 + (endDate.month - startDate.month);
     if (totalMonth < 1) totalMonth = 12;
     
-    int count = totalMonth;
-    int answer = count;
+    int answer = totalMonth;
     int step = 1;
     if (!byMonth) {
-      answer = count ~/ 12;
+      answer = totalMonth ~/ 12;
       step = 12;
     }
+
+    Simulation result = Simulation(this, byMonth, startDate, endDate, totalMonth, answer, step);
+    return result;
+  }
+
+  SimulationResult? simulate(double volatility, double rateAdjustment, bool byMonth, int? endAge, int? durationYear) {
+    if (accountList!.isEmpty) {
+      return null;
+    }
+
+    // work out the window, start date, end date, number of samples to take
+    final Simulation sim = window(byMonth,durationYear,endAge);
+
+    // convert any ages into dates so its easier to process late.
+    prepare();
+
+    final pensionList = accountList!.where((a) => a.type == AccountType.pension).toList();
+    final current = accountList!.where((a) => a.type == AccountType.current).toList().first;
 
     // Series Data
     Map<int, List<double>> accountSeries = {};
     for (Account a in accountList!) {
       if (a.id == null) continue;
-      accountSeries[a.id!] = List.filled(answer, 0.0);
-      accountSeries[a.id!]![0] = a.amount;
+      accountSeries[a.id!] = List.filled(sim.sampleCount, 0.0);
     }
 
-    Map<int,double> accountValue = {};
-    List<double> sumValue = List.filled(answer, 0); // sum of pensions
-    double minValue = 0;
-    double maxValue = 0; // min/max accountValue over entire run, so graph can scale
-    List<double> incomeValue = List.filled(answer, 0); // Total Money IN to Current
-    List<double> outgoingValue = List.filled(answer, 0); // Total Money OUT of Current
-    List<double> intoPension = List.filled(answer, 0); // Net Flow into Pension (Allocated to steps)
+    List<double> sumValue = List.filled(sim.sampleCount, 0); // sum of pensions
+    List<double> incomeValue = List.filled(sim.sampleCount, 0); // Total Money IN to Current
+    List<double> outgoingValue = List.filled(sim.sampleCount, 0); // Total Money OUT of Current
+    List<double> intoPension = List.filled(sim.sampleCount, 0); // Net Flow into Pension (Allocated to steps)
     
-    List<double> ageValue = List.generate(answer, (i) {
-        DateTime stepDate = DateTime(startDate.year, startDate.month + (i * step));
+    List<double> ageValue = List.generate(sim.sampleCount, (i) {
+        DateTime stepDate = DateTime(sim.start.year, sim.start.month + (i * sim.step));
         return yearsBetween(user.dob!, stepDate).toDouble();
     });
 
     // Initialise
+    Map<int,Working> working = {};
     for (Account a in accountList!) {
       if (a.id == null) continue;
-      accountValue[a.id!] = a.amount;
-      if (a.type!=AccountType.pension) {
-        minValue = minValue<a.amount ? minValue : a.amount;
-        maxValue = maxValue>a.amount ? maxValue : a.amount;
-      }
-    }
-    // Convert annual amounts to monthly for calculation
-    for (Income i in incomeList!) {
-      income.add(Transaction(i, i.id!,i.amount, i.rate / 12.0)); 
-    }
-    for (Outgoing o in outgoingList!) {
-      outgoing.add(Transaction(o, o.id!,o.amount, o.rate / 12.0)); 
-    }
-    for (Transfer t in transferList!) {
-      transfer.add(Transaction(t, t.id!,t.amount, t.rate / 12.0)); 
+      Working w = Working(a);
+      working[w.source.id!] = w;
     }
 
     // Simulation Loop, always step by month 
-    DateTime previousDate = startDate;
-    int index = 0;
-    for (int month = 0; month < count; month++) {
-      if (month > 0) {
-        // Apply rate to transactions (Compound annually)
-        // Note: rate() compounds annual amount. We need to be careful with monthly steps.
-        // Simplified: Apply rate growth every 12 months (or equivalent fraction)
-        // For now, let's keep rate() logic but applied proportionally? 
-        // Logic `rate()` multiplies amount by (1+rate).
-        // If step is monthly, we shouldn't increase inflation every month!
-        // FIXED: Only apply inflation once per year.
-        
-        DateTime currentDate = DateTime(startDate.year, startDate.month + month);
-        if (byMonth) 
-          index++;
-        else if (currentDate.year!=previousDate.year)
-          index++;
-        previousDate = currentDate;
-
-        // Check if we passed a year boundary or simplified: just update rates annually
-        // Simpler: Apply (1+rate)^(stepMonths/12) to transaction values? 
-        // Existing logic was: `t.amount *= (1.0 + i.rate)`. This implies annual jump.
-        // Let's stick to annual inflation update for now to avoid complexity explosion, 
-        // checks if (step * stepMonths) % 12 == 0 roughly?
-        // Better: Continuous inflation?
-        // Let's stick to: Update transaction values annually.
-        
+    sim.begin(working);
+    for (int month = 0; month < sim.monthCount; month++) {
+      if (month > 0) {        
+        // calculate rate for this for transactions/income/outgoing rates have already been prepared to be byMonth.
         rate();
-
-        mark(currentDate); 
+        // flag which transactions are to be applied on this date
+        mark(sim.current); 
         
         List<Transaction>? retry = [];
-        for (Account a in accountList!) {          
-          // Incomes
+        for (Working w in working.values) {          
           for (Transaction t in income) {
             if (t.use) {
               Income i = t.source as Income;
-              if (a.id==i.intoId) {
+              if (w.source.id==i.intoId) {
                 t.taken = t.target; // just for consistency
-                accountValue[i.intoId] = accountValue[i.intoId]! + t.taken!;
+                w.amount += t.taken!;
 //                  if (pensionList.any((p) => p.id == i.intoId)) {
               }
-              if (a.id==current.id!) {
-                incomeValue[index] = incomeValue[index] + t.taken!;
+              if (w.source.id==current.id!) {
+                incomeValue[sim.sample] = incomeValue[sim.sample] + t.taken!;
               }
               if (pensionList.any((p) => p.id == i.intoId)) {
-                intoPension[index] = intoPension[index] + t.taken!;
+                intoPension[sim.sample] = intoPension[sim.sample] + t.taken!;
               }
             }
           }
@@ -290,20 +344,17 @@ class Simulate {
           for (Transaction t in outgoing) {
             if (t.use) {
               Outgoing o = t.source as Outgoing;
-              if (a.id==o.fromId) {
-                if (accountValue.containsKey(o.fromId)) {
-                  t.taken = t.target;
-                  if (accountValue[o.fromId]!<t.target) {
-                    t.taken = accountValue[o.fromId];
-                  }
-                  accountValue[o.fromId] = accountValue[o.fromId]! - t.taken!;
-                }
+              if (w.source.id==o.fromId) {
+                t.taken = t.target;
+                if (w.amount<t.target) 
+                  t.taken = w.amount;
+                w.amount -= t.taken!;
               }
-              if (a.id==current.id!) {
-                outgoingValue[index] = outgoingValue[index] + t.taken!;
+              if (w.source.id==current.id!) {
+                outgoingValue[sim.sample] = outgoingValue[sim.sample] + t.taken!;
               }
               if (pensionList.any((p) => p.id == o.fromId)) {
-                intoPension[index] = intoPension[index] + t.taken!;
+                intoPension[sim.sample] = intoPension[sim.sample] + t.taken!;
               }
             }
           }
@@ -312,19 +363,16 @@ class Simulate {
           for (Transaction t in transfer) {
             if (t.use) {
               Transfer r = t.source as Transfer;
-              if (a.id==r.fromId) {
-                if (accountValue.containsKey(r.fromId)) {
-                  t.taken = t.target;
-                  if (accountValue[r.fromId]!<t.target) {
-                    t.taken = accountValue[r.fromId];
-                  }
-                  accountValue[r.fromId] = accountValue[r.fromId]! - t.taken!;
-                }
-                if (a.id==current.id!) {
-                  outgoingValue[index] = outgoingValue[index] + t.taken!;
-                }
+              if (w.source.id==r.fromId) {
+                t.taken = t.target;
+                if (w.amount<t.target) 
+                  t.taken = w.amount;
+                w.amount -= t.taken!;
               }
-              if (a.id==r.intoId) {
+              if (w.source.id==current.id!) {
+                outgoingValue[sim.sample] = outgoingValue[sim.sample] + t.taken!;
+              }
+              if (w.source.id==r.intoId) {
                 // might not have not taken from other account yet, don't know if it has this ammount left so can't do this transaction fully yet.
                 retry.add(t);
               }
@@ -335,41 +383,37 @@ class Simulate {
         // can now do that transaction we delayed earlier as must have taken from from other account, if not then taken=0 and nothing changes
         for (Transaction t in retry) {
           Transfer r = t.source as Transfer;
-          accountValue[r.intoId] = accountValue[r.intoId]! + t.taken!;
+          Working w = working[r.intoId]!;
+          w.amount += t.taken!;
           if (r.intoId==current.id!)
-            incomeValue[index] = incomeValue[index] + t.taken!;
+            incomeValue[sim.sample] = incomeValue[sim.sample] + t.taken!;
           if (pensionList.any((p) => p.id == r.intoId)) {
-            intoPension[index] = intoPension[index] + t.taken!;
+            intoPension[sim.sample] = intoPension[sim.sample] + t.taken!;
           }
         }
 
         // Apply Interest 
-        for (Account a in accountList!) {
-          if (a.id == null) continue;
-          int id = a.id!;
+        for (final w in working.values) {
+          Account a = w.source;
           double rate = a.rate;
-          if (pensionList.any((p) => p.id == id)) 
+          if (pensionList.any((p) => p.id == a.id!)) 
             rate = rate + rateAdjustment; // simulate different rates for pensions, doesn't apply to savings/state pension etc
           // monthly rate = (1+annual)^(1/12) - 1
           rate = pow(1 + rate, 1.0/12.0) - 1.0;
           // step rate = (1+monthly)^(stepMonths) - 1
 //          double stepRate = pow(1 + monthlyRate, stepMonth) - 1.0;
           
-          accountValue[id] = accountValue[id]! * (1.0 + rate);
+          w.amount *= (1.0 + rate);
 
-          if (a.type!=AccountType.pension) {
-            minValue = minValue<accountValue[a.id]! ? minValue : accountValue[a.id]!;
-            maxValue = maxValue>accountValue[a.id]! ? maxValue : accountValue[a.id]!;
-          }            
-
-          accountSeries[id]![index] = accountValue[id]!;
+          accountSeries[a.id!]![sim.sample] = w.amount;
         }
        
         double total = 0;
         for (Account a in pensionList) {
-          if (a.id != null) total += accountValue[a.id!]!;
+          Working w = working[a.id!]!;
+          total += w.amount;
         }
-        sumValue[index] = total;
+        sumValue[sim.sample] = total;
       } else {
         // Step 0 - Initial State
         double total = 0;
@@ -377,20 +421,22 @@ class Simulate {
           if (a.id != null) total += a.amount;
         }
         sumValue[0] = total;
-      }
-    }
+      } 
+
+      sim.next(working);
+    } // month
 
     // MC - Adapted for Variable Steps & Flows
     // Running MC on yearly resolution usually, but here we can match steps.
     int mcRuns = 2000; // Reduced for performance with more steps
-    List<double> mcMinList = List.filled(count, 0.0);
-    List<double> mcMaxList = List.filled(count, 0.0);
+    List<double> mcMinList = List.filled(sim.sampleCount, 0.0);
+    List<double> mcMaxList = List.filled(sim.sampleCount, 0.0);
 
     if (pensionList.isNotEmpty) {
-      mcMinList = List.filled(count, double.infinity);
-      mcMaxList = List.filled(count, double.negativeInfinity);
+      mcMinList = List.filled(sim.sampleCount, double.infinity);
+      mcMaxList = List.filled(sim.sampleCount, double.negativeInfinity);
 
-      List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(count, 0));
+      List<List<double>> mcResults = List.generate(mcRuns, (_) => List.filled(sim.sampleCount, 0));
       Random rand = Random();
 
       for (int run = 0; run < mcRuns; run++) {
@@ -398,7 +444,7 @@ class Simulate {
          double bal = pensionList.fold(0.0, (p, c) => p + c.amount);
          mcResults[run][0] = bal;
 
-         for (int step = 1; step < count; step++) {
+         for (int month = 0; month < sim.monthCount; month++) {
             double annualRate = (pensionList.first.rate) + rateAdjustment; // Approximate rate
             double sigma = volatility;
             
@@ -410,13 +456,13 @@ class Simulate {
             double shock = normal(rand);
             double growth = exp(stepMu + stepSigma * shock);
             
-            bal = (bal + intoPension[index]) * growth;
+            bal = (bal + intoPension[0]) * growth;
             if (bal < 0) bal = 0;
-            mcResults[run][step] = bal;
+            mcResults[run][0] = bal;
          }
       }
       
-      for (int step = 0; step < count; step++) {
+      for (int step = 0; step < sim.sampleCount; step++) {
          List<double> stepValues = [];
          for(int r=0; r<mcRuns; r++) stepValues.add(mcResults[r][step]);
          stepValues.sort();
@@ -441,14 +487,12 @@ class Simulate {
 
     // Calc min max for axes
     double sumMax = sumValue.isNotEmpty ? sumValue.reduce(max) : 100;
-    double accountMin = minValue;
-    double accountMax = maxValue;
-  
-    if (pensionList.isNotEmpty) {
-      double mcLow = mcMinList.isNotEmpty ? mcMinList.reduce(min) : 0;
-      double mcHigh = mcMaxList.isNotEmpty ? mcMaxList.reduce(max) : 0;
+    double lMax = 0;
+    for (final w in working.values) {
+      if (w.source.type!=AccountType.pension && lMax<w.maximum)
+        lMax = w.maximum;
     }
-
+  
     return SimulationResult(
         ageList: ageValue, // x - axis
         ageMin: ageValue.isNotEmpty ? ageValue.first : 0,
@@ -456,7 +500,7 @@ class Simulate {
         pensionMin: 0.0,
         pensionMax: sumMax,
         accountMin: 0.0,
-        accountMax: accountMax,
+        accountMax: lMax,
         nameList: nameList,
         sumList: sumValue,
         incomeList: incomeValue,

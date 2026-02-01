@@ -10,6 +10,7 @@ import 'package:shared/models/income.dart';
 import 'package:shared/models/outgoing.dart';
 import 'package:shared/models/transfer.dart';
 import 'package:shared/models/ageOrDate.dart';
+import 'package:shared/models/simulation_result.dart';
 
 class CsvService {
   
@@ -49,25 +50,30 @@ class CsvService {
     return buffer.toString();
   }
 
-  static String exportSimulation(dynamic result) {
+  static String exportSimulation(SimulationResult result) {
     // result is SimulationResult, assume dynamic to avoid circular import if needed, 
     // or import SimulationResult. It is safe to import.
     final buffer = StringBuffer();
-    buffer.writeln('Age,Pension Value,Income,Monte Carlo Min,Monte Carlo Max');
+    buffer.write('Age,Income,Outgoing,Sum,');
+    for (String a in result.nameList) {
+      buffer.write('$a,');
+    }
+    buffer.writeln('');
     
     // Check if result has lists
     if (result != null) {
-      final sunValues = result.sum;
-      final incomeValues = result.income;
-      final mcMin = result.monteMin;
-      final mcMax = result.monteMax;
-      final ageList = result.ageList;
-      
-      int count = ageList.length;
-      if (sunValues.length < count) count = sunValues.length;
+      int count = result.ageList.length;
       
       for (int i = 0; i < count; i++) {
-        buffer.writeln('${ageList[i].toStringAsFixed(1)},${sunValues[i].toStringAsFixed(2)},${incomeValues[i].toStringAsFixed(2)},${mcMin.isNotEmpty ? mcMin[i].toStringAsFixed(2) : ""},${mcMax.isNotEmpty ? mcMax[i].toStringAsFixed(2) : ""}');
+        buffer.write('${result.ageList[i].toStringAsFixed(1)},');
+        buffer.write('${result.incomeList[i].toStringAsFixed(2)},');
+        buffer.write('${result.outgoingList[i].toStringAsFixed(2)},');
+        buffer.write('${result.sumList[i].toStringAsFixed(2)},');
+        for (int c =0; c<result.accountMap.length; c++) {
+          List<double> x = result.accountMap[c];
+          buffer.write('${x[i].toStringAsFixed(2)},');
+        }
+        buffer.writeln('');
       }
     }
     

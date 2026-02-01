@@ -57,9 +57,12 @@ class DataTableView extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: _getAlignment(index),
                   children: [
-                    Text(
-                      headers[index],
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                        child:   Text(
+                          headers[index],
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                        ),
                     ),
                   ],
                 ),
@@ -88,11 +91,15 @@ class DataTableView extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: _getAlignment(cellIndex),
                           children: [
-                            if (cellIndex < cells.length)
-                               cells[cellIndex], // No Expanded here, let cell take natural width or be flexible? 
-                               // Actually if cell is Text it might overflow.
-                               // We should wrap cell in Flexible or Expanded if possible. 
-                               // But widget passed is generic. Assuming text/row.
+                            Padding(
+                              padding: const EdgeInsets.only(right: 16.0),
+                                child:
+//                                  if (cellIndex < cells.length)
+                                    cells[cellIndex], // No Expanded here, let cell take natural width or be flexible? 
+                                    // Actually if cell is Text it might overflow.
+                                    // We should wrap cell in Flexible or Expanded if possible. 
+                                    // But widget passed is generic. Assuming text/row.
+                                ),
                           ],
                         ),
                       );
