@@ -36,6 +36,8 @@ class _SimulationScreenState extends State<SimulationScreen> {
   double _pensionMax = 2000000.0;
   double _accountMin = 0.0;
   double _accountMax = 50000.0; // right y-axis
+  DateTime dob = DateTime(1900,1,1);
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +64,8 @@ class _SimulationScreenState extends State<SimulationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: User missing for simulation')));
       return;
     }
+
+    dob = authFn.user!.dob!;
 
     int? endAgeParam;
     int? durationParam;
@@ -131,6 +135,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
           pensionMax: result.pensionMax,
           accountMin: result.accountMin,
           accountMax: result.accountMax,
+          dob: dob,
         ),
       );
     }

@@ -344,13 +344,13 @@ class Simulate {
           for (Transaction t in outgoing) {
             if (t.use) {
               Outgoing o = t.source as Outgoing;
-              if (w.source.id==o.fromId) {
+              if (o.fromId==w.source.id) {
                 t.taken = t.target;
                 if (w.amount<t.target) 
                   t.taken = w.amount;
                 w.amount -= t.taken!;
               }
-              if (w.source.id==current.id!) {
+              if (o.fromId==w.source.id && o.fromId==current.id!) {
                 outgoingValue[sim.sample] = outgoingValue[sim.sample] + t.taken!;
               }
               if (pensionList.any((p) => p.id == o.fromId)) {
@@ -363,16 +363,16 @@ class Simulate {
           for (Transaction t in transfer) {
             if (t.use) {
               Transfer r = t.source as Transfer;
-              if (w.source.id==r.fromId) {
+              if (r.fromId==w.source.id) {
                 t.taken = t.target;
                 if (w.amount<t.target) 
                   t.taken = w.amount;
                 w.amount -= t.taken!;
               }
-              if (w.source.id==current.id!) {
+              if (r.fromId==w.source.id && r.fromId==current.id!) {
                 outgoingValue[sim.sample] = outgoingValue[sim.sample] + t.taken!;
               }
-              if (w.source.id==r.intoId) {
+              if (r.intoId==w.source.id) {
                 // might not have not taken from other account yet, don't know if it has this ammount left so can't do this transaction fully yet.
                 retry.add(t);
               }

@@ -1,3 +1,11 @@
+DateTime addFractionalYear(DateTime date, double year) {
+  int wholeYears = year.floor();
+  double fractionalPart = year - wholeYears;
+  int daysToAdd = (fractionalPart * 365.25).round();
+  
+  return date.add(Duration(days: daysToAdd)).add(Duration(days: wholeYears * 365)).add(Duration(days: (wholeYears / 4).floor()));
+}   
+
 DateTime addYear(DateTime date, int yearToAdd) {
   // Create a new DateTime by adding years to the current date
   return DateTime(date.year + yearToAdd, date.month, date.day);

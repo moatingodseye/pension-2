@@ -1,6 +1,8 @@
 import '../services/visual_monte_carlo.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:shared/models/date.dart';
+
 class SimulationChart extends StatelessWidget {
   final List<String> nameList;
   final List<double> sumList;
@@ -11,6 +13,7 @@ class SimulationChart extends StatelessWidget {
   final List<double> mcMinList;
   final List<double> mcMaxList;
   final List<double> ageList;
+  final DateTime dob;
   final List<bool> showList;
 
   final double pensionMin;
@@ -39,6 +42,7 @@ class SimulationChart extends StatelessWidget {
     required this.accountMax,
     required this.ageMin,
     required this.ageMax,
+    required this.dob,
     this.intoPensionList = const [],
   });
 
@@ -187,8 +191,15 @@ class SimulationChart extends StatelessWidget {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                reservedSize: 40,
                 interval: (ageMax - ageMin) / 10,
-                getTitlesWidget: (value, meta) => Text(value.toStringAsFixed(0)),
+                getTitlesWidget: (value, meta) => Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('${value.toStringAsFixed(0)}'), // Age
+                    Text('${addFractionalYear(dob, value).year}'), // Year below
+                  ],
+                ),
               ),
             ),
             leftTitles: AxisTitles(
