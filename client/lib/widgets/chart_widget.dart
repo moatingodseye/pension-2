@@ -266,6 +266,8 @@ class SimulationChart extends StatelessWidget {
                   double value = spot.y;
                   String label = name[realIndex];
                   Color color = spot.bar.color ?? Colors.blue;
+//                  if (realIndex==0)
+//                    label = '$spot.x $label';
 
                   if (isIncomeLine) {
                     value = spot.y / factor; // Denormalize

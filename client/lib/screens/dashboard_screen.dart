@@ -145,41 +145,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 24),
                   
                   // Quick Actions Panel
-                  Expanded(
-                    flex: 1,
-                    child: AppCard(
-                      title: 'Quick Actions',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.add_circle_outline),
-                            label: const Text('Add New Account'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
-                            onPressed: () => showDialog(context: context, builder: (_) => const AccountFormDialog()),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.monetization_on_outlined),
-                            label: const Text('Add Income Stream'),
-                             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                            onPressed: () => showDialog(context: context, builder: (_) => const IncomeFormDialog()),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.money_off_outlined),
-                            label: const Text('Add Expense'),
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                            onPressed: () => showDialog(context: context, builder: (_) => const OutgoingFormDialog()),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],

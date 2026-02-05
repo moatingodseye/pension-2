@@ -108,9 +108,11 @@ class _HomeContainerState extends State<HomeContainer> {
       case 0: // Dashboard
         secondaryHeader = 'Quick Actions';
         secondaryItems = [
-           SidebarItem(icon: Icons.add, label: 'Add Income', onTap: () => _openDialog(const IncomeFormDialog())),
-           SidebarItem(icon: Icons.remove, label: 'Add Outgoing', onTap: () => _openDialog(const OutgoingFormDialog())),
+           SidebarItem(icon: Icons.add, label: 'Add New Account', onTap: () => _openDialog(const AccountFormDialog())),
+           SidebarItem(icon: Icons.monetization_on, label: 'Add Income', onTap: () => _openDialog(const IncomeFormDialog())),
+           SidebarItem(icon: Icons.money_off, label: 'Add Outgoing', onTap: () => _openDialog(const OutgoingFormDialog())),
            SidebarItem(icon: Icons.swap_horiz, label: 'Transfer', onTap: () => _openDialog(const TransferFormDialog())),
+
         ];
         break;
       case 1: // Accounts

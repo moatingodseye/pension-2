@@ -444,22 +444,25 @@ class Simulate {
          double bal = pensionList.fold(0.0, (p, c) => p + c.amount);
          mcResults[run][0] = bal;
 
-         for (int month = 0; month < sim.monthCount; month++) {
-            double annualRate = (pensionList.first.rate) + rateAdjustment; // Approximate rate
-            double sigma = volatility;
-            
-            // Adjust sigma/mu for step duration
-            double stepTimeYears = 1 / 12.0;
-            double stepSigma = sigma * sqrt(stepTimeYears);
-            double stepMu = (log(1 + annualRate) - 0.5 * sigma * sigma) * stepTimeYears;
-            
-            double shock = normal(rand);
-            double growth = exp(stepMu + stepSigma * shock);
-            
-            bal = (bal + intoPension[0]) * growth;
-            if (bal < 0) bal = 0;
-            mcResults[run][0] = bal;
-         }
+
+          for (int step = 0; step < sim.sampleCount; step++) {
+             double annualRate = (pensionList.first.rate) + rateAdjustment; // Approximate rate
+             double sigma = volatility;
+             
+             // Time step in years
+             double stepTimeYears = sim.step / 12.0;
+             
+             double stepSigma = sigma * sqrt(stepTimeYears);
+             double stepMu = (log(1 + annualRate) - 0.5 * sigma * sigma) * stepTimeYears;
+             
+             double shock = normal(rand);
+             double growth = exp(stepMu + stepSigma * shock);
+             
+             // Apply flow for this step (captured in deterministic run)
+             bal = (bal + intoPension[step]) * growth;
+             if (bal < 0) bal = 0;
+             mcResults[run][step] = bal;
+          }
       }
       
       for (int step = 0; step < sim.sampleCount; step++) {
