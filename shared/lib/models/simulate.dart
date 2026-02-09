@@ -265,7 +265,8 @@ class Simulate {
     int answer = totalMonth;
     int step = 1;
     if (!byMonth) {
-      answer = totalMonth ~/ 12;
+      answer = (totalMonth ~/ 12)+1;
+      totalMonth = answer * 12;
       step = 12;
     }
 
