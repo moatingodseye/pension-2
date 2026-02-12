@@ -73,8 +73,8 @@ class UserApi extends Access {
     final users = rows.map((r) => models.User(
       id: r['id'] as int,
       username: r['username'] as String,
-      isAdmin: r['isadmin'] == 1,
-      isLocked: r['islocked'] == 1,
+      isAdmin: r['isAdmin'] == 1,
+      isLocked: r['isLocked'] == 1,
       // dob is null for list endpoint
     )).toList();
 

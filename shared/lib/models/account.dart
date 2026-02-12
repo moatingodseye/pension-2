@@ -48,10 +48,12 @@ class Account extends Base{
 
     row.forEach((columnName, value) {
       switch (columnName) {
+        case 'isType':
         case 'istype':
           json['isType'] = value; // just a string at the point or an int, don't really care
           break;
         case 'amountat':
+        case 'amountAt':
           json['amountAt'] = AgeOrDate.fromString(value as String?).toJson(); // just a string from the db convert to AgeOrDate
           break;
         default:

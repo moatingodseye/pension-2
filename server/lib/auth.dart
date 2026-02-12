@@ -45,7 +45,7 @@ class Authentication extends Access {
       final user = result.first;
 
       // Check if the account is locked
-      if (user['islocked'] == 1) {
+      if (user['isLocked'] == 1) {
         return forbidden('Acount locked');
       }
 
@@ -55,10 +55,10 @@ class Authentication extends Access {
         return unauthorised('Invalid');
       }
 
-      final jwt = JWT({'id': user['id'], 'admin': user['isadmin'] == 1});
+      final jwt = JWT({'id': user['id'], 'admin': user['isAdmin'] == 1});
       return Response.ok(jsonEncode({
         'token': jwt.sign(SecretKey(jwtSecret)), 
-        'isAdmin': user['isadmin'] == 1,
+        'isAdmin': user['isAdmin'] == 1,
         'id': user['id'],
         'dob': user['dob'] // Return DOB string
       }));

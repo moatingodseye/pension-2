@@ -71,15 +71,14 @@ class AccountApi extends Access {
     // Insert using model fields
     try {
       db.execute(
-        '''INSERT INTO account (userid, istype, name, amount, age, amountat, rate)
-           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT INTO account (userid, istype, name, amount, amountat, rate)
+           VALUES (?, ?, ?, ?, ?, ?)''',
         [
           userId,
           newAccount.type.id,
           newAccount.name,
           newAccount.amount,
 //          newAccount.amountAt.toIso8601String().split('T')[0],
-          null,
           newAccount.amountAt.toString(),
           newAccount.rate
         ],
@@ -120,13 +119,12 @@ class AccountApi extends Access {
     try {
       db.execute(
         '''UPDATE account 
-           SET istype=?, name=?, amount=?, age=?, amountat=?, rate=?
+           SET istype=?, name=?, amount=?, amountat=?, rate=?
            WHERE id=?''',
         [
           updatedAccount.type.id,
           updatedAccount.name,
           updatedAccount.amount,
-          null,
           updatedAccount.amountAt.toString(),
           updatedAccount.rate,
           id

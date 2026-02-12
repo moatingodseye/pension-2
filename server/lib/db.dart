@@ -102,8 +102,8 @@ class PensionDb {
     if (admin.isEmpty) {
       final hash = BCrypt.hashpw('admin', BCrypt.gensalt());
       db.execute(
-        "INSERT INTO user (username, password, dob, isadmin, islocked) VALUES (?, ?, ?, 1, 0)",
-        ['admin', hash, '1970-01-01'],
+        "INSERT INTO user (username, password, dob, isadmin, islocked) VALUES (?, ?, ?, ?, ?)",
+        ['admin', hash, '1970-01-01',1,0],
       );
     }
   }
