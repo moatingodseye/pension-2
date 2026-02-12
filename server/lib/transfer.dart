@@ -3,9 +3,12 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/transfer.dart';
 import 'access.dart';
+import 'services/simulationService.dart';
 
 class TransferApi extends Access {
-  TransferApi(super.db);
+  final SimulationService? _simulationService;
+  
+  TransferApi(super.db, [this._simulationService]);
 
   Router get router {
     final router = Router();
@@ -68,6 +71,7 @@ class TransferApi extends Access {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         [userId, newTransfer.name, newTransfer.fromId, newTransfer.intoId, newTransfer.amount, newTransfer.startAt.toString(), newTransfer.endAt.toString(), newTransfer.rate],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -106,6 +110,7 @@ class TransferApi extends Access {
           WHERE id=?''',
         [updatedTransfer.name, updatedTransfer.fromId, updatedTransfer.intoId, updatedTransfer.amount, updatedTransfer.startAt.toString(), updatedTransfer.endAt.toString(), updatedTransfer.rate, id],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -115,6 +120,7 @@ class TransferApi extends Access {
   Future<Response> delete(Request request, String idStr) async {
     final userId = request.context['uid'];
     db.execute("DELETE FROM transfer WHERE id=? AND userid=?", [idStr, userId]);
+    _simulationService?.invalidateCache(userId as int);
     return ok();
   }
 }

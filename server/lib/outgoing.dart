@@ -3,9 +3,12 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/outgoing.dart';
 import 'access.dart';
+import 'services/simulationService.dart';
 
 class OutgoingApi extends Access {
-  OutgoingApi(super.db);
+  final SimulationService? _simulationService;
+  
+  OutgoingApi(super.db, [this._simulationService]);
 
   Router get router {
     final router = Router();
@@ -69,6 +72,7 @@ class OutgoingApi extends Access {
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
         [userId, newOutgoing.name, newOutgoing.fromId, newOutgoing.amount, newOutgoing.startAt.toString(), newOutgoing.endAt.toString(), newOutgoing.rate],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -107,6 +111,7 @@ class OutgoingApi extends Access {
           WHERE id=?''',
         [updatedOutgoing.name, updatedOutgoing.fromId, updatedOutgoing.amount, updatedOutgoing.startAt.toString(), updatedOutgoing.endAt.toString(), updatedOutgoing.rate, id],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -116,6 +121,7 @@ class OutgoingApi extends Access {
   Future<Response> delete(Request request, String idStr) async {
     final userId = request.context['uid'];
     db.execute("DELETE FROM outgoing WHERE id=? AND userid=?", [idStr, userId]);
+    _simulationService?.invalidateCache(userId as int);
     return ok();
   }
 }

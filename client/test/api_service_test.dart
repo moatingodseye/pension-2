@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:client/services/apiResponse.dart';
-import 'package:client/services/aprException.dart';
+import 'package:client/services/apiException.dart';
 
 void main() {
   group('ApiResponse', () {

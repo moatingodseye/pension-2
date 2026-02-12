@@ -96,6 +96,16 @@ class PensionDb {
       )
     '''); 
 
+    // Snapshots of account values for plan vs reality
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS accountSnapshot (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        accountId INTEGER,
+        value REAL,
+        date TEXT
+      )
+    ''');
+
     migrate();
 
     final admin = db.select("SELECT * FROM user WHERE username='admin'");

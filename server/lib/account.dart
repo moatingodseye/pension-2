@@ -3,9 +3,12 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/account.dart';
 import 'access.dart';
+import 'services/simulationService.dart';
 
 class AccountApi extends Access {
-  AccountApi(super.db);
+  final SimulationService? _simulationService;
+  
+  AccountApi(super.db, [this._simulationService]);
   
   Router get router {
     final router = Router();
@@ -83,6 +86,7 @@ class AccountApi extends Access {
           newAccount.rate
         ],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -130,6 +134,7 @@ class AccountApi extends Access {
           id
         ],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -143,6 +148,7 @@ class AccountApi extends Access {
     if (id == null) return fail('Invalid ID');
 
     db.execute('DELETE FROM account WHERE id = ? AND userid = ?', [id, userId]);
+    _simulationService?.invalidateCache(userId as int);
     return ok();
   }
 }

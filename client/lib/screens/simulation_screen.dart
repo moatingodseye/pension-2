@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/simulation_provider.dart';
+import '../providers/simulationProvider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/income_provider.dart';
@@ -61,7 +61,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
 
     // Ensure we have a valid DOB
     if (authFn.user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: User missing for simulation')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: User missing for simulation')));
       return;
     }
 
@@ -130,7 +130,7 @@ class _SimulationScreenState extends State<SimulationScreen> {
           mcMinList: result.monteMinList,
           mcMaxList: result.monteMaxList,
           ageList: result.ageList,
-          showList: provider.showList,
+          showList: result.nameList.map((name) => provider.showList[name] ?? true).toList(),
           pensionMin: result.pensionMin,
           pensionMax: result.pensionMax,
           accountMin: result.accountMin,
@@ -261,24 +261,24 @@ class _SimulationScreenState extends State<SimulationScreen> {
                         children: [
                            FilterChip(
                              label: const Text('Sum'),
-                             selected: provider.showList[0],
-                             onSelected: (v) => provider.toggleLine(0),
+                             selected: provider.showList['Sum'] ?? true,
+                             onSelected: (v) => provider.toggleLine('Sum'),
                            ),
                            FilterChip(
                              label: const Text('Income'),
-                             selected: provider.showList[1],
-                             onSelected: (v) => provider.toggleLine(1),
+                             selected: provider.showList['Income'] ?? true,
+                             onSelected: (v) => provider.toggleLine('Income'),
                            ),
                            FilterChip(
                              label: const Text('Monte Carlo'),
-                             selected: provider.showList[2],
-                             onSelected: (v) => provider.toggleLine(2),
+                             selected: provider.showList['Monte Carlo'] ?? true,
+                             onSelected: (v) => provider.toggleLine('Monte Carlo'),
                            ),
-                           ...List.generate(result.accountMap.length, (i) {
+                           ...result.nameList.map((name) {
                              return FilterChip(
-                               label: Text('Pot ${i+1}'),
-                               selected: i+3 < provider.showList.length ? provider.showList[i+3] : false,
-                               onSelected: (v) => provider.toggleLine(i+3),
+                               label: Text(name),
+                               selected: provider.showList[name] ?? true,
+                               onSelected: (v) => provider.toggleLine(name),
                              );
                            }),
                         ],

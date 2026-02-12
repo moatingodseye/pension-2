@@ -67,7 +67,7 @@ class UserApi extends Access {
 
   // Get a list of all users
   Future<Response> select(Request req) async {
-    final rows = db.select("SELECT id, username, isadmin, islocked FROM user");
+    final rows = db.select("SELECT id, username, isAdmin, isLocked FROM user");
     
     // Convert rows to User models (without dob for list view)
     final users = rows.map((r) => models.User(

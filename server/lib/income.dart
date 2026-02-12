@@ -3,9 +3,12 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shared/models/income.dart';
 import 'access.dart';
+import 'services/simulationService.dart';
 
 class IncomeApi extends Access {
-  IncomeApi(super.db);
+  final SimulationService? _simulationService;
+  
+  IncomeApi(super.db, [this._simulationService]);
 
   Router get router {
     final router = Router();
@@ -68,6 +71,7 @@ class IncomeApi extends Access {
            VALUES (?, ?, ?, ?, ?, ?, ?)''',
         [userId, newIncome.name, newIncome.intoId, newIncome.amount, newIncome.startAt.toString(), newIncome.endAt.toString(), newIncome.rate],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -106,6 +110,7 @@ class IncomeApi extends Access {
           WHERE id=?''',
         [updatedIncome.name, updatedIncome.intoId, updatedIncome.amount, updatedIncome.startAt.toString(), updatedIncome.endAt.toString(), updatedIncome.rate, id],
       );
+      _simulationService?.invalidateCache(userId as int);
       return ok();
     } catch (e) {
       return fail(e.toString());
@@ -116,6 +121,7 @@ class IncomeApi extends Access {
      // Implementation similar to other classes
     final userId = request.context['uid'];
     db.execute("DELETE FROM income WHERE id=? AND userid=?", [idStr, userId]);
+    _simulationService?.invalidateCache(userId as int);
     return ok();
   }
 }

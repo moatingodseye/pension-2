@@ -4,6 +4,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:bcrypt/bcrypt.dart';
 import 'access.dart';
 import 'user.dart';
+import 'package:shared/models/user.dart' as models;
 import 'middleware/auth.dart';
 
 class Authentication extends Access {
@@ -34,7 +35,7 @@ class Authentication extends Access {
     try {
       // Query to fetch user details based on username
       final result = db.select(
-        'SELECT id, username, password, isadmin, islocked, dob FROM user WHERE username = ?',
+        'SELECT id, username, password, isAdmin, isLocked, dob FROM user WHERE username = ?',
         [username],
       );
 
@@ -43,7 +44,7 @@ class Authentication extends Access {
       }
 
       // Convert to User model
-      final user = User.fromDb(result.first);
+      final user = models.User.fromDb(result.first);
 
       // Check if the account is locked
       if (user.isLocked) {

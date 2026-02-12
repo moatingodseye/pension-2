@@ -61,8 +61,12 @@ class User {
               : json['dob'] is int
                   ? DateTime.fromMillisecondsSinceEpoch(json['dob'] as int)
                   : null,
-      isAdmin: (json['isadmin'] is int ? json['isadmin'] == 1 : json['isadmin'] as bool? ?? false),
-      isLocked: (json['islocked'] is int ? json['islocked'] == 1 : json['islocked'] as bool? ?? true),
+      isAdmin: (json['isAdmin'] ?? json['isadmin']) is int 
+          ? ((json['isAdmin'] ?? json['isadmin']) == 1) 
+          : ((json['isAdmin'] ?? json['isadmin']) as bool? ?? false),
+      isLocked: (json['isLocked'] ?? json['islocked']) is int 
+          ? ((json['isLocked'] ?? json['islocked']) == 1) 
+          : ((json['isLocked'] ?? json['islocked']) as bool? ?? false),
     );
   }
 

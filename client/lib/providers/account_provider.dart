@@ -15,6 +15,14 @@ class AccountProvider extends ChangeNotifier {
   int limit = 20;
   int totalCount = 0;
 
+  // Selection
+  Account? selectedAccount;
+
+  void select(Account? account) {
+    selectedAccount = account;
+    notifyListeners();
+  }
+
   Future<void> load({int? newPage}) async {
     if (newPage != null) page = newPage;
     

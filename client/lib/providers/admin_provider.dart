@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared/models/user.dart';
 import '../services/apiService.dart';
-import '../services/aprException.dart';
+import '../services/apiException.dart';
 
 class AdminProvider extends ChangeNotifier {
   List<User> _user = [];

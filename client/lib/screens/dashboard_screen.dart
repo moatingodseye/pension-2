@@ -10,6 +10,11 @@ import '../widgets/app_card.dart';
 import '../widgets/forms/account_form_dialog.dart';
 import '../widgets/forms/income_form_dialog.dart';
 import '../widgets/forms/outgoing_form_dialog.dart';
+import '../providers/simulationProvider.dart';
+import 'package:shared/models/snapshot.dart';
+import '../services/snapshotService.dart';
+import 'package:shared/logic.dart';
+import 'dart:math';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,13 +31,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       Provider.of<AccountProvider>(context, listen: false).load();
       Provider.of<IncomeProvider>(context, listen: false).load();
       Provider.of<OutgoingProvider>(context, listen: false).load();
+      Provider.of<SimulationProvider>(context, listen: false).load();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<AccountProvider, IncomeProvider, OutgoingProvider>(
-      builder: (ctx, accProv, incProv, outProv, _) {
+    return Consumer4<AccountProvider, IncomeProvider, OutgoingProvider, SimulationProvider>(
+      builder: (ctx, accProv, incProv, outProv, simProv, _) {
         // Calculate Totals
         double totalPension = 0;
         double totalSavings = 0;
@@ -147,6 +153,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Quick Actions Panel
                 ],
               ),
+              
+              const SizedBox(height: 24),
+              Text('Projected Performance (Plan vs Reality)', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+
+              if (simProv.isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (simProv.results.isEmpty)
+                const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('No simulation data available.')))
+              else
+                ...accProv.accounts.map((account) {
+                  final result = simProv.getResult(account.id!);
+                  if (result == null) return const SizedBox.shrink();
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(account.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 200,
+                            child: _AccountSimulationChart(account: account, result: result),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
             ],
           ),
         );
@@ -258,6 +296,102 @@ class _Badge extends StatelessWidget {
       ),
       padding: EdgeInsets.all(size * 0.15),
       child: Center(child: Icon(icon, color: borderColor, size: size * 0.6)),
+    );
+  }
+}
+
+class _AccountSimulationChart extends StatefulWidget {
+  final Account account;
+  final MonteCarloResult result;
+
+  const _AccountSimulationChart({required this.account, required this.result});
+
+  @override
+  State<_AccountSimulationChart> createState() => _AccountSimulationChartState();
+}
+
+class _AccountSimulationChartState extends State<_AccountSimulationChart> {
+  final SnapshotService _snapshotService = SnapshotService();
+  List<AccountSnapshot> _snapshots = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSnapshots();
+  }
+
+  void _loadSnapshots() async {
+    try {
+      final list = await _snapshotService.getSnapshots(widget.account.id!);
+      if (mounted) setState(() => _snapshots = list);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final result = widget.result;
+    
+    // Convert 10th percentile to spots
+    final p10Spots = result.percentile10.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList();
+    final p50Spots = result.median.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList();
+    final p90Spots = result.percentile90.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList();
+
+    // Spaghetti
+    final spaghettiLines = result.paths.take(20).map((path) {
+      return LineChartBarData(
+        spots: path.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+        isCurved: true,
+        color: Colors.grey.withOpacity(0.1), // Faint
+        barWidth: 1,
+        dotData: FlDotData(show: false),
+      );
+    }).toList();
+
+    // Snapshots (Real Data)
+    // We plot past snapshots relative to "Now" (Index 0).
+    // Assuming simulation starts at Index 0.
+    final now = DateTime.now();
+    final snapshotSpots = _snapshots.map((s) {
+       // Years difference: (s.date - now) / 365
+       // This will be negative for past dates.
+       final diffDays = s.date.difference(now).inDays;
+       final diffYears = diffDays / 365.0;
+       return FlSpot(diffYears, s.value);
+    }).toList();
+    // Add current value as (0, current)
+    snapshotSpots.add(FlSpot(0, widget.account.amount));
+    snapshotSpots.sort((a,b) => a.x.compareTo(b.x));
+
+    return LineChart(
+      LineChartData(
+        lineBarsData: [
+          ...spaghettiLines,
+          // Percentiles
+          LineChartBarData(spots: p10Spots, color: Colors.green.withOpacity(0.5), barWidth: 2, dotData: FlDotData(show: false)),
+          LineChartBarData(spots: p50Spots, color: Colors.blue, barWidth: 3, dotData: FlDotData(show: false)),
+          LineChartBarData(spots: p90Spots, color: Colors.green.withOpacity(0.5), barWidth: 2, dotData: FlDotData(show: false)),
+          // Snapshots
+          LineChartBarData(
+            spots: snapshotSpots, 
+            color: Colors.orange, 
+            barWidth: 3, 
+            isCurved: false,
+            dotData: FlDotData(show: true),
+          ),
+        ],
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, meta) {
+            return Text('${val.toInt()}y', style: const TextStyle(fontSize: 10));
+          })),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (val, meta) {
+             return Text('${val ~/ 1000}k', style: const TextStyle(fontSize: 10));
+          })),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(show: false),
+        borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
+      ),
     );
   }
 }

@@ -9,7 +9,7 @@ import 'providers/account_provider.dart';
 import 'providers/income_provider.dart';
 import 'providers/outgoing_provider.dart';
 import 'providers/transfer_provider.dart';
-import 'providers/simulation_provider.dart';
+import 'providers/simulationProvider.dart';
 import 'providers/admin_provider.dart';
 import 'core/constants.dart';
 import 'services/debugLogger.dart';
@@ -25,7 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeService()), // Add ThemeService
+        ChangeNotifierProvider(create: (_) => ThemeService()), 
         ChangeNotifierProvider(create: (_) => AccountProvider()),
         ChangeNotifierProvider(create: (_) => IncomeProvider()),
         ChangeNotifierProvider(create: (_) => OutgoingProvider()),

@@ -18,6 +18,9 @@ import 'admin.dart';
 import 'middleware/auth.dart';
 import 'middleware/api.dart';
 
+import 'snapshotApi.dart';
+import 'services/simulationService.dart';
+
 void main() async {
   setupClientLogging();
 
@@ -59,13 +62,16 @@ void main() async {
   pub.post('/restore', apiKeyMiddleware(validApiKey)(restoreHandler));
   pub.mount('/', protected);
 
-  final account = AccountApi(pension.getDb());
-  final income = IncomeApi(pension.getDb());
-  final outgoing = OutgoingApi(pension.getDb());
-  final transfer = TransferApi(pension.getDb());
+  final simulationService = SimulationService(pension.getDb());
+  
+  final account = AccountApi(pension.getDb(), simulationService);
+  final income = IncomeApi(pension.getDb(), simulationService);
+  final outgoing = OutgoingApi(pension.getDb(), simulationService);
+  final transfer = TransferApi(pension.getDb(), simulationService);
   final user = UserApi(pension.getDb());
   final admin = Admin(pension.getDb());
   final Simulate sim = Simulate();
+  final snapshot = SnapshotApi(pension.getDb());
 
   // --- Protected routes ---
   prot
@@ -73,6 +79,8 @@ void main() async {
     ..mount('/income', income.router.call)
     ..mount('/outgoing', outgoing.router.call)
     ..mount('/transfer', transfer.router.call)
+    ..mount('/snapshot', snapshot.router.call)
+    ..mount('/simulation', simulationService.router.call)
 
     ..post('/user', user.insert)
     ..get('/user', user.select)

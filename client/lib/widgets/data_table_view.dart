@@ -6,6 +6,8 @@ class DataTableView extends StatelessWidget {
   final List<MainAxisAlignment>? columnAlignments;
   final VoidCallback? onAdd;
   final String? addLabel;
+  final Function(int)? onRowTap;
+  final int? selectedRowIndex;
 
   const DataTableView({
     super.key,
@@ -14,11 +16,14 @@ class DataTableView extends StatelessWidget {
     this.columnAlignments,
     this.onAdd,
     this.addLabel,
+    this.onRowTap,
+    this.selectedRowIndex,
   });
 
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
+      // ... (keep existing empty state)
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -38,9 +43,6 @@ class DataTableView extends StatelessWidget {
       );
     }
 
-    // Determine flex or width for columns? use Table widgets or Row+Expanded?
-    // Using a Header Row + ListView of Rows is easier for scrolling.
-    
     return Column(
       children: [
         // Header
@@ -53,16 +55,13 @@ class DataTableView extends StatelessWidget {
           child: Row(
             children: List.generate(headers.length, (index) {
               return Expanded(
-                flex: index == 0 ? 3 : 2, // First column slightly wider (Name/Description)
+                flex: index == 0 ? 3 : 2,
                 child: Row(
                   mainAxisAlignment: _getAlignment(index),
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
-                        child:   Text(
-                          headers[index],
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
-                        ),
+                    Text(
+                      headers[index],
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                     ),
                   ],
                 ),
@@ -79,11 +78,14 @@ class DataTableView extends StatelessWidget {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, rowIndex) {
               final cells = rows[rowIndex];
+              final isSelected = selectedRowIndex == rowIndex;
+              
               return InkWell(
-                onTap: () {}, // Handle row tap? Or let cells handle it?
+                onTap: onRowTap != null ? () => onRowTap!(rowIndex) : null,
                 hoverColor: Colors.grey.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Compact padding
+                child: Container(
+                  color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: List.generate(cells.length, (cellIndex) {
                       return Expanded(
@@ -91,15 +93,8 @@ class DataTableView extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: _getAlignment(cellIndex),
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 16.0),
-                                child:
-//                                  if (cellIndex < cells.length)
-                                    cells[cellIndex], // No Expanded here, let cell take natural width or be flexible? 
-                                    // Actually if cell is Text it might overflow.
-                                    // We should wrap cell in Flexible or Expanded if possible. 
-                                    // But widget passed is generic. Assuming text/row.
-                                ),
+                             // Wrap cell in flexible if needed, but for now specific widgets handle it
+                             cells[cellIndex],
                           ],
                         ),
                       );

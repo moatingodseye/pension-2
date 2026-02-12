@@ -6,6 +6,7 @@ import 'providers/auth_provider.dart';
 import 'services/theme_service.dart';
 import 'services/csv_service.dart';
 import 'providers/account_provider.dart';
+import 'package:shared/models/account.dart';
 import 'providers/income_provider.dart';
 import 'providers/outgoing_provider.dart';
 import 'providers/transfer_provider.dart';
@@ -24,6 +25,7 @@ import 'widgets/forms/account_form_dialog.dart';
 import 'widgets/forms/income_form_dialog.dart';
 import 'widgets/forms/outgoing_form_dialog.dart';
 import 'widgets/forms/transfer_form_dialog.dart';
+import 'widgets/snapshot_dialog.dart';
 
 class HomeContainer extends StatefulWidget {
   const HomeContainer({super.key});
@@ -124,11 +126,25 @@ class _HomeContainerState extends State<HomeContainer> {
         ];
         break;
       case 1: // Accounts
-        secondaryHeader = 'Account Actions';
-        secondaryItems = [
-          SidebarItem(icon: Icons.add, label: 'Add Account', onTap: () => _openDialog(const AccountFormDialog())),
-          SidebarItem(icon: Icons.filter_list, label: 'Filter List', onTap: () => _placeholderAction('Filter Accounts')),
-        ];
+        {
+          final accountProvider = context.watch<AccountProvider>();
+          final sel = accountProvider.selectedAccount;
+          
+          secondaryHeader = 'Account Actions';
+          secondaryItems = [
+            SidebarItem(icon: Icons.add, label: 'Add Account', onTap: () => _openDialog(const AccountFormDialog())),
+            SidebarItem(icon: Icons.filter_list, label: 'Filter List', onTap: () => _placeholderAction('Filter Accounts')),
+          ];
+          
+          if (sel != null) {
+            secondaryItems.addAll([
+              SidebarItem(label: 'Selected: ${sel.name}', icon: Icons.check_circle, enabled: false), // Header-like item
+              SidebarItem(icon: Icons.edit, label: 'Edit Account', onTap: () => _openDialog(AccountFormDialog(account: sel))),
+              SidebarItem(icon: Icons.history, label: 'Snapshots', onTap: () => _openDialog(SnapshotsDialog(account: sel))),
+              SidebarItem(icon: Icons.delete, label: 'Delete Account', onTap: () => _confirmDeleteAccount(context, accountProvider, sel)),
+            ]);
+          }
+        }
         break;
       case 2: // Incomes
         secondaryHeader = 'Income Actions';
@@ -194,7 +210,29 @@ class _HomeContainerState extends State<HomeContainer> {
   }
 
   void _openDialog(Widget dialog) {
-    showDialog(context: context, builder: (_) => dialog);
+    showDialog(context: context, builder: (ctx) => dialog);
+  }
+
+  void _confirmDeleteAccount(BuildContext context, AccountProvider provider, Account acc) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: Text('Are you sure you want to delete "${acc.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              provider.delete(acc.id!);
+              provider.select(null); // Clear selection
+              Navigator.pop(ctx);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _placeholderAction(String name) {
@@ -216,6 +254,8 @@ class _HomeContainerState extends State<HomeContainer> {
       transProv.load(),
     ]);
 
+    if (!context.mounted) return;
+
     final accountsCsv = csvService.exportAccounts(accProv.accounts);
     final incomesCsv = csvService.exportIncomes(incProv.incomes);
     final outgoingsCsv = csvService.exportOutgoings(outProv.outgoings);
@@ -236,6 +276,7 @@ class _HomeContainerState extends State<HomeContainer> {
   Future<void> _importData(BuildContext context) async {
       final content = await CsvService.pickAndRead(context);
       if (content == null) return;
+      if (!context.mounted) return;
       
       final csvService = CsvService();
       try {
@@ -251,7 +292,9 @@ class _HomeContainerState extends State<HomeContainer> {
               final list = csvService.parseAccounts(content);
               if (list.isNotEmpty) {
                   final prov = Provider.of<AccountProvider>(context, listen: false);
-                  for(var item in list) await prov.add(item);
+                  for(var item in list) {
+                    await prov.add(item);
+                  }
                   imported = true;
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Accounts')));
               }
@@ -261,7 +304,9 @@ class _HomeContainerState extends State<HomeContainer> {
               final list = csvService.parseIncomes(content);
               if (list.isNotEmpty) {
                   final prov = Provider.of<IncomeProvider>(context, listen: false);
-                  for(var item in list) await prov.add(item);
+                  for(var item in list) {
+                    await prov.add(item);
+                  }
                   imported = true;
                   if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Incomes')));
               }
@@ -273,7 +318,9 @@ class _HomeContainerState extends State<HomeContainer> {
                     final list = csvService.parseTransfers(content);
                     if (list.isNotEmpty) {
                         final prov = Provider.of<TransferProvider>(context, listen: false);
-                        for(var item in list) await prov.add(item);
+                        for(var item in list) {
+                          await prov.add(item);
+                        }
                         imported = true;
                         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Transfers')));
                     }
@@ -282,7 +329,9 @@ class _HomeContainerState extends State<HomeContainer> {
                     final list = csvService.parseOutgoings(content);
                     if (list.isNotEmpty) {
                         final prov = Provider.of<OutgoingProvider>(context, listen: false);
-                        for(var item in list) await prov.add(item);
+                        for(var item in list) {
+                          await prov.add(item);
+                        }
                         imported = true;
                         if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${list.length} Outgoings')));
                     }

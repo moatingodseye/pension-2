@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared/models/outgoing.dart';
 import '../services/apiService.dart';
-import '../services/aprException.dart';
+import '../services/apiException.dart';
 
 class OutgoingProvider extends ChangeNotifier {
   List<Outgoing> outgoings = [];

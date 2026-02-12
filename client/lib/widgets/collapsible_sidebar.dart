@@ -97,16 +97,10 @@ class CollapsibleSidebar extends StatelessWidget {
                 // If I want to disable it, I should probably add a `enabled` flag to SidebarItem? 
                 // Or I can interpret "onTap is a dummy function" as disabled? No.
                 
-                // Let's adding `enabled` property to SidebarItem seems cleanest but requires changing SidebarItem definition.
-                // Let's check SidebarItem definition at top of file.
-                
-                // Code view shows:
-                // class SidebarItem { final IconData icon; final String label; final VoidCallback? onTap; ... }
-                
-                // I will add `bool enabled` to SidebarItem.
-                
+                final VoidCallback? tapHandler = item.onTap ?? () => onItemSelected(index);
+
                 return InkWell(
-                  onTap: item.enabled ? onTap : null,
+                  onTap: item.enabled ? tapHandler : null,
                   child: Container(
                     height: 50,
                     color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
