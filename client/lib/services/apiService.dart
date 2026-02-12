@@ -4,7 +4,7 @@ import '../core/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'debugLogger.dart';
 import 'apiResponse.dart';
-import 'aprException.dart';
+import 'apiException.dart';
 
 class ApiService {
   static String? token = "";
@@ -123,17 +123,14 @@ class ApiService {
   }
 
   static Map<String, dynamic> _parseJsonResponse(http.Response res) {
-    final body = _tryDecode(res);
-
-    if (body is Map<String, dynamic>) {
-      return body;
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+       final body = _tryDecode(res);
+       if (body is Map<String, dynamic>) return body;
+       // Valid response but empty or not map?
+       return {'success': true}; 
     }
-
-    return {
-      'success': false,
-      'error': 'Invalid server response',
-      'raw': res.body,
-    };
+    
+    throw apiException(res.body);
   }
 
   /// Register a new user and return an ApiResponse

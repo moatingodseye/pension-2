@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared/models/account.dart';
 import '../services/apiService.dart';
-import '../services/aprException.dart';
+import '../services/apiException.dart';
 
 import '../services/debugLogger.dart';
 

@@ -34,7 +34,7 @@ class Authentication extends Access {
     try {
       // Query to fetch user details based on username
       final result = db.select(
-        'SELECT id, password, isadmin, islocked, dob FROM user WHERE username = ?',
+        'SELECT id, username, password, isadmin, islocked, dob FROM user WHERE username = ?',
         [username],
       );
 
@@ -42,25 +42,42 @@ class Authentication extends Access {
         return fail('No such user');
       }
 
-      final user = result.first;
+      // Convert to User model
+      final user = User.fromDb(result.first);
 
       // Check if the account is locked
-      if (user['isLocked'] == 1) {
-        return forbidden('Acount locked');
+      if (user.isLocked) {
+        return forbidden('Account locked');
       }
 
       // Check if the password matches
-      final isPasswordCorrect = BCrypt.checkpw(password, user['password']);
-      if (!isPasswordCorrect) {
-        return unauthorised('Invalid');
+      // Note: User model fromDb might not have password set if we were selecting strict fields, 
+      // but here we expressly selected it. 
+      // The shared User model maps 'password' from the DB result if available.
+      // However, looking at User.fromDb in the shared model, it expects 'password' key to map it?
+      // Actually checking User.dart, fromDb calls fromJson. 
+      // fromJson expects 'password'. db.select returns lowercase column names usually?
+      // Let's rely on standard map key access if User model is strict on keys.
+      // But wait, the shared model `fromDb` maps keys. 
+      
+      final dbPassword = result.first['password'] as String?;
+
+      if (dbPassword == null) {
+          return fail('User data corruption (no password set)');
       }
 
-      final jwt = JWT({'id': user['id'], 'admin': user['isAdmin'] == 1});
+      final isPasswordCorrect = BCrypt.checkpw(password, dbPassword);
+      if (!isPasswordCorrect) {
+        return unauthorised('Invalid credentials');
+      }
+
+      final jwt = JWT({'id': user.id, 'admin': user.isAdmin});
+      
       return Response.ok(jsonEncode({
         'token': jwt.sign(SecretKey(jwtSecret)), 
-        'isAdmin': user['isAdmin'] == 1,
-        'id': user['id'],
-        'dob': user['dob'] // Return DOB string
+        'isAdmin': user.isAdmin,
+        'id': user.id,
+        'dob': user.dob?.toIso8601String()
       }));
     } catch (e) {
       return error(e.toString());

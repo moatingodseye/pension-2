@@ -77,6 +77,7 @@ class _HomeContainerState extends State<HomeContainer> {
     if (_selectedIndex == 7 && !auth.isAdmin) safeIndex = 0;
 
     // 1. Build Primary Sidebar Items
+    // 1. Build Primary Sidebar Items
     final primaryItems = [
       SidebarItem(icon: Icons.dashboard, label: 'Dashboard'),
       SidebarItem(icon: Icons.account_balance, label: 'Accounts'),
@@ -85,7 +86,14 @@ class _HomeContainerState extends State<HomeContainer> {
       SidebarItem(icon: Icons.compare_arrows, label: 'Transfers'),
       SidebarItem(icon: Icons.bar_chart, label: 'Sim'),
       SidebarItem(icon: Icons.storage, label: 'Data'),
-      SidebarItem(icon: Icons.admin_panel_settings, label: 'Admin'),
+      SidebarItem(
+        icon: Icons.admin_panel_settings, 
+        label: 'Admin',
+        enabled: auth.isAdmin,
+        onTap: auth.isAdmin ? null : () {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admin Access Required')));
+        },
+      ),
       SidebarItem(
         icon: themeService.isDarkMode ? Icons.light_mode : Icons.dark_mode, 
         label: themeService.isDarkMode ? 'Light Mode' : 'Dark Mode',
