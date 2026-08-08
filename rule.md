@@ -262,6 +262,17 @@ condensed instruction injected into sub-agent prompts.
   - **Every deliberate exception**, as data with its reason attached, so the
     exception and the declaration cannot drift apart.
 
+  **The floor is 95% line coverage, measured over EVERY line the project ships.**
+  Not per-package-when-convenient and not "the packages we happen to measure":
+  a runner that leaves a quarter of the codebase outside the denominator reports
+  a number that is higher than the truth, which is worse than reporting nothing.
+  Coverage below the floor is a finding to surface, not a level to settle at.
+
+  Line coverage is the floor, not the goal — the clauses above are the goal. A
+  file can be 100% covered by tests that assert nothing, and that is not
+  coverage; it is a second copy of the implementation.
+
+
   Pure logic is unit-tested without a database or a socket; a handler's *policy*
   (what it decides) is separated from its *plumbing* (how it reads and writes) so
   the policy stays testable. When a change deletes behaviour, its test is deleted
