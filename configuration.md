@@ -282,12 +282,21 @@ The Dart build is ALWAYS the `*-x64` binary; bare `mercury.exe` = legacy Rust (n
 - Linux daemon process name is `dart:mercury` → use `pkill -f '[m]ercury serve'` (`pkill -x mercury` misses it).
 - No cross-compile (`dart compile exe` = host OS only): Linux built in the forgejo `dart` container on Mac Pro podman host `claude@192.168.101.193` with `bash -c` (NOT `bash -lc`); Windows built on Dart VM `192.168.101.161`.
 
-**Known mesh (2026-06-22):** `dev`/XE10-Base `192.168.101.174:8199` (hub) · `17f` `192.168.101.111:8200` · `macpro193`/claude `192.168.101.193:8199` (build host) · `macpro215` `192.168.101.215:8199` (PENDING) · `runner101` `192.168.101.101:8199` (PENDING). Legacy Rust node `JRB-Contracts` `10.192.41.58:8199`.
+**Known mesh (2026-06-22):** `dev`/XE10-Base `192.168.101.174:8199` (hub) · `17f` `192.168.101.111:8200` · `macpro193`/claude `192.168.101.193:8199` (build host) · `macpro215` `192.168.101.215:8199` (**not a VM — see below**) · `vm217` `192.168.101.217:8199` (**LIVE** — the spare-capacity box) · `runner101` `192.168.101.101:8199` (PENDING). Legacy Rust node `JRB-Contracts` `10.192.41.58:8199`.
 
 **Deployed mercury nodes (added 2026-07-02):**
 - `192.168.101.119` (user `deploy`, host `deployment`) — **NEW Ubuntu VM**; mercury :8199 via systemd `mercury.service`; LVM grown to ~97 GB. SSH key `~/.ssh/vm119`; sudo drop-in `/etc/sudoers.d/deploy`.
 - `192.168.101.193` (user `claude`, agent-vm) — mercury :8199 via systemd.
 - `192.168.101.217` (user `claude`, host `claude`) — mercury :8199 via systemd; LVM grown to ~57 GB. SSH key `~/.ssh/vm217`.
+  **Verified 2026-08-09 — this is the SECOND agent VM, and it is the one with room.**
+  ~42 GB free (23% used) against `.193`'s 7.3 GB (87% used); podman 4.9.3; **no containers running**.
+  Same mercury key as `.193`, so `MERCURY_HOST=192.168.101.217` is all it takes. No `dart` and no
+  `cargo` on the host — toolchains come from pods, exactly as on `.193`.
+  **Heavy pods belong here.** `.193` is shared by every project and reached 98% disk with the SQL
+  Server (~2.8 GB) and Oracle (~4 GB) images present at once, which is what stopped four-engine
+  database testing being routine.
+  ⚠ **`hostname` and the login user are `claude` on BOTH boxes**, so neither tells you which one
+  you are on — confirm `MERCURY_HOST` before trusting where a command ran.
 - `192.168.101.101` (user `claude`, host `claudejobrunner`, runner101/forgejo job runner) — mercury :8199 via systemd; LVM grown to ~77 GB. SSH key `~/.ssh/yt-vm`.
 
 ## Orac deployment topology (LIVE vs DEV) — added 2026-07-02
@@ -361,3 +370,65 @@ ssh vm119 'podman logs --since 10s orac-api' | grep -iE "drain error|does not ex
 The Superpowers `brainstorming` / `writing-plans` skills default to `docs/superpowers/specs/` and
 `docs/superpowers/plans/`; that path is **vetoed by the owner**. Write specs as
 `plan/YYYY-MM-DD-<topic>-design.md` and plans as `plan/YYYY-MM-DD-<topic>-plan.md`.
+
+### `192.168.101.215` is the Mac Pro ITSELF, not a VM (established 2026-08-09)
+
+It has been carried as a pending mesh node since 2026-06-22 under the name `macpro215`, as though it
+were another guest to bring up. It is not:
+
+- reverse DNS resolves to **`jrbs-Mac-Pro.local`**, and the MAC (`00:3e:e1:…`) is an Apple OUI;
+- the SSH banner is `OpenSSH_8.6`, which is macOS, not the Ubuntu the guests run;
+- **port 22 is the only port open** — nothing on :8199, so it cannot be driven by Mercury.
+
+So `.215` is the **hypervisor host** that `macpro193` (and `.217`) run on.
+
+> ⛔ **DO NOT ACCESS `.215` DIRECTLY — owner's instruction, 2026-08-09.** Not by SSH, not by
+> Mercury, not by any other means. It is the machine every agent VM runs on, so work done on it
+> puts the guests at risk, and it is out of bounds regardless of what it appears to be running.
+> It refuses every key in `~/.ssh` in any case. Do not probe it to find out what is on it — that
+> question has been asked and closed.
+
+
+<!-- OWNER-RULES-2026-08-17 -->
+## ⛔ Git is NOT a transport (owner, 2026-08-17)
+
+> *"NO! i do not accept pull from git. During development you mess with local
+> source, you zip and copy to vm, you try and compile, you find faults. I do not
+> want junk in git so I object to commit, push, pull, compile, find issues,
+> repeat — it just fills git with garbage commits."*
+
+**Never make a test box pull from git in order to build.** A `git fetch` /
+`checkout` in a deploy or test script forces a commit AND a push before anything
+can be compiled there, so every compile error costs a commit and the history
+fills with "fix build", "try again", "typo" — noise that buries the real work.
+
+**Do this instead:**
+
+- **Ship the WORKING TREE, committed or not.** Tar what the build needs, copy it
+  to the box (`mercury fs.write`), untar into the build context, build from that.
+- **No `git pull` / `git checkout` / `git fetch` step in any deploy or test
+  script**, and never "just commit it quickly" to get bytes onto a machine.
+- **Commits are for FINISHED work** — a feature with its tests and its design
+  entry. That is not licence to commit as a means of moving files.
+- A box that builds nothing needs no source on it at all. If its image comes
+  from CI, it does not need a clone.
+
+## 🌙 "end-of-day" — STOP, then tidy (owner, 2026-08-17)
+
+When the owner says **`end-of-day`**, that is a command, not a remark.
+
+1. **STOP what you are doing.** A small delay to finish the immediate step is
+   fine; **do not start new jobs**, new builds, new test runs or new
+   investigations.
+2. **Tidy up** — remove scratch files, stray branches, half-finished edits.
+3. **Bring `design/` up to date.** Every decision made today is written where it
+   belongs, not left in a commit message or in chat.
+4. **Commit and push** the plan and the day's work.
+5. **Leave `next.md` ready for tomorrow** — what is outstanding, nothing that is
+   already done, and enough that the next session can resume from it alone.
+6. **Tidy the VM.** Remove source that was copied over, temporary pods and
+   containers, build leftovers and scratch tarballs. Leave the box no fuller
+   than you found it — a shared agent VM fills up and then nothing deploys.
+
+Skill: `end-of-day` (user-level, `~/.claude/skills/end-of-day/`), so it runs the
+same way in every repo.
